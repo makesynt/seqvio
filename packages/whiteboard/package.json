@@ -1,0 +1,65 @@
+{
+  "name": "@seqvio/whiteboard",
+  "version": "0.1.0",
+  "description": "Whiteboard animation components for Seqvio",
+  "keywords": [
+    "seqvio",
+    "whiteboard",
+    "animation",
+    "video",
+    "draw",
+    "svg",
+    "react"
+  ],
+  "license": "MIT",
+  "author": "Seqvio Team",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/makesynt/seqvio.git",
+    "directory": "packages/whiteboard"
+  },
+  "bugs": {
+    "url": "https://github.com/makesynt/seqvio/issues"
+  },
+  "homepage": "https://github.com/makesynt/seqvio#readme",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "assets"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@fontsource/noto-sans-sc": "^5.2.5",
+    "dejavu-fonts-ttf": "^2.37.3",
+    "opentype.js": "^1.3.4",
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0",
+    "roughjs": "^4.6.6"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.3.0"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  }
+}

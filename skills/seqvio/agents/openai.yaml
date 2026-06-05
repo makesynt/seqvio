@@ -1,0 +1,3 @@
+display_name: Seqvio
+short_description: Author and render TSX-based narrated explainer videos with Seqvio.
+default_prompt: Use Seqvio to create or fix a TSX explainer video composition, follow the extract-synthesize-render workflow when narration is needed, and validate with the documented render commands.

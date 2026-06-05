@@ -1,0 +1,23 @@
+.env
+.env.local
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+*.tsbuildinfo
+packages/renderer/.generated/
+packages/core/src/*.js
+packages/core/src/*.d.ts
+
+# Render intermediates
+temp/
+
+# Local render output (generated at runtime)
+output/
+
+# Local IDE config
+.cursor/

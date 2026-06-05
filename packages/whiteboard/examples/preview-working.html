@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=0.5">
+  <title>Whiteboard Preview - Framework Intro</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: Arial, sans-serif;
+    }
+    #canvas-container {
+      width: 1920px;
+      height: 1080px;
+      background: white;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      position: relative;
+      transform: scale(0.8);
+      transform-origin: top center;
+    }
+    svg {
+      width: 100%;
+      height: 100%;
+      background: white;
+    }
+    .controls {
+      margin-top: 20px;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      width: 1536px;
+      justify-content: center;
+    }
+    button {
+      padding: 12px 24px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background: #3498db;
+      color: white;
+      font-weight: bold;
+    }
+    button:hover {
+      background: #2980b9;
+    }
+    button:disabled {
+      background: #95a5a6;
+      cursor: not-allowed;
+    }
+    .info {
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      color: #333;
+      padding: 0 20px;
+    }
+    .speed-control {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+    .speed-control label {
+      font-size: 14px;
+      color: #666;
+    }
+    .speed-control select {
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+      background: white;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1 style="color: #2c3e50; margin-bottom: 10px;">Seqvio Whiteboard Preview</h1>
+  <p style="color: #7f8c8d; margin-bottom: 20px;">Framework Introduction Demo</p>
+
+  <div id="canvas-container">
+    <svg id="scene" width="1920" height="1080"></svg>
+  </div>
+
+  <div class="controls">
+    <button id="play">▶ Play</button>
+    <button id="pause" disabled>⏸ Pause</button>
+    <button id="restart">↻ Restart</button>
+
+    <div class="speed-control">
+      <label>Speed:</label>
+      <select id="speed">
+        <option value="0.5">0.5x</option>
+        <option value="1" selected>1x</option>
+        <option value="2">2x</option>
+        <option value="4">4x (Preview)</option>
+      </select>
+    </div>
+
+    <span class="info">
+      Frame: <span id="frame">0</span> / <span id="total">2700</span>
+      | Time: <span id="time">0.0</span>s / 90.0s
+      | <span id="fps-display">30 FPS</span>
+    </span>
+  </div>
+
+  <script>
+    const scene = document.getElementById('scene');
+    let currentFrame = 0;
+    const totalFrames = 2700;
+    const baseFPS = 30;
+    let speed = 1;
+    let isPlaying = false;
+    let lastFrameTime = 0;
+
+    // Helper: calculate progress with easing
+    function progress(frame, start, duration, easing = 'linear') {
+      if (frame < start) return 0;
+      if (frame >= start + duration) return 1;
+      const t = (frame - start) / duration;
+
+      // Easing functions
+      switch(easing) {
+        case 'ease-out':
+          return t * (2 - t);
+        case 'ease-in':
+          return t * t;
+        case 'ease-in-out':
+          return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+        default:
+          return t;
+      }
+    }
+
+    // Clear scene
+    function clearScene() {
+      scene.innerHTML = '';
+    }
+
+    // Draw text with handwriting effect
+    function drawText(text, x, y, props, frame) {
+      const p = progress(frame, props.start || 0, props.duration || 60, props.easing || 'ease-out');
+      if (p === 0) return;
+
+      const visibleLength = Math.floor(text.length * p);
+      const visibleText = text.substring(0, visibleLength);
+
+      const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      textEl.setAttribute('x', x);
+      textEl.setAttribute('y', y);
+      textEl.setAttribute('font-size', props.fontSize || 48);
+      textEl.setAttribute('font-weight', props.fontWeight || 'normal');
+      textEl.setAttribute('font-family', 'Arial, sans-serif');
+      textEl.setAttribute('text-anchor', props.align || 'start');
+
+      // Stroke
+      textEl.setAttribute('stroke', props.strokeColor || '#2c3e50');
+      textEl.setAttribute('stroke-width', props.strokeWidth || 2);
+      textEl.setAttribute('stroke-linecap', 'round');
+      textEl.setAttribute('stroke-linejoin', 'round');
+
+      // Fill with delay
+      if (props.fillColor && props.fillDelay !== undefined) {
+        const fillProgress = Math.max(0, (p - props.fillDelay) / (1 - props.fillDelay));
+        if (fillProgress > 0) {
+          textEl.setAttribute('fill', props.fillColor);
+          textEl.setAttribute('fill-opacity', fillProgress);
+        } else {
+          textEl.setAttribute('fill', 'none');
+        }
+      } else {
+        textEl.setAttribute('fill', props.fillColor || 'none');
+      }
+
+      textEl.textContent = visibleText;
+      scene.appendChild(textEl);
+    }
+
+    // Draw circle with stroke animation
+    function drawCircle(cx, cy, r, props, frame) {
+      const p = progress(frame, props.start || 0, props.duration || 60, 'ease-out');
+      if (p === 0) return;
+
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', cx);
+      circle.setAttribute('cy', cy);
+      circle.setAttribute('r', r);
+      circle.setAttribute('stroke', props.strokeColor || '#2c3e50');
+      circle.setAttribute('stroke-width', props.strokeWidth || 3);
+      circle.setAttribute('stroke-linecap', 'round');
+
+      // Fill
+      if (props.fillColor) {
+        const fillProgress = Math.max(0, (p - 0.5) / 0.5);
+        circle.setAttribute('fill', props.fillColor);
+        circle.setAttribute('fill-opacity', fillProgress);
+      } else {
+        circle.setAttribute('fill', 'none');
+      }
+
+      // Stroke animation
+      const circumference = 2 * Math.PI * r;
+      circle.setAttribute('stroke-dasharray', circumference);
+      circle.setAttribute('stroke-dashoffset', circumference * (1 - p));
+
+      scene.appendChild(circle);
+    }
+
+    // Draw rectangle with stroke animation
+    function drawRect(x, y, w, h, props, frame) {
+      const p = progress(frame, props.start || 0, props.duration || 60, 'ease-out');
+      if (p === 0) return;
+
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', x);
+      rect.setAttribute('y', y);
+      rect.setAttribute('width', w);
+      rect.setAttribute('height', h);
+      rect.setAttribute('stroke', props.strokeColor || '#2c3e50');
+      rect.setAttribute('stroke-width', props.strokeWidth || 3);
+      rect.setAttribute('stroke-linecap', 'round');
+      rect.setAttribute('fill', 'none');
+
+      // Stroke animation
+      const perimeter = 2 * (w + h);
+      rect.setAttribute('stroke-dasharray', perimeter);
+      rect.setAttribute('stroke-dashoffset', perimeter * (1 - p));
+
+      scene.appendChild(rect);
+    }
+
+    // Draw line
+    function drawLine(x1, y1, x2, y2, props, frame) {
+      const p = progress(frame, props.start || 0, props.duration || 30, 'ease-out');
+      if (p === 0) return;
+
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', x1);
+      line.setAttribute('y1', y1);
+      line.setAttribute('x2', x1 + (x2 - x1) * p);
+      line.setAttribute('y2', y1 + (y2 - y1) * p);
+      line.setAttribute('stroke', props.strokeColor || '#2c3e50');
+      line.setAttribute('stroke-width', props.strokeWidth || 3);
+      line.setAttribute('stroke-linecap', 'round');
+
+      scene.appendChild(line);
+    }
+
+    // Draw hand gesture
+    function drawHand(action, x, y, props, frame) {
+      const p = progress(frame, props.start || 0, props.duration || 30, 'linear');
+      if (p === 0) return;
+
+      // Calculate hand position following animation
+      const startX = props.startX || x;
+      const startY = props.startY || y;
+      const handX = startX + (x - startX) * p;
+      const handY = startY + (y - startY) * p;
+
+      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      g.setAttribute('transform', `translate(${handX}, ${handY})`);
+      g.setAttribute('opacity', Math.min(1, p * 2)); // Fade in
+
+      // Hand SVG path based on action
+      let path = '';
+      const color = props.color || '#FFD700';
+
+      switch(action) {
+        case 'write':
+          // Writing hand with pen
+          path = `<path d="M -10,-5 L -8,-15 L 0,-18 L 8,-15 L 10,-5 L 8,5 L 0,8 L -8,5 Z"
+                  fill="${color}" stroke="#333" stroke-width="1.5"/>
+                  <line x1="0" y1="8" x2="0" y2="18" stroke="#333" stroke-width="2"/>`;
+          break;
+        case 'point':
+          // Pointing hand
+          path = `<path d="M 0,-15 L 3,-10 L 3,0 L 8,0 L 8,8 L -8,8 L -8,0 L -3,0 L -3,-10 Z"
+                  fill="${color}" stroke="#333" stroke-width="1.5"/>`;
+          break;
+        case 'draw':
+        default:
+          // Drawing hand
+          path = `<circle cx="0" cy="0" r="12" fill="${color}" stroke="#333" stroke-width="1.5"/>
+                  <circle cx="0" cy="0" r="3" fill="#333"/>`;
+      }
+
+      g.innerHTML = path;
+      scene.appendChild(g);
+    }
+
+    // Main render function
+    function renderFrame(frame) {
+      clearScene();
+
+      // SCENE 1: Title (0-270)
+      if (frame < 270) {
+        drawText('Seqvio Whiteboard', 960, 300, {
+          start: 0, duration: 120, fontSize: 72, fontWeight: 'bold',
+          strokeColor: '#2c3e50', fillColor: '#3498db', fillDelay: 0.4, align: 'middle'
+        }, frame);
+
+        // Hand follows title writing
+        drawHand('write', 1460, 280, {
+          start: 0, duration: 120, startX: 460, startY: 280
+        }, frame);
+
+        drawText("The World's First Open-Source AI Whiteboard Framework", 960, 400, {
+          start: 120, duration: 90, fontSize: 36, strokeColor: '#7f8c8d', align: 'middle'
+        }, frame);
+
+        // Hand follows subtitle
+        drawHand('write', 1460, 390, {
+          start: 120, duration: 90, startX: 460, startY: 390
+        }, frame);
+
+        drawLine(460, 430, 1460, 430, {
+          start: 210, duration: 45, strokeColor: '#3498db', strokeWidth: 4
+        }, frame);
+
+        // Hand follows underline
+        drawHand('draw', 1460, 430, {
+          start: 210, duration: 45, startX: 460, startY: 430
+        }, frame);
+      }
+
+      // SCENE 2: Key Features Title (270-360)
+      else if (frame >= 270 && frame < 360) {
+        drawText('Key Features', 960, 540, {
+          start: 270, duration: 90, fontSize: 64, fontWeight: 'bold',
+          strokeColor: '#2c3e50', align: 'middle'
+        }, frame);
+      }
+
+      // SCENE 3: Feature 1 - Open Source (360-630)
+      else if (frame >= 360 && frame < 630) {
+        drawCircle(300, 300, 45, {
+          start: 360, duration: 60, strokeColor: '#27ae60', fillColor: '#d5f4e6'
+        }, frame);
+
+        // Hand draws circle
+        const angle = progress(frame, 360, 60, 'ease-out') * Math.PI * 2;
+        const circleX = 300 + Math.cos(angle - Math.PI / 2) * 45;
+        const circleY = 300 + Math.sin(angle - Math.PI / 2) * 45;
+        if (frame >= 360 && frame < 420) {
+          drawHand('draw', circleX, circleY, {
+            start: 360, duration: 60
+          }, frame);
+        }
+
+        drawText('1', 300, 320, {
+          start: 420, duration: 25, fontSize: 52, fontWeight: 'bold',
+          strokeColor: '#27ae60', align: 'middle'
+        }, frame);
+
+        drawRect(400, 250, 450, 120, {
+          start: 445, duration: 75, strokeColor: '#27ae60', strokeWidth: 3
+        }, frame);
+
+        // Hand draws rectangle
+        if (frame >= 445 && frame < 520) {
+          const rectProgress = progress(frame, 445, 75, 'ease-out');
+          const perimeter = 2 * (450 + 120);
+          const dist = perimeter * rectProgress;
+          let handRectX, handRectY;
+          if (dist < 450) {
+            handRectX = 400 + dist;
+            handRectY = 250;
+          } else if (dist < 450 + 120) {
+            handRectX = 850;
+            handRectY = 250 + (dist - 450);
+          } else if (dist < 900 + 120) {
+            handRectX = 850 - (dist - 570);
+            handRectY = 370;
+          } else {
+            handRectX = 400;
+            handRectY = 370 - (dist - 1020);
+          }
+          drawHand('draw', handRectX, handRectY, {
+            start: 445, duration: 75
+          }, frame);
+        }
+
+        drawText('100% Open Source', 625, 290, {
+          start: 520, duration: 60, fontSize: 42, fontWeight: 'bold',
+          strokeColor: '#27ae60', align: 'middle'
+        }, frame);
+
+        // Hand writes feature text
+        drawHand('write', 850, 280, {
+          start: 520, duration: 60, startX: 400, startY: 280
+        }, frame);
+
+        drawText('MIT License - Free Forever', 625, 335, {
+          start: 580, duration: 50, fontSize: 28, strokeColor: '#7f8c8d', align: 'middle'
+        }, frame);
+      }
+
+      // SCENE 4: Feature 2 - React + TypeScript (630-900)
+      else if (frame >= 630 && frame < 900) {
+        drawCircle(300, 300, 45, {
+          start: 630, duration: 60, strokeColor: '#3498db', fillColor: '#ebf5fb'
+        }, frame);
+
+        drawText('2', 300, 320, {
+          start: 690, duration: 25, fontSize: 52, fontWeight: 'bold',
+          strokeColor: '#3498db', align: 'middle'
+        }, frame);
+
+        drawRect(400, 250, 450, 120, {
+          start: 715, duration: 75, strokeColor: '#3498db', strokeWidth: 3
+        }, frame);
+
+        drawText('React + TypeScript', 625, 290, {
+          start: 790, duration: 60, fontSize: 42, fontWeight: 'bold',
+          strokeColor: '#3498db', align: 'middle'
+        }, frame);
+
+        drawText('Modern & Type-Safe', 625, 335, {
+          start: 850, duration: 50, fontSize: 28, strokeColor: '#7f8c8d', align: 'middle'
+        }, frame);
+      }
+
+      // SCENE 5: Feature 3 - AI-Powered (900-1170)
+      else if (frame >= 900 && frame < 1170) {
+        drawCircle(300, 300, 45, {
+          start: 900, duration: 60, strokeColor: '#9b59b6', fillColor: '#f4ecf7'
+        }, frame);
+
+        drawText('3', 300, 320, {
+          start: 960, duration: 25, fontSize: 52, fontWeight: 'bold',
+          strokeColor: '#9b59b6', align: 'middle'
+        }, frame);
+
+        drawRect(400, 250, 450, 120, {
+          start: 985, duration: 75, strokeColor: '#9b59b6', strokeWidth: 3
+        }, frame);
+
+        drawText('AI-Friendly Design', 625, 290, {
+          start: 1060, duration: 60, fontSize: 42, fontWeight: 'bold',
+          strokeColor: '#9b59b6', align: 'middle'
+        }, frame);
+
+        drawText('Claude Code & Cursor Ready', 625, 335, {
+          start: 1120, duration: 50, fontSize: 28, strokeColor: '#7f8c8d', align: 'middle'
+        }, frame);
+      }
+
+      // SCENE 6: Feature 4 - Rich Components (1170-1440)
+      else if (frame >= 1170 && frame < 1440) {
+        drawCircle(300, 300, 45, {
+          start: 1170, duration: 60, strokeColor: '#e67e22', fillColor: '#fef5e7'
+        }, frame);
+
+        drawText('4', 300, 320, {
+          start: 1230, duration: 25, fontSize: 52, fontWeight: 'bold',
+          strokeColor: '#e67e22', align: 'middle'
+        }, frame);
+
+        drawRect(400, 250, 450, 120, {
+          start: 1255, duration: 75, strokeColor: '#e67e22', strokeWidth: 3
+        }, frame);
+
+        drawText('Rich Components', 625, 290, {
+          start: 1330, duration: 60, fontSize: 42, fontWeight: 'bold',
+          strokeColor: '#e67e22', align: 'middle'
+        }, frame);
+
+        drawText('Text, Shapes, Images & More', 625, 335, {
+          start: 1390, duration: 50, fontSize: 28, strokeColor: '#7f8c8d', align: 'middle'
+        }, frame);
+      }
+
+      // SCENE 7: Call to Action (1440+)
+      else if (frame >= 1440) {
+        drawRect(510, 450, 900, 180, {
+          start: 1440, duration: 90, strokeColor: '#e74c3c', strokeWidth: 5
+        }, frame);
+
+        drawText('Start Creating Today!', 960, 540, {
+          start: 1530, duration: 90, fontSize: 68, fontWeight: 'bold',
+          strokeColor: '#e74c3c', align: 'middle'
+        }, frame);
+
+        drawText('github.com/unifiedvideo/framework', 960, 720, {
+          start: 1620, duration: 75, fontSize: 36, strokeColor: '#2c3e50', align: 'middle'
+        }, frame);
+      }
+    }
+
+    // Animation loop
+    function animate(timestamp) {
+      if (!isPlaying) return;
+
+      if (!lastFrameTime) lastFrameTime = timestamp;
+      const elapsed = timestamp - lastFrameTime;
+      const frameTime = 1000 / (baseFPS * speed);
+
+      if (elapsed >= frameTime) {
+        currentFrame++;
+        if (currentFrame > totalFrames) {
+          currentFrame = totalFrames;
+          pause();
+          return;
+        }
+
+        renderFrame(currentFrame);
+
+        // Update UI
+        document.getElementById('frame').textContent = currentFrame;
+        document.getElementById('time').textContent = (currentFrame / baseFPS).toFixed(1);
+
+        lastFrameTime = timestamp;
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    // Controls
+    function play() {
+      if (currentFrame >= totalFrames) {
+        currentFrame = 0;
+      }
+      isPlaying = true;
+      lastFrameTime = 0;
+      document.getElementById('play').disabled = true;
+      document.getElementById('pause').disabled = false;
+      requestAnimationFrame(animate);
+    }
+
+    function pause() {
+      isPlaying = false;
+      document.getElementById('play').disabled = false;
+      document.getElementById('pause').disabled = true;
+    }
+
+    function restart() {
+      pause();
+      currentFrame = 0;
+      renderFrame(0);
+      document.getElementById('frame').textContent = 0;
+      document.getElementById('time').textContent = '0.0';
+    }
+
+    // Event listeners
+    document.getElementById('play').addEventListener('click', play);
+    document.getElementById('pause').addEventListener('click', pause);
+    document.getElementById('restart').addEventListener('click', restart);
+    document.getElementById('speed').addEventListener('change', (e) => {
+      speed = parseFloat(e.target.value);
+      document.getElementById('fps-display').textContent = `${Math.round(baseFPS * speed)} FPS`;
+    });
+
+    // Initial render
+    renderFrame(0);
+    document.getElementById('total').textContent = totalFrames;
+  </script>
+</body>
+</html>
