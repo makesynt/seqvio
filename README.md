@@ -19,7 +19,6 @@ Pre-rendered overview videos with ElevenLabs narration and burned-in captions. S
 
 **English overview** — [`seqvio-overview-en.tsx`](./examples/compositions/seqvio-overview-en.tsx)
 
-[![English overview preview](./docs/assets/videos/seqvio-overview-en.preview.gif)](./docs/assets/videos/seqvio-overview-en.mp4)
 https://github.com/user-attachments/assets/83687d9c-63f0-4544-a67a-8f6eacc19928)
 
 **中文介绍** — [`seqvio-overview-zh.tsx`](./examples/compositions/seqvio-overview-zh.tsx)
