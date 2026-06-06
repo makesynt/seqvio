@@ -18,15 +18,15 @@ Pre-rendered overview videos with ElevenLabs narration and burned-in captions. S
 
 **English overview** — [`seqvio-overview-en.tsx`](./examples/compositions/seqvio-overview-en.tsx)
 
-<video src="https://github.com/makesynt/seqvio/raw/main/docs/assets/videos/seqvio-overview-en.mp4" width="720" controls>
-  <a href="https://github.com/makesynt/seqvio/raw/main/docs/assets/videos/seqvio-overview-en.mp4">Download English overview (MP4)</a>
-</video>
+[![English overview preview](./docs/assets/videos/seqvio-overview-en.preview.gif)](./docs/assets/videos/seqvio-overview-en.mp4)
+
+▶ [Watch with narration (MP4)](./docs/assets/videos/seqvio-overview-en.mp4) — GitHub strips inline `<video>` tags for repo-hosted files; click the preview or link to open the full video with audio.
 
 **中文介绍** — [`seqvio-overview-zh.tsx`](./examples/compositions/seqvio-overview-zh.tsx)
 
-<video src="https://github.com/makesynt/seqvio/raw/main/docs/assets/videos/seqvio-overview-zh.mp4" width="720" controls>
-  <a href="https://github.com/makesynt/seqvio/raw/main/docs/assets/videos/seqvio-overview-zh.mp4">下载中文介绍视频 (MP4)</a>
-</video>
+[![中文介绍预览](./docs/assets/videos/seqvio-overview-zh.preview.gif)](./docs/assets/videos/seqvio-overview-zh.mp4)
+
+▶ [观看带旁白完整视频 (MP4)](./docs/assets/videos/seqvio-overview-zh.mp4)
 
 ## Quick Start
 
