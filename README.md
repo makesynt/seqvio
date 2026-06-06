@@ -1,3 +1,4 @@
+
 # Seqvio
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
@@ -19,14 +20,11 @@ Pre-rendered overview videos with ElevenLabs narration and burned-in captions. S
 **English overview** — [`seqvio-overview-en.tsx`](./examples/compositions/seqvio-overview-en.tsx)
 
 [![English overview preview](./docs/assets/videos/seqvio-overview-en.preview.gif)](./docs/assets/videos/seqvio-overview-en.mp4)
-
-▶ [Watch with narration (MP4)](./docs/assets/videos/seqvio-overview-en.mp4) — GitHub strips inline `<video>` tags for repo-hosted files; click the preview or link to open the full video with audio.
+https://github.com/user-attachments/assets/83687d9c-63f0-4544-a67a-8f6eacc19928)
 
 **中文介绍** — [`seqvio-overview-zh.tsx`](./examples/compositions/seqvio-overview-zh.tsx)
 
-[![中文介绍预览](./docs/assets/videos/seqvio-overview-zh.preview.gif)](./docs/assets/videos/seqvio-overview-zh.mp4)
-
-▶ [观看带旁白完整视频 (MP4)](./docs/assets/videos/seqvio-overview-zh.mp4)
+https://github.com/user-attachments/assets/3ce605bc-7ad1-449b-a67c-5d8368f5398b
 
 ## Quick Start
 
