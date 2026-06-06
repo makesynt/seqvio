@@ -1,6 +1,6 @@
 {
   "name": "@seqvio/core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Core timeline and composition engine for Seqvio",
   "keywords": [
     "seqvio",
@@ -43,7 +43,7 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@seqvio/whiteboard": "0.1.0",
+    "@seqvio/whiteboard": "0.1.1",
     "react": "^19.0.0"
   },
   "devDependencies": {

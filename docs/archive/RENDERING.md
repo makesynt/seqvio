@@ -156,10 +156,16 @@ npx puppeteer browsers install chrome
 ```
 
 ### 内存不足
+
+> Historical note: the legacy `render-demo.js` standalone renderer was removed. Use `seqvio-render` from `@seqvio/renderer` instead.
+
+Reduce duration while testing:
+
 ```bash
-# 减少帧数进行测试
-# 修改 render-demo.js 中的 TOTAL_FRAMES
-const TOTAL_FRAMES = 300; // 10 秒测试
+pnpm --filter @seqvio/renderer exec seqvio-render \
+  --component ../../examples/compositions/seqvio-intro.tsx \
+  --output ../../output/short-test.mp4 \
+  --duration 300
 ```
 
 ---
@@ -182,7 +188,7 @@ const TOTAL_FRAMES = 300; // 10 秒测试
 
 ## 渲染脚本
 
-位置: `render-demo.js`
+位置: `@seqvio/renderer` CLI（`seqvio-render`）
 
 简化版渲染器，直接使用 HTML/SVG，无需 React 构建。
 

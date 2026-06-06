@@ -258,8 +258,6 @@ seqvio/
 │
 ├── README.md                         # 主文档
 ├── ARCHITECTURE.md                   # 架构设计
-├── QUICKSTART.md                     # 快速开始
-├── COMPARISON.md                     # 框架对比
 ├── CONTRIBUTING.md                   # 贡献指南
 ├── CHANGELOG.md                      # 更新日志
 ├── LICENSE                           # MIT 许可证

@@ -479,6 +479,6 @@ Seqvio：
 **这就是为什么我们选择统一模式！**
 
 更多信息：
-- [快速开始](../QUICKSTART.md)
+- [快速开始](../README.md)
 - [统一模式详解](./UNIFIED-MODE.md)
 - [架构设计](./ARCHITECTURE.md)

@@ -12,58 +12,104 @@ Seqvio is a focused workflow for turning lessons, product walkthroughs, and tech
 
 > **Current status:** Seqvio supports explicit React/TSX compositions, whiteboard-style scenes, audio/caption metadata, and local MP4 rendering. Higher-level AI authoring and studio workflows are tracked in the [Roadmap](#roadmap).
 
+## Demo
+
+Pre-rendered overview videos with ElevenLabs narration and burned-in captions. Source compositions live in [`examples/compositions/`](./examples/compositions/).
+
+**English overview** — [`seqvio-overview-en.tsx`](./examples/compositions/seqvio-overview-en.tsx)
+
+<video src="https://github.com/makesynt/seqvio/raw/main/docs/assets/videos/seqvio-overview-en.mp4" width="720" controls>
+  <a href="https://github.com/makesynt/seqvio/raw/main/docs/assets/videos/seqvio-overview-en.mp4">Download English overview (MP4)</a>
+</video>
+
+**中文介绍** — [`seqvio-overview-zh.tsx`](./examples/compositions/seqvio-overview-zh.tsx)
+
+<video src="https://github.com/makesynt/seqvio/raw/main/docs/assets/videos/seqvio-overview-zh.mp4" width="720" controls>
+  <a href="https://github.com/makesynt/seqvio/raw/main/docs/assets/videos/seqvio-overview-zh.mp4">下载中文介绍视频 (MP4)</a>
+</video>
+
 ## Quick Start
 
-### With an AI coding agent
+Seqvio has two separate pieces:
 
-Install the Seqvio skill, then describe the video you want:
+| Piece | What it is | Install with |
+| --- | --- | --- |
+| **Agent skill** | Teaches Cursor and other agents how to author TSX compositions and run the render workflow | `npx skills add ...` |
+| **Renderer CLI** | Runs `seqvio-render` and `seqvio-audio` to produce MP4 files | `npm install @seqvio/renderer` or a local repo build |
+
+Installing the skill alone is **not** enough to render videos. You also need the CLI (or a local checkout of this repository).
+
+### 1. Install the agent skill
 
 ```bash
-npx skills add makesynt/seqvio
+npx skills add makesynt/seqvio --skill seqvio -a cursor -y
 ```
 
-Try a prompt like:
+Replace `cursor` with your agent if needed (`claude-code`, `codex`, etc.). To preview available skills first:
 
-> Using `/seqvio`, create a 4-scene Chinese product overview with whiteboard visuals, ElevenLabs narration, and burned-in captions. Render the final MP4.
+```bash
+npx skills add makesynt/seqvio --list
+```
 
-The skill teaches agents the Seqvio production loop: pick an example composition, author or edit TSX scenes, extract narration metadata, synthesize audio, and render MP4 output.
+This step copies the Seqvio skill into your agent. It does **not** install npm packages, clone this repo, or render MP4 output by itself.
 
-Supported agents include Cursor, Claude Code, Codex, Gemini CLI, and other coding agents that support skills.
+### 2. Install the renderer
 
-Rendering currently requires a local checkout of this repository. See [Manual setup](#manual-setup) below.
+Pick one path:
 
-### Manually with the CLI
+**Option A — npm package (simplest for most users)**
 
-For contributors or advanced users who want to run the renderer directly:
+```bash
+npm install -g @seqvio/renderer
+seqvio-render --help
+```
+
+Published packages: `@seqvio/renderer`, `@seqvio/core`, and `@seqvio/whiteboard`.
+
+**Option B — local repository (best for contributors and example compositions)**
 
 ```bash
 git clone https://github.com/makesynt/seqvio.git
 cd seqvio
 pnpm install
 pnpm build
-pnpm --filter @seqvio/renderer exec seqvio-render \
-  --component ../../examples/compositions/seqvio-overview-en.tsx \
-  --output ../../output/seqvio-overview-en.mp4 \
+pnpm --filter @seqvio/renderer exec seqvio-render --help
+```
+
+Use the workspace CLI when you want the bundled [`examples/compositions/`](./examples/compositions/) and monorepo smoke scripts.
+
+### 3. Optional: narration credentials
+
+For ElevenLabs or other TTS providers, export credentials before synthesis:
+
+```bash
+export ELEVENLABS_API_KEY=your_key
+```
+
+See [`.env.example`](./.env.example). The CLI reads process environment variables and does not auto-load `.env`.
+
+### 4. Ask your agent to create a video
+
+After steps 1 and 2, try a prompt like:
+
+> Using `/seqvio`, create a 4-scene Chinese product overview with whiteboard visuals, ElevenLabs narration, and burned-in captions. Render the final MP4.
+
+The skill guides the agent through: pick an example composition, edit TSX, extract narration metadata, synthesize audio, and run `seqvio-render`.
+
+Supported agents include Cursor, Claude Code, Codex, Gemini CLI, and other coding agents that support skills.
+
+### Render manually without an agent
+
+```bash
+seqvio-render \
+  --component path/to/scene.tsx \
+  --output ./output/demo.mp4 \
   --width 1280 --height 720 --fps 30 --quality medium
 ```
 
-**Requirements:** Node.js `>=18`, pnpm `>=8`, Chromium (via Puppeteer), FFmpeg (bundled for the renderer CLI)
+When using a local repo checkout, run the same command through `pnpm --filter @seqvio/renderer exec`. More detail: [Manual setup](#manual-setup).
 
-## Demo
-
-Pre-rendered overview videos from [`examples/compositions/`](./examples/compositions/):
-
-**English overview** — [`seqvio-overview-en.tsx`](./examples/compositions/seqvio-overview-en.tsx)
-
-<video src="./docs/assets/videos/seqvio-overview-en.mp4" width="720" controls>
-  <a href="./docs/assets/videos/seqvio-overview-en.mp4">Download English overview (MP4)</a>
-</video>
-
-**中文介绍** — [`seqvio-overview-zh.tsx`](./examples/compositions/seqvio-overview-zh.tsx)
-
-<video src="./docs/assets/videos/seqvio-overview-zh.mp4" width="720" controls>
-  <a href="./docs/assets/videos/seqvio-overview-zh.mp4">下载中文介绍视频 (MP4)</a>
-</video>
+**Requirements:** Node.js `>=18`, Chromium (via Puppeteer), FFmpeg (bundled in `@seqvio/renderer`). Local repo development also uses pnpm `>=8`.
 
 ## What You Can Build
 
@@ -97,20 +143,21 @@ See [`docs/COMPOSITION-AUTHORING.md`](./docs/COMPOSITION-AUTHORING.md) for the a
 
 ## Agent Skills
 
-Seqvio ships repo-local skills for coding agents:
+The skill lives in [`skills/seqvio/SKILL.md`](./skills/seqvio/SKILL.md) with supporting references:
 
-| Skill | Purpose |
+| Reference | Purpose |
 | --- | --- |
-| [`skills/seqvio/SKILL.md`](./skills/seqvio/SKILL.md) | Main production loop for authoring, narration, and rendering |
-| [`skills/seqvio/references/authoring-patterns.md`](./skills/seqvio/references/authoring-patterns.md) | TSX composition patterns and timing rules |
-| [`skills/seqvio/references/audio-workflow.md`](./skills/seqvio/references/audio-workflow.md) | Extract, synthesize, and mux narration |
-| [`skills/seqvio/references/render-workflow.md`](./skills/seqvio/references/render-workflow.md) | Build, render, and smoke-test commands |
+| [`authoring-patterns.md`](./skills/seqvio/references/authoring-patterns.md) | TSX composition patterns and timing rules |
+| [`audio-workflow.md`](./skills/seqvio/references/audio-workflow.md) | Extract, synthesize, and mux narration |
+| [`render-workflow.md`](./skills/seqvio/references/render-workflow.md) | Build, render, and smoke-test commands |
 
-Install with:
+Install the skill (see [Quick Start](#quick-start)):
 
 ```bash
-npx skills add makesynt/seqvio
+npx skills add makesynt/seqvio --skill seqvio -a cursor -y
 ```
+
+The skill teaches workflow and commands. Install `@seqvio/renderer` separately when you need to render MP4 output.
 
 ## Why Seqvio
 
@@ -133,7 +180,17 @@ Seqvio is not trying to be a full Remotion replacement or a generic HTML-to-vide
 
 ## Manual setup
 
-Clone the repository and build the workspace:
+Use this section when working from a local repository checkout or when you need narrated renders with bundled examples.
+
+### Install from npm
+
+```bash
+npm install -g @seqvio/renderer
+```
+
+This installs `seqvio-render` and `seqvio-audio` globally. Dependencies `@seqvio/core` and `@seqvio/whiteboard` are pulled in automatically.
+
+### Clone and build the repository
 
 ```bash
 git clone https://github.com/makesynt/seqvio.git

@@ -29,13 +29,31 @@ Do not assume roadmap features already exist just because they appear in plannin
 
 ## Install
 
-From any project with a supported coding agent:
+Seqvio has two separate pieces:
+
+1. **Agent skill** — workflow and authoring rules (this file)
+2. **Renderer CLI** — `seqvio-render` / `seqvio-audio`
+
+Install the skill:
 
 ```bash
-npx skills add makesynt/seqvio
+npx skills add makesynt/seqvio --skill seqvio -a cursor -y
 ```
 
-Rendering requires a local checkout of this repository with `pnpm install && pnpm build`.
+Install the renderer separately. Either:
+
+```bash
+npm install -g @seqvio/renderer
+```
+
+Or work from a local repository checkout:
+
+```bash
+git clone https://github.com/makesynt/seqvio.git
+cd seqvio && pnpm install && pnpm build
+```
+
+The skill alone does not install npm packages or render MP4 output.
 
 ## Example Prompts
 

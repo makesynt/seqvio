@@ -405,7 +405,7 @@ packages/
 
 ### 核心文档
 - **README.md** - 项目介绍和功能说明
-- **QUICKSTART.md** - 3 分钟快速开始
+- **README.md** - 快速开始与当前用法
 - **SIMPLIFIED-MODE.md** - 简化模式设计（3 种文件）
 - **UNIFIED-MODE.md** - 统一模式完整说明
 - **COMPARISON.md** - 与其他框架详细对比
@@ -525,4 +525,4 @@ Seqvio 是下一代视频生成框架，它：
 
 ---
 
-**立即开始：** [快速开始指南](./QUICKSTART.md)
+**立即开始：** [README 快速开始指南](../../README.md)

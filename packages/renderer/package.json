@@ -1,6 +1,6 @@
 {
   "name": "@seqvio/renderer",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Video renderer and audio CLI for Seqvio",
   "keywords": [
     "seqvio",
@@ -55,8 +55,8 @@
   },
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
-    "@seqvio/core": "0.1.0",
-    "@seqvio/whiteboard": "0.1.0",
+    "@seqvio/core": "0.1.1",
+    "@seqvio/whiteboard": "0.1.1",
     "esbuild": "^0.25.0",
     "fluent-ffmpeg": "^2.1.3",
     "puppeteer": "^22.0.0",

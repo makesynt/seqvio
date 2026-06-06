@@ -1,9 +1,0 @@
-{
-  "name": "Seqvio",
-  "slug": "seqvio",
-  "scope": "@seqvio",
-  "cli": "seqvio",
-  "rendererCli": "seqvio-render",
-  "runtimePrefix": "__seqvio",
-  "description": "A simple framework for generative video workflows"
-}

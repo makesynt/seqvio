@@ -3,7 +3,7 @@
 > Proposal note
 >
 > This document captures a product direction discussion and includes aspirational CLI and AI workflows.
-> For the current implementation, use `README.md`, `QUICKSTART-TSX.md`, and `docs/COMPOSITION-AUTHORING.md`.
+> For the current implementation, use `README.md` and `docs/COMPOSITION-AUTHORING.md`.
 
 **最简化版本：只用一种文件格式**
 

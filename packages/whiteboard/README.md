@@ -165,9 +165,9 @@ Important behavior:
 Repo examples:
 
 - [../../packages/whiteboard/examples/01-hello-world.tsx](../../packages/whiteboard/examples/01-hello-world.tsx)
+- [../../examples/compositions/seqvio-overview-en.tsx](../../examples/compositions/seqvio-overview-en.tsx)
+- [../../examples/compositions/seqvio-overview-zh.tsx](../../examples/compositions/seqvio-overview-zh.tsx)
 - [../../examples/compositions/seqvio-intro.tsx](../../examples/compositions/seqvio-intro.tsx)
-- [../../examples/compositions/seqvio-intro-30-en.tsx](../../examples/compositions/seqvio-intro-30-en.tsx)
-- [../../examples/compositions/seqvio-intro-30-zh.tsx](../../examples/compositions/seqvio-intro-30-zh.tsx)
 
 ## AI Assistant Usage
 

@@ -347,4 +347,4 @@ Garden Skills 项目本质上就是 Vite + React，可以：
 
 ---
 
-**立即开始：** [快速开始指南](./QUICKSTART.md)
+**立即开始：** [README 快速开始指南](../README.md)
