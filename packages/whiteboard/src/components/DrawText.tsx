@@ -66,13 +66,16 @@ export const DrawText: React.FC<DrawTextProps> = ({
     ? pickHandwritingFontFamily(text)
     : (fontProp ?? theme.fontFamily);
 
+  // Content-based seed (text + size + position), not drawId — see DrawShape for
+  // why tree-position-dependent seeds make hand-drawn output non-deterministic
+  // under edits.
   const roughStyle = useMemo(
     () => ({
       roughness: (theme.roughness ?? 1.25) * textRoughness * 0.9,
       bowing: (theme.bowing ?? 1.1) * textRoughness * 0.55,
-      seed: hashRoughSeed(`${drawId}:text:${text}`),
+      seed: hashRoughSeed(`text:${text}:${fontSize}:${position.x}:${position.y}`),
     }),
-    [theme.roughness, theme.bowing, textRoughness, drawId, text]
+    [theme.roughness, theme.bowing, textRoughness, text, fontSize, position.x, position.y]
   );
 
   const useStrokeWash =

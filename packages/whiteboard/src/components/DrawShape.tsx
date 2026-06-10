@@ -100,13 +100,17 @@ export const DrawShape: React.FC<DrawShapeProps> = ({
     [type, position, size, from, to, borderRadius]
   );
 
+  // Seed the rough generator from the shape's own geometry, NOT from drawId
+  // (React useId is tree-position dependent, so inserting an element earlier
+  // would silently change the hand-drawn appearance of every later element).
+  // Content-based seeding makes a shape's look depend only on the shape itself.
   const roughStyle = useMemo(
     () => ({
       roughness: handDrawn ? Math.max(0.5, roughness) : roughness,
       bowing,
-      seed: hashRoughSeed(`${drawId}:${geometryKey}`),
+      seed: hashRoughSeed(`shape:${geometryKey}`),
     }),
-    [handDrawn, roughness, bowing, drawId, geometryKey]
+    [handDrawn, roughness, bowing, geometryKey]
   );
 
   const path = useMemo(() => {
