@@ -5,6 +5,7 @@
 
 # Dependencies
 node_modules/
+.tools/
 
 # Build outputs
 dist/
@@ -21,3 +22,6 @@ output/
 
 # Local IDE config
 .cursor/
+
+# visual regression scratch
+tests/visual-snapshots/.work/

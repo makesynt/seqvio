@@ -3,7 +3,7 @@
  * Captures frames via browser React runtime and generates MP4 video
  */
 
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import puppeteer, { Browser, Page } from 'puppeteer';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -142,14 +142,7 @@ export class VideoRenderer {
         percent: 0,
         message: `Rendering ${totalFrames} frames...`,
       });
-      await this.renderFrames(totalFrames);
-
-      this.reportProgress({
-        phase: 'encoding',
-        percent: 0,
-        message: `Encoding video with FFmpeg at ${this.effectiveFps} fps...`,
-      });
-      const encodedVideoPath = await this.encodeVideo();
+      const encodedVideoPath = await this.renderAndEncode(totalFrames);
 
       if (this.resolvedAudioTracks.length > 0) {
         this.reportProgress({
@@ -267,103 +260,148 @@ export class VideoRenderer {
     return end >= start ? end - start + 1 : 0;
   }
 
-  private async renderFrames(totalFrames: number): Promise<void> {
-    const startFrame = this.options.startFrame;
-    this.frameFileCount = 0;
+  private crfForQuality(): number {
+    const qualitySettings: Record<string, number> = {
+      low: 28,
+      medium: 20,
+      high: 18,
+      '4k': 15,
+    };
+    return qualitySettings[this.options.quality];
+  }
 
-    for (let i = 0; i < totalFrames; i++) {
-      const sourceFrame = startFrame + i;
-      await setFrameAndWait(this.page!, sourceFrame);
+  private buildEncodeArgs(targetPath: string): string[] {
+    const args = [
+      '-y',
+      '-f', 'image2pipe',
+      '-framerate', String(this.effectiveFps),
+      '-i', '-',
+      '-c:v', 'libx264',
+      '-pix_fmt', 'yuv420p',
+      '-crf', String(this.crfForQuality()),
+      '-preset', 'medium',
+      '-movflags', '+faststart',
+    ];
+    if (this.options.pixelRatio > 1) {
+      args.push('-vf', `scale=${this.options.width}:${this.options.height}`);
+    }
+    args.push('-r', String(this.effectiveFps), targetPath);
+    return args;
+  }
 
-      const framePath = path.join(
-        this.options.tempDir,
-        `frame-${String(i).padStart(6, '0')}.png`
-      );
+  /**
+   * Render a contiguous frame segment on the given page and stream each captured
+   * PNG straight into a dedicated FFmpeg process via stdin (image2pipe). No
+   * intermediate PNG files touch disk; rendering and encoding overlap.
+   *
+   * onFrame is invoked once per encoded frame so the caller can aggregate
+   * progress across concurrent segments.
+   */
+  private async encodeSegment(
+    page: Page,
+    firstSourceFrame: number,
+    frameCount: number,
+    targetPath: string,
+    onFrame: () => void
+  ): Promise<void> {
+    const ffmpeg = spawn(ffmpegPath.path, this.buildEncodeArgs(targetPath), {
+      windowsHide: true,
+    });
 
-      await this.page!.screenshot({
-        path: framePath,
-        type: 'png',
-        omitBackground: false,
+    let ffmpegStderr = '';
+    ffmpeg.stderr.on('data', (chunk) => {
+      ffmpegStderr += chunk.toString();
+    });
+
+    const ffmpegExit = new Promise<void>((resolve, reject) => {
+      ffmpeg.on('error', reject);
+      ffmpeg.on('close', (code) => {
+        if (code === 0) resolve();
+        else reject(new Error(ffmpegStderr || `FFmpeg exited with code ${code}`));
       });
-      this.frameFileCount += 1;
+    });
 
-      if (i % 30 === 0 || i === totalFrames - 1) {
-        this.reportProgress({
-          phase: 'rendering',
-          currentFrame: i + 1,
-          totalFrames,
-          percent: Math.round(((i + 1) / totalFrames) * 100),
-          message: `Rendered frame ${i + 1}/${totalFrames} (source frame ${sourceFrame})`,
+    const writeFrame = (buffer: Buffer): Promise<void> =>
+      new Promise((resolve, reject) => {
+        ffmpeg.stdin.write(buffer, (error) => {
+          if (error) reject(error);
+          else resolve();
         });
+      });
+
+    try {
+      for (let i = 0; i < frameCount; i++) {
+        const sourceFrame = firstSourceFrame + i;
+        await setFrameAndWait(page, sourceFrame);
+
+        const buffer = (await page.screenshot({
+          type: 'png',
+          omitBackground: false,
+        })) as Buffer;
+
+        await writeFrame(buffer);
+
+        // Optional debug tee: also persist PNGs when --keepFrames is set.
+        if (this.options.keepFrames) {
+          fs.writeFileSync(
+            path.join(this.options.tempDir, `frame-${String(sourceFrame).padStart(6, '0')}.png`),
+            buffer
+          );
+        }
+
+        onFrame();
       }
+
+      ffmpeg.stdin.end();
+      await ffmpegExit;
+    } catch (error) {
+      ffmpeg.stdin.destroy();
+      ffmpeg.kill();
+      throw error;
     }
   }
 
-  private async encodeVideo(): Promise<string> {
+  /**
+   * Render all frames to an encoded (video-only) MP4 by streaming each captured
+   * frame into a single FFmpeg process.
+   *
+   * NOTE: Multi-page parallel rendering (split frame range across N pages, then
+   * concat) was prototyped but is intentionally not enabled — on a single host
+   * N headless Chrome + N FFmpeg processes contend for CPU and run slower than
+   * serial, with intermittent segment-encode failures. Parallelism belongs at
+   * the orchestration layer (one process per video across machines), not here.
+   */
+  private async renderAndEncode(totalFrames: number): Promise<string> {
     const targetPath =
       this.resolvedAudioTracks.length > 0
         ? path.join(this.options.tempDir, 'video-only.mp4')
         : this.options.output;
 
-    return new Promise((resolve, reject) => {
-      if (!fs.existsSync(this.options.tempDir)) {
-        reject(new Error(`Temp frame directory not found: ${this.options.tempDir}`));
-        return;
-      }
-      const frameFiles = fs.readdirSync(this.options.tempDir)
-        .filter((name) => name.startsWith('frame-') && name.endsWith('.png'));
-      if (frameFiles.length === 0) {
-        reject(new Error(`No frame images found in ${this.options.tempDir}`));
-        return;
-      }
-
-      const framePattern = path.join(this.options.tempDir, 'frame-%06d.png');
-      const qualitySettings: Record<string, { crf: number }> = {
-        low: { crf: 28 },
-        medium: { crf: 20 },
-        high: { crf: 18 },
-        '4k': { crf: 15 },
-      };
-      const settings = qualitySettings[this.options.quality];
-      const args = [
-        '-y',
-        '-framerate',
-        String(this.effectiveFps),
-        '-i',
-        framePattern,
-        '-frames:v',
-        String(frameFiles.length),
-        '-c:v',
-        'libx264',
-        '-pix_fmt',
-        'yuv420p',
-        '-crf',
-        String(settings.crf),
-        '-preset',
-        'medium',
-        '-movflags',
-        '+faststart',
-      ];
-
-      if (this.options.pixelRatio > 1) {
-        args.push('-vf', `scale=${this.options.width}:${this.options.height}`);
-      }
-
-      args.push('-r', String(this.effectiveFps), targetPath);
-
-      execFile(ffmpegPath.path, args, { windowsHide: true }, (error, _stdout, stderr) => {
-        if (error) {
-          reject(new Error(stderr || error.message));
-          return;
-        }
+    this.frameFileCount = 0;
+    let done = 0;
+    const onFrame = () => {
+      done += 1;
+      if (done % 30 === 0 || done === totalFrames) {
         this.reportProgress({
-          phase: 'encoding',
-          percent: 100,
-          message: 'Encoding: 100%',
+          phase: 'rendering',
+          currentFrame: done,
+          totalFrames,
+          percent: Math.round((done / totalFrames) * 100),
+          message: `Rendered ${done}/${totalFrames} frames`,
         });
-        resolve(targetPath);
-      });
-    });
+      }
+    };
+
+    await this.encodeSegment(
+      this.page!,
+      this.options.startFrame,
+      totalFrames,
+      targetPath,
+      onFrame
+    );
+    this.frameFileCount = done;
+    this.reportProgress({ phase: 'encoding', percent: 100, message: 'Encoding: 100%' });
+    return targetPath;
   }
 
   private resolveAudioTracks(): ResolvedAudioTrack[] {
@@ -480,14 +518,8 @@ export class VideoRenderer {
       await this.browser.close();
     }
 
-    if (!this.options.keepFrames && fs.existsSync(this.options.tempDir)) {
-      const files = fs.readdirSync(this.options.tempDir);
-      for (const file of files) {
-        if (file.startsWith('frame-') && file.endsWith('.png')) {
-          fs.unlinkSync(path.join(this.options.tempDir, file));
-        }
-      }
-    }
+    // Frames are streamed straight to FFmpeg, so no PNGs exist unless
+    // --keepFrames was requested (in which case the caller wants to keep them).
   }
 }
 

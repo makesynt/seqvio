@@ -18,7 +18,7 @@ import {
 } from './scene-registry';
 import { resolveCompositionDurationFrames } from './time';
 import { getTransitionProgress, getTransitionStyle } from './transitions';
-import { SceneLocalFrameProvider } from '@seqvio/whiteboard';
+import { FpsProvider, SceneLocalFrameProvider } from './frame';
 
 export interface CompositionConfig {
   id: string;
@@ -157,22 +157,24 @@ export const VideoComposition: React.FC<VideoCompositionProps> = ({
         getSceneRegistration: (sceneId) => getSceneRegistration(layout, sceneId),
       }}
     >
-      <div
-        id={id}
-        data-composition-id={id}
-        style={{
-          position: 'relative',
-          width,
-          height,
-          backgroundColor,
-          overflow: 'hidden',
-        }}
-      >
-        {children}
-        {activeTransition && (
-          <TransitionOverlay transition={activeTransition} frame={frame} />
-        )}
-      </div>
+      <FpsProvider value={fps}>
+        <div
+          id={id}
+          data-composition-id={id}
+          style={{
+            position: 'relative',
+            width,
+            height,
+            backgroundColor,
+            overflow: 'hidden',
+          }}
+        >
+          {children}
+          {activeTransition && (
+            <TransitionOverlay transition={activeTransition} frame={frame} />
+          )}
+        </div>
+      </FpsProvider>
     </CompositionContext.Provider>
   );
 };

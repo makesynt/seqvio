@@ -12,8 +12,8 @@ import {
   type CompositionAudioManifest,
   type RenderableMeta,
 } from '../media-contract';
+import { setGlobalFrame } from '@seqvio/core';
 import {
-  setGlobalFrame,
   preloadHandwritingFonts,
   preloadPathFonts,
 } from '@seqvio/whiteboard';
@@ -64,29 +64,42 @@ function writeRuntimeGlobal<T>(key: SeqvioRuntimeKey, value: T): void {
   (window as Record<string, unknown>)[runtimeGlobalName(key)] = value;
 }
 
-async function waitForResources(): Promise<void> {
-  if (document.fonts?.ready) {
-    await document.fonts.ready;
-  }
-
-  const images = Array.from(document.images);
+/** Await any <img> that has not finished loading. Cheap no-op when all complete. */
+async function waitForPendingImages(): Promise<void> {
+  const pending = Array.from(document.images).filter((img) => !img.complete);
+  if (pending.length === 0) return;
   await Promise.all(
-    images.map(
+    pending.map(
       (img) =>
         new Promise<void>((resolve) => {
-          if (img.complete) {
-            resolve();
-            return;
-          }
           img.addEventListener('load', () => resolve(), { once: true });
           img.addEventListener('error', () => resolve(), { once: true });
         })
     )
   );
+}
 
-  await new Promise<void>((resolve) => {
-    requestAnimationFrame(() => resolve());
-  });
+/**
+ * One-time resource gate, run once after the initial render. Fonts only need to
+ * load once for the whole composition; awaiting document.fonts.ready every frame
+ * was redundant work multiplied across thousands of frames.
+ */
+async function waitForInitialResources(): Promise<void> {
+  if (document.fonts?.ready) {
+    await document.fonts.ready;
+  }
+  await waitForPendingImages();
+  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+}
+
+/**
+ * Per-frame settle: flush the new frame to the DOM, await only images that are
+ * still loading (e.g. a DrawImage appearing this frame), then one rAF so the
+ * browser paints before we screenshot.
+ */
+async function waitForFrame(): Promise<void> {
+  await waitForPendingImages();
+  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 }
 
 function applyFrame(frame: number): void {
@@ -212,7 +225,7 @@ export function mountBrowserRuntime(
       applyFrame(frame);
       setFrameState?.(frame);
     });
-    await waitForResources();
+    await waitForFrame();
     writeRuntimeGlobal('frameReady', true);
   });
 
@@ -228,6 +241,7 @@ export function mountBrowserRuntime(
         burnCaptions: Boolean(options.burnCaptions),
       })
     );
+    await waitForInitialResources();
     writeRuntimeGlobal('ready', true);
     writeRuntimeGlobal('frameReady', true);
   })();

@@ -1,25 +1,11 @@
 /**
  * Optional scene-local frame for multi-scene compositions.
+ *
+ * Moved into @seqvio/core (style-agnostic). Re-exported here to preserve the
+ * existing @seqvio/whiteboard public API. See packages/core/src/frame.ts.
  */
 
-import React, { createContext, useContext } from 'react';
-
-const SceneLocalFrameContext = createContext<number | null>(null);
-
-export function SceneLocalFrameProvider({
-  value,
-  children,
-}: {
-  value: number;
-  children: React.ReactNode;
-}) {
-  return (
-    <SceneLocalFrameContext.Provider value={value}>
-      {children}
-    </SceneLocalFrameContext.Provider>
-  );
-}
-
-export function useSceneLocalFrame(): number | null {
-  return useContext(SceneLocalFrameContext);
-}
+export {
+  SceneLocalFrameProvider,
+  useSceneLocalFrame,
+} from '@seqvio/core';

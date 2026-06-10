@@ -1,36 +1,14 @@
 /**
  * useCurrentFrame Hook
+ *
+ * Frame state now lives in @seqvio/core (style-agnostic infrastructure).
+ * These re-exports preserve the existing @seqvio/whiteboard public API while
+ * the single source of truth is core. See packages/core/src/frame.ts.
  */
 
-import { useEffect, useState } from 'react';
-import { useSceneLocalFrame } from '../context/SceneLocalFrame';
-
-let globalFrame = 0;
-let frameListeners: Set<(frame: number) => void> = new Set();
-
-export function setGlobalFrame(frame: number) {
-  globalFrame = frame;
-  frameListeners.forEach((listener) => listener(frame));
-}
-
-export function useCurrentFrame(): number {
-  const sceneLocalFrame = useSceneLocalFrame();
-  const [frame, setFrame] = useState(globalFrame);
-
-  useEffect(() => {
-    frameListeners.add(setFrame);
-    return () => {
-      frameListeners.delete(setFrame);
-    };
-  }, []);
-
-  if (sceneLocalFrame !== null) {
-    return sceneLocalFrame;
-  }
-
-  return frame;
-}
-
-export function useFPS(): number {
-  return 30;
-}
+export {
+  useCurrentFrame,
+  useFPS,
+  setGlobalFrame,
+  getGlobalFrame,
+} from '@seqvio/core';

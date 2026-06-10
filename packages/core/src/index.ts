@@ -3,6 +3,7 @@
  */
 
 export * from './brand';
+export * from './frame';
 export * from './audio';
 export * from './captions';
 export * from './timeline';
