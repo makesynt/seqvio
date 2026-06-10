@@ -141,7 +141,7 @@ function compileElement(el: StoryboardElement): string {
   }
 }
 
-function compileScene(
+function compileWhiteboardScene(
   scene: StoryboardScene,
   componentName: string,
   board: ReturnType<typeof resolved>
@@ -153,6 +153,48 @@ function compileScene(
 ${elements}
       <Hand action="write" follow={true} visible={true} />
     </WhiteboardScene>
+  );
+}`;
+}
+
+/**
+ * Presentation style maps IR elements onto slide primitives: the first text
+ * becomes the SlideTitle, remaining texts become a staggered BulletList, and
+ * icons/shapes are not represented in this style (a warning is surfaced by the
+ * caller). This is a deliberate, readable mapping — the same IR renders as a
+ * keynote-style slide instead of a hand-drawn board.
+ */
+function compilePresentationScene(
+  scene: StoryboardScene,
+  componentName: string
+): string {
+  const texts = scene.elements.filter(
+    (el): el is TextElement => el.type === 'text'
+  );
+  const [titleEl, ...bulletEls] = texts;
+
+  const lines: string[] = [];
+  if (titleEl) {
+    lines.push(
+      `      <SlideTitle` +
+        jsxAttr('text', titleEl.text) +
+        jsxAttr('start', titleEl.start ?? 0) +
+        jsxAttr('duration', titleEl.duration ?? 18) +
+        jsxAttr('color', titleEl.strokeColor) +
+        ` />`
+    );
+  }
+  if (bulletEls.length > 0) {
+    const items = `[${bulletEls.map((b) => JSON.stringify(b.text)).join(', ')}]`;
+    const start = bulletEls[0].start ?? (titleEl ? (titleEl.start ?? 0) + 20 : 20);
+    lines.push(`      <BulletList items={${items}} start={${start}} />`);
+  }
+
+  return `function ${componentName}() {
+  return (
+    <PresentationScene width={W} height={H}>
+${lines.join('\n')}
+    </PresentationScene>
   );
 }`;
 }
@@ -188,14 +230,37 @@ export interface CompileResult {
  */
 export function compileStoryboardToTsx(board: Storyboard): CompileResult {
   const r = resolved(board);
+  const style = board.style ?? STORYBOARD_DEFAULTS.style;
 
   const sceneNames = board.scenes.map((scene, index) =>
     sceneComponentName(scene.id, index)
   );
 
   const sceneFns = board.scenes
-    .map((scene, index) => compileScene(scene, sceneNames[index], r))
+    .map((scene, index) =>
+      style === 'presentation'
+        ? compilePresentationScene(scene, sceneNames[index])
+        : compileWhiteboardScene(scene, sceneNames[index], r)
+    )
     .join('\n\n');
+
+  const styleImport =
+    style === 'presentation'
+      ? `import {
+  PresentationScene,
+  SlideTitle,
+  BulletList,
+  Callout,
+} from '@seqvio/presentation';`
+      : `import {
+  DrawShape,
+  DrawText,
+  DrawImage,
+  DrawIcon,
+  Hand,
+  WhiteboardScene,
+  excalidrawTheme,
+} from '@seqvio/whiteboard';`;
 
   // Scene/Transition tree inside <VideoComposition>. Each scene carries an
   // explicit duration so the composition renders correctly before audio exists.
@@ -226,15 +291,7 @@ export function compileStoryboardToTsx(board: Storyboard): CompileResult {
 import React from 'react';
 import type { RenderableMeta } from '@seqvio/core';
 import { VideoComposition, Scene, Transition } from '@seqvio/core';
-import {
-  DrawShape,
-  DrawText,
-  DrawImage,
-  DrawIcon,
-  Hand,
-  WhiteboardScene,
-  excalidrawTheme,
-} from '@seqvio/whiteboard';
+${styleImport}
 
 const W = ${r.width};
 const H = ${r.height};

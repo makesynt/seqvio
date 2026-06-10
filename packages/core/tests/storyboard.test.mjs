@@ -136,4 +136,28 @@ describe('compileStoryboardToTsx', () => {
     const { code } = compileStoryboardToTsx(board);
     assert.match(code, /<Transition type="fade"/);
   });
+
+  it('targets the presentation style when style is presentation', () => {
+    const board = {
+      id: 'p',
+      style: 'presentation',
+      scenes: [
+        {
+          id: 's',
+          elements: [
+            { type: 'text', text: 'Title', position: { x: 1, y: 1 }, start: 0, duration: 18 },
+            { type: 'text', text: 'Point one', position: { x: 1, y: 1 }, start: 20, duration: 16 },
+            { type: 'text', text: 'Point two', position: { x: 1, y: 1 }, start: 34, duration: 16 },
+          ],
+        },
+      ],
+    };
+    const { code } = compileStoryboardToTsx(board);
+    assert.match(code, /from '@seqvio\/presentation'/);
+    assert.doesNotMatch(code, /from '@seqvio\/whiteboard'/);
+    assert.match(code, /<PresentationScene/);
+    assert.match(code, /<SlideTitle[^>]*text=\{"Title"\}/);
+    // First text -> title; remaining texts -> bullet list.
+    assert.match(code, /<BulletList items=\{\["Point one", "Point two"\]\}/);
+  });
 });

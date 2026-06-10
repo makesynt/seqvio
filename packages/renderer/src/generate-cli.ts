@@ -29,6 +29,7 @@ function printUsage(): void {
 Options:
   --ir <path>     Path to storyboard IR JSON (required)
   --out <path>    Output TSX path (required for compile)
+  --style <name>  Override style: whiteboard | presentation
   --force         Overwrite an existing --out file
   --help
 `);
@@ -130,7 +131,16 @@ function main(): void {
     throw new Error(`Output already exists (use --force to overwrite): ${outPath}`);
   }
 
-  const { code } = compileStoryboardToTsx(storyboard as Storyboard);
+  // --style overrides the storyboard's own style field, so one IR can be
+  // compiled to whiteboard or presentation without editing the JSON.
+  const styleOverride = args.get('style');
+  const board = storyboard as Storyboard;
+  const effectiveBoard =
+    typeof styleOverride === 'string'
+      ? { ...board, style: styleOverride as Storyboard['style'] }
+      : board;
+
+  const { code } = compileStoryboardToTsx(effectiveBoard);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, code, 'utf8');
   console.log(`Wrote composition to ${outPath}`);

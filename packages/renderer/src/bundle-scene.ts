@@ -191,6 +191,18 @@ export async function bundleScene(options: BundleSceneOptions): Promise<BundleSc
   const whiteboardEntry = resolvePackageModuleEntry('@seqvio/whiteboard');
   const coreEntry = resolvePackageModuleEntry('@seqvio/core');
 
+  const alias: Record<string, string> = {
+    '@seqvio/whiteboard': whiteboardEntry,
+    '@seqvio/core': coreEntry,
+  };
+  // Presentation is an optional style package; alias it when installed so
+  // presentation-style compositions bundle, without making it a hard dependency.
+  try {
+    alias['@seqvio/presentation'] = resolvePackageModuleEntry('@seqvio/presentation');
+  } catch {
+    // Not installed — whiteboard compositions still bundle fine.
+  }
+
   try {
     await esbuild.build({
       entryPoints: [entryPath],
@@ -208,10 +220,7 @@ export async function bundleScene(options: BundleSceneOptions): Promise<BundleSc
         '.ttf': 'file',
         '.otf': 'file',
       },
-      alias: {
-        '@seqvio/whiteboard': whiteboardEntry,
-        '@seqvio/core': coreEntry,
-      },
+      alias,
       define: {
         'process.env.NODE_ENV': '"production"',
       },

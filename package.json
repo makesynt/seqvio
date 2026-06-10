@@ -25,7 +25,7 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspaces --if-present --include-workspace-root=false",
-    "build": "npm run build -w @seqvio/core && npm run build -w @seqvio/whiteboard && npm run build -w @seqvio/renderer",
+    "build": "npm run build -w @seqvio/core && npm run build -w @seqvio/whiteboard && npm run build -w @seqvio/presentation && npm run build -w @seqvio/renderer",
     "test": "npm run test --workspaces --if-present --include-workspace-root=false",
     "test:visual": "node scripts/visual-regression.mjs",
     "test:visual:update": "node scripts/visual-regression.mjs --update",

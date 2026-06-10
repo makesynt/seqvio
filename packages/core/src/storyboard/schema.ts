@@ -15,7 +15,7 @@
  * @seqvio/core stays free of any style package.
  */
 
-export type StoryboardStyle = 'whiteboard';
+export type StoryboardStyle = 'whiteboard' | 'presentation';
 
 export type ElementAlign = 'left' | 'center' | 'right';
 

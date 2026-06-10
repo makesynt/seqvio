@@ -125,10 +125,14 @@ export function validateStoryboard(input: unknown): StoryboardIssue[] {
     issues.push({ severity: 'error', message: 'id must be a non-empty string' });
   }
 
-  if (board.style !== undefined && board.style !== 'whiteboard') {
+  if (
+    board.style !== undefined &&
+    board.style !== 'whiteboard' &&
+    board.style !== 'presentation'
+  ) {
     issues.push({
       severity: 'error',
-      message: `style "${String(board.style)}" is not supported (only "whiteboard")`,
+      message: `style "${String(board.style)}" is not supported (use "whiteboard" or "presentation")`,
     });
   }
 

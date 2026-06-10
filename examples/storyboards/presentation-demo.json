@@ -1,0 +1,44 @@
+{
+  "id": "presentation-demo",
+  "style": "presentation",
+  "width": 1280,
+  "height": 720,
+  "fps": 30,
+  "scenes": [
+    {
+      "id": "intro",
+      "narration": "Seqvio is not whiteboard-only. The same storyboard can render as slides.",
+      "elements": [
+        {
+          "type": "text",
+          "text": "Style-agnostic by design",
+          "position": { "x": 640, "y": 160 },
+          "fontSize": 60,
+          "start": 0,
+          "duration": 18
+        },
+        {
+          "type": "text",
+          "text": "One storyboard IR",
+          "position": { "x": 240, "y": 320 },
+          "start": 24,
+          "duration": 16
+        },
+        {
+          "type": "text",
+          "text": "Whiteboard or presentation output",
+          "position": { "x": 240, "y": 384 },
+          "start": 40,
+          "duration": 16
+        },
+        {
+          "type": "text",
+          "text": "Each style package depends only on core",
+          "position": { "x": 240, "y": 448 },
+          "start": 56,
+          "duration": 16
+        }
+      ]
+    }
+  ]
+}
