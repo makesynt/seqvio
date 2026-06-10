@@ -11,3 +11,4 @@ export * from './time';
 export * from './composition';
 export * from './scene-registry';
 export * from './transitions';
+export * from './storyboard';

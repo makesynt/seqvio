@@ -1,0 +1,65 @@
+{
+  "id": "hello-storyboard",
+  "style": "whiteboard",
+  "width": 1280,
+  "height": 720,
+  "fps": 30,
+  "texture": "whiteboard",
+  "lockToAudio": true,
+  "transitionDuration": 12,
+  "scenes": [
+    {
+      "id": "intro",
+      "narration": "This composition was generated from a storyboard description, not written by hand.",
+      "elements": [
+        {
+          "type": "text",
+          "text": "From JSON to video",
+          "position": { "x": 640, "y": 200 },
+          "fontSize": 72,
+          "fontWeight": "bold",
+          "align": "center",
+          "start": 0,
+          "duration": 30,
+          "strokeColor": "#2563eb"
+        },
+        {
+          "type": "text",
+          "text": "A storyboard compiles to a TSX composition",
+          "position": { "x": 640, "y": 300 },
+          "fontSize": 32,
+          "align": "center",
+          "start": 36,
+          "duration": 28,
+          "strokeColor": "#1f2937"
+        },
+        {
+          "type": "shape",
+          "shape": "arrow",
+          "from": { "x": 380, "y": 420 },
+          "to": { "x": 900, "y": 420 },
+          "start": 70,
+          "duration": 20,
+          "strokeColor": "#16a34a"
+        }
+      ]
+    },
+    {
+      "id": "outro",
+      "narration": "The same renderer produces the final MP4.",
+      "elements": [
+        {
+          "type": "text",
+          "text": "Storyboard -> TSX -> MP4",
+          "position": { "x": 640, "y": 360 },
+          "fontSize": 48,
+          "fontWeight": "bold",
+          "align": "center",
+          "start": 0,
+          "duration": 32,
+          "strokeColor": "#7c3aed"
+        }
+      ]
+    }
+  ]
+}

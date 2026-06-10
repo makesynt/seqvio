@@ -40,7 +40,8 @@
   },
   "bin": {
     "seqvio-render": "dist/cli.js",
-    "seqvio-audio": "dist/audio-cli.js"
+    "seqvio-audio": "dist/audio-cli.js",
+    "seqvio-generate": "dist/generate-cli.js"
   },
   "scripts": {
     "build": "tsc",

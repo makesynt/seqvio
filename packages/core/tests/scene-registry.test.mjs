@@ -1,8 +1,12 @@
-import { describe, it, expect } from 'node:test';
+/**
+ * Runs against the compiled dist (CommonJS). Build core first:
+ * `npm run build -w @seqvio/core`.
+ */
+
+import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { buildCompositionLayout } from '../src/scene-registry';
 import React from 'react';
-import { Scene, Transition } from '../src/composition';
+import { buildCompositionLayout, Scene, Transition } from '../dist/index.js';
 
 describe('scene-registry', () => {
   it('computes global scene and transition ranges', () => {
