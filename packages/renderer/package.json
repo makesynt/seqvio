@@ -41,7 +41,8 @@
   "bin": {
     "seqvio-render": "dist/cli.js",
     "seqvio-audio": "dist/audio-cli.js",
-    "seqvio-generate": "dist/generate-cli.js"
+    "seqvio-generate": "dist/generate-cli.js",
+    "seqvio-preview": "dist/preview-cli.js"
   },
   "scripts": {
     "build": "tsc",
