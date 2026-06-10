@@ -79,9 +79,22 @@ export interface ImageElement extends BaseElement {
   size?: Size;
 }
 
-export type StoryboardElement = TextElement | ShapeElement | ImageElement;
+export interface IconElement extends BaseElement {
+  type: 'icon';
+  /** Built-in icon name (see @seqvio/whiteboard ICON_NAMES). */
+  name: string;
+  position: Vec2;
+  /** Square size in pixels. */
+  size?: number;
+}
 
-export const ELEMENT_TYPES = ['text', 'shape', 'image'] as const;
+export type StoryboardElement =
+  | TextElement
+  | ShapeElement
+  | ImageElement
+  | IconElement;
+
+export const ELEMENT_TYPES = ['text', 'shape', 'image', 'icon'] as const;
 
 export const SHAPE_KINDS: ShapeKind[] = [
   'circle',

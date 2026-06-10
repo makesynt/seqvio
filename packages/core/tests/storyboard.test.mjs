@@ -84,6 +84,47 @@ describe('compileStoryboardToTsx', () => {
     assert.match(code, /lockToAudio: true/);
   });
 
+  it('compiles icon elements and imports DrawIcon', () => {
+    const board = {
+      id: 'icons',
+      scenes: [
+        {
+          id: 's',
+          elements: [
+            { type: 'icon', name: 'check', position: { x: 100, y: 100 }, size: 80 },
+          ],
+        },
+      ],
+    };
+    const { code } = compileStoryboardToTsx(board);
+    assert.match(code, /DrawIcon/);
+    assert.match(code, /name=\{"check"\}/);
+  });
+
+  it('emits explicit scene duration so it renders before audio synthesis', () => {
+    const board = {
+      id: 'x',
+      scenes: [
+        {
+          id: 's',
+          elements: [{ type: 'text', text: 'hi', position: { x: 1, y: 1 }, start: 0, duration: 40 }],
+        },
+      ],
+    };
+    const { code } = compileStoryboardToTsx(board);
+    assert.match(code, /<Scene id="s" duration=\{\d+\}>/);
+  });
+
+  it('omits audio/lockToAudio when there is no narration', () => {
+    const board = {
+      id: 'x',
+      scenes: [{ id: 's', elements: [{ type: 'text', text: 'hi', position: { x: 1, y: 1 } }] }],
+    };
+    const { code } = compileStoryboardToTsx(board);
+    assert.doesNotMatch(code, /lockToAudio/);
+    assert.doesNotMatch(code, /audio=\{meta\.audio\}/);
+  });
+
   it('inserts a fade transition between consecutive scenes', () => {
     const board = {
       id: 'two',

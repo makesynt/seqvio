@@ -48,6 +48,9 @@ export { WhiteboardScene } from './components/WhiteboardScene';
 export { DrawText } from './components/DrawText';
 export { DrawShape } from './components/DrawShape';
 export { DrawImage } from './components/DrawImage';
+export { DrawIcon } from './components/DrawIcon';
+export { ICON_PATHS, ICON_NAMES, isIconName } from './components/icons';
+export type { IconName } from './components/icons';
 export { Hand } from './components/Hand';
 
 // Hooks

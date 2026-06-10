@@ -20,6 +20,7 @@ import {
   type StoryboardScene,
   type TextElement,
   type ImageElement,
+  type IconElement,
   type Vec2,
   type Size,
 } from './schema';
@@ -116,6 +117,17 @@ function compileImage(el: ImageElement): string {
   );
 }
 
+function compileIcon(el: IconElement): string {
+  return (
+    `      <DrawIcon` +
+    jsxAttr('name', el.name) +
+    vecAttr('position', el.position) +
+    jsxAttr('size', el.size) +
+    commonDrawAttrs(el) +
+    ` />`
+  );
+}
+
 function compileElement(el: StoryboardElement): string {
   switch (el.type) {
     case 'text':
@@ -124,6 +136,8 @@ function compileElement(el: StoryboardElement): string {
       return compileShape(el);
     case 'image':
       return compileImage(el);
+    case 'icon':
+      return compileIcon(el);
   }
 }
 
@@ -141,6 +155,26 @@ ${elements}
     </WhiteboardScene>
   );
 }`;
+}
+
+/**
+ * Frames a scene needs based on its elements (latest element end), with a tail
+ * pad so the last stroke is visible before cutting. Used so generated
+ * compositions render correctly *before* any audio is synthesized; once audio
+ * exists, lockToAudio extends scenes to match narration length.
+ */
+const SCENE_TAIL_PAD = 18;
+
+function sceneDurationFrames(scene: StoryboardScene): number {
+  if (typeof scene.duration === 'number' && scene.duration > 0) {
+    return scene.duration;
+  }
+  let maxEnd = 0;
+  for (const el of scene.elements) {
+    const end = (el.start ?? 0) + (el.duration ?? 30);
+    if (end > maxEnd) maxEnd = end;
+  }
+  return Math.max(1, maxEnd + SCENE_TAIL_PAD);
 }
 
 export interface CompileResult {
@@ -163,10 +197,11 @@ export function compileStoryboardToTsx(board: Storyboard): CompileResult {
     .map((scene, index) => compileScene(scene, sceneNames[index], r))
     .join('\n\n');
 
-  // Scene/Transition tree inside <VideoComposition>.
+  // Scene/Transition tree inside <VideoComposition>. Each scene carries an
+  // explicit duration so the composition renders correctly before audio exists.
   const sceneTree = board.scenes
     .map((scene, index) => {
-      const tag = `      <Scene id=${JSON.stringify(scene.id)}>\n        <${sceneNames[index]} />\n      </Scene>`;
+      const tag = `      <Scene id=${JSON.stringify(scene.id)} duration={${sceneDurationFrames(scene)}}>\n        <${sceneNames[index]} />\n      </Scene>`;
       const needsTransition = index < board.scenes.length - 1 && r.transitionDuration > 0;
       const transition = needsTransition
         ? `\n      <Transition type="fade" duration={${r.transitionDuration}} />`
@@ -176,8 +211,11 @@ export function compileStoryboardToTsx(board: Storyboard): CompileResult {
     .join('\n');
 
   // Narration cues for the audio manifest.
-  const narrationCues = board.scenes
-    .filter((scene) => scene.narration && scene.narration.trim().length > 0)
+  const narratedScenes = board.scenes.filter(
+    (scene) => scene.narration && scene.narration.trim().length > 0
+  );
+  const hasNarration = narratedScenes.length > 0;
+  const narrationCues = narratedScenes
     .map(
       (scene) =>
         `      {\n        id: ${JSON.stringify(scene.id)},\n        sceneId: ${JSON.stringify(scene.id)},\n        text: ${JSON.stringify(scene.narration)},\n      },`
@@ -192,6 +230,7 @@ import {
   DrawShape,
   DrawText,
   DrawImage,
+  DrawIcon,
   Hand,
   WhiteboardScene,
   excalidrawTheme,
@@ -210,15 +249,16 @@ export default function ${pascalId(r.id)}() {
       width={W}
       height={H}
       fps={FPS}
-      backgroundColor=${JSON.stringify(r.backgroundColor)}
-      audio={meta.audio}
+      backgroundColor=${JSON.stringify(r.backgroundColor)}${hasNarration ? '\n      audio={meta.audio}' : ''}
     >
 ${sceneTree}
     </VideoComposition>
   );
 }
 
-export const meta: RenderableMeta = {
+${
+  hasNarration
+    ? `export const meta: RenderableMeta = {
   fps: FPS,
   audio: {
     fps: FPS,
@@ -227,7 +267,11 @@ export const meta: RenderableMeta = {
 ${narrationCues}
     ],
   },
-};
+};`
+    : `export const meta: RenderableMeta = {
+  fps: FPS,
+};`
+}
 `;
 
   return { code };

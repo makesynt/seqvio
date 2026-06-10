@@ -108,6 +108,15 @@ export interface DrawImageProps extends DrawOptions {
   traceMode?: 'outline' | 'full' | 'edges';
 }
 
+export interface DrawIconProps extends DrawOptions {
+  /** Name of a built-in icon (see ICON_NAMES). */
+  name: string;
+  /** Top-left position of the icon box. */
+  position?: Point;
+  /** Rendered size in CSS pixels (icon box is square). */
+  size?: number;
+}
+
 export type DrawElement = {
   id: string;
   type: 'text' | 'shape' | 'image' | 'path';

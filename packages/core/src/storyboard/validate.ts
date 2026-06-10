@@ -100,6 +100,15 @@ function validateElement(
       }
       break;
     }
+    case 'icon': {
+      if (typeof el.name !== 'string' || el.name.length === 0) {
+        issues.push({ severity: 'error', message: `${path}.name must be a non-empty string` });
+      }
+      if (!isVec2(el.position)) {
+        issues.push({ severity: 'error', message: `${path}.position must be { x, y }` });
+      }
+      break;
+    }
   }
 }
 

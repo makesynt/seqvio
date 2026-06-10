@@ -41,6 +41,15 @@
           "start": 70,
           "duration": 20,
           "strokeColor": "#16a34a"
+        },
+        {
+          "type": "icon",
+          "name": "lightbulb",
+          "position": { "x": 600, "y": 470 },
+          "size": 80,
+          "start": 94,
+          "duration": 24,
+          "strokeColor": "#f97316"
         }
       ]
     },
