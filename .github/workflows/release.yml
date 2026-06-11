@@ -45,6 +45,9 @@ jobs:
           version: npm run version
           # When versions are already bumped (PR merged): build + publish.
           publish: npm run release
+          # Tag each published version and create a matching GitHub Release
+          # whose notes come from the package changelog.
+          createGithubReleases: true
           commit: "chore: version packages"
           title: "chore: version packages"
         env:
