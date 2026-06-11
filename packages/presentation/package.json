@@ -1,6 +1,6 @@
 {
   "name": "@seqvio/presentation",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Slide/keynote-style presentation components for Seqvio",
   "keywords": [
     "seqvio",
