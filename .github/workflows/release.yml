@@ -37,6 +37,25 @@ jobs:
       - name: Build packages
         run: npm run build
 
+      # TEMP DEBUG — compares the CI token fingerprint with the local one and
+      # checks what the token can actually do. Remove after diagnosis.
+      - name: Debug npm token
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          node -e "
+            const t = process.env.NPM_TOKEN || '';
+            const c = require('crypto');
+            console.log('raw length:', t.length);
+            console.log('trimmed length:', t.trim().length);
+            console.log('sha256(raw) first16:', c.createHash('sha256').update(t).digest('hex').slice(0,16));
+            console.log('sha256(trim) first16:', c.createHash('sha256').update(t.trim()).digest('hex').slice(0,16));
+            console.log('prefix:', t.slice(0,12) + '...');
+          "
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > "$HOME/.npmrc"
+          echo "--- whoami ---"; npm whoami || echo "whoami FAILED"
+          echo "--- access (presentation) ---"; npm access list collaborators @seqvio/presentation 2>&1 || echo "access check FAILED"
+
       - name: Create Release PR or Publish to npm
         uses: changesets/action@v1
         with:
