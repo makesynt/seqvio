@@ -20,13 +20,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # changesets needs full history to compute changed packages.
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: npm
@@ -45,6 +45,9 @@ jobs:
           version: npm run version
           # When versions are already bumped (PR merged): build + publish.
           publish: npm run release
+          # Tag each published version and create a matching GitHub Release
+          # whose notes come from the package changelog.
+          createGithubReleases: true
           commit: "chore: version packages"
           title: "chore: version packages"
         env:
