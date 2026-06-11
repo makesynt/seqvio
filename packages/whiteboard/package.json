@@ -1,6 +1,6 @@
 {
   "name": "@seqvio/whiteboard",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Whiteboard animation components for Seqvio",
   "keywords": [
     "seqvio",
@@ -47,7 +47,7 @@
   },
   "dependencies": {
     "@fontsource/noto-sans-sc": "^5.2.5",
-    "@seqvio/core": "0.1.1",
+    "@seqvio/core": "0.2.0",
     "dejavu-fonts-ttf": "^2.37.3",
     "opentype.js": "^1.3.4",
     "react": "^18.0.0 || ^19.0.0",
