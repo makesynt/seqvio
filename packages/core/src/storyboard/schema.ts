@@ -8,14 +8,14 @@
  *   DrawImage / Hand) so compilation is mechanical and unambiguous.
  * - Pure data (JSON). An LLM fills this table; it never writes executable code.
  *   The IR is validated against this shape before compilation (see validate.ts).
- * - Style-agnostic at the top level: `style` selects which style package the
- *   compiler targets (whiteboard today; presentation/etc. later).
+ * - Whiteboard-only: the IR maps to @seqvio/whiteboard components so the
+ *   compile step stays mechanical and predictable.
  *
  * This module is types + constants only — no React, no whiteboard import — so
  * @seqvio/core stays free of any style package.
  */
 
-export type StoryboardStyle = 'whiteboard' | 'presentation';
+export type StoryboardStyle = 'whiteboard';
 
 export type ElementAlign = 'left' | 'center' | 'right';
 
@@ -112,6 +112,7 @@ export interface StoryboardScene {
   narration?: string;
   /** Optional explicit scene length in frames (otherwise driven by audio/elements). */
   duration?: number;
+  /** Whiteboard drawable elements. */
   elements: StoryboardElement[];
 }
 

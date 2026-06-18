@@ -32,8 +32,6 @@ These are valuable for direction and terminology, but they include roadmap ideas
 | File | Notes |
 | --- | --- |
 | [`PRODUCT-PLAN.md`](./PRODUCT-PLAN.md) | Best statement of product positioning and current-vs-future scope |
-| [`proposals/WHY-UNIFIED-MODE.md`](./proposals/WHY-UNIFIED-MODE.md) | Design rationale for the broader framework direction |
-| [`proposals/STORYBOARD-SPEC.md`](./proposals/STORYBOARD-SPEC.md) | Historical/spec exploration, not the active authoring path |
 | [`proposals/README.md`](./proposals/README.md) | Index of proposal and design-direction docs |
 
 ## Proposal Reference Docs
@@ -44,8 +42,9 @@ These files were moved under `docs/proposals/` so they are clearly separated fro
 | --- | --- |
 | [`proposals/ARCHITECTURE.md`](./proposals/ARCHITECTURE.md) | Long-range architecture ideas |
 | [`proposals/PROJECT-STRUCTURE.md`](./proposals/PROJECT-STRUCTURE.md) | Intended monorepo shape |
+| [`proposals/RENDER-PERFORMANCE.md`](./proposals/RENDER-PERFORMANCE.md) | Render performance roadmap and benchmark plan |
+| [`proposals/TSX-ONLY.md`](./proposals/TSX-ONLY.md) | TSX-first product direction discussion |
 | [`proposals/WHITEBOARD-MVP.md`](./proposals/WHITEBOARD-MVP.md) | Whiteboard package intent and MVP framing |
-| [`proposals/COMPARISON.md`](./proposals/COMPARISON.md) | Conceptual comparison against other frameworks |
 
 ## Archive Docs
 

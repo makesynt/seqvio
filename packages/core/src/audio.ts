@@ -34,6 +34,8 @@ export interface CompositionAudioManifest {
 export interface RenderableMeta {
   duration?: number;
   fps?: number;
+  width?: number;
+  height?: number;
   audio?: CompositionAudioManifest;
   captions?: CaptionCue[];
 }

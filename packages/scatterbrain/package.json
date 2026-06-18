@@ -1,11 +1,13 @@
 {
-  "name": "@seqvio/presentation",
-  "version": "0.2.0",
-  "description": "Slide/keynote-style presentation components for Seqvio",
+  "name": "@seqvio/scatterbrain",
+  "version": "0.1.0",
+  "description": "Post-it / cork-board sticky-note style components for Seqvio",
   "keywords": [
     "seqvio",
+    "scatterbrain",
+    "sticky-note",
+    "postit",
     "presentation",
-    "slides",
     "video",
     "react"
   ],
@@ -14,7 +16,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/makesynt/seqvio.git",
-    "directory": "packages/presentation"
+    "directory": "packages/scatterbrain"
   },
   "bugs": {
     "url": "https://github.com/makesynt/seqvio/issues"

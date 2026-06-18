@@ -5,6 +5,8 @@
 import React, { createContext, useContext, useMemo } from 'react';
 import {
   WhiteboardTheme,
+  TypeScale,
+  Spacing,
   defaultWhiteboardTheme,
   mergeTheme,
 } from './defaultTheme';
@@ -38,5 +40,35 @@ export function useOptionalWhiteboardTheme(): WhiteboardTheme | null {
   return ctx === defaultWhiteboardTheme ? null : ctx;
 }
 
+/**
+ * Returns the current theme's `typeScale` object.
+ *
+ * Use inside a WhiteboardScene subtree to read named font-size tokens:
+ *
+ * ```tsx
+ * const ts = useTypeScale();
+ * <DrawText text="Title" fontSize={ts.h1} ... />
+ * <DrawText text="Body"  fontSize={ts.body} ... />
+ * ```
+ */
+export function useTypeScale(): TypeScale {
+  return useContext(WhiteboardThemeContext).typeScale;
+}
+
+/**
+ * Returns the current theme's `spacing` object.
+ *
+ * Use inside a WhiteboardScene subtree to read named spacing tokens:
+ *
+ * ```tsx
+ * const sp = useSpacing();
+ * <DrawText position={{ x: sp.padX, y: sp.padY }} ... />
+ * <DrawShape position={{ x: sp.padX, y: sp.padY + ts.h1 + sp.gapMd }} ... />
+ * ```
+ */
+export function useSpacing(): Spacing {
+  return useContext(WhiteboardThemeContext).spacing;
+}
+
 export { defaultWhiteboardTheme, mergeTheme };
-export type { WhiteboardTheme };
+export type { WhiteboardTheme, TypeScale, Spacing };

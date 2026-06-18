@@ -109,6 +109,13 @@ Important flags:
 - Set `sceneId` on each cue in multi-scene compositions.
 - Scene and composition durations may be omitted when `lockToAudio: true` and resolved audio should drive timing.
 - After changing narration text, re-run extract and synthesize before rendering.
+- **Match the visual timeline to the resolved audio length.** With `lockToAudio: true`,
+  the video is stretched to the synthesized narration duration. If the authored
+  draw animations finish well before that (e.g. visuals end at frame 560 but the
+  narration resolves to 1303 frames), the picture freezes for the remainder.
+  After synthesizing, read the cue `startFrame`/`endFrame` (and total `duration`)
+  from `audio-manifest.resolved.json`, then space each scene's `start`/`duration`
+  to fill its cue's frame window so drawing stays paced with the voice.
 
 ## Refreshing README demo videos
 

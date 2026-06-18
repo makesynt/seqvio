@@ -32,7 +32,7 @@ import { getTextStrokeWidth, useWhiteboardTheme } from '../theme';
 export const DrawText: React.FC<DrawTextProps> = ({
   text,
   font: fontProp,
-  fontSize = 48,
+  fontSize: fontSizeProp,
   fontWeight = 'normal',
   position = { x: 100, y: 100 },
   align = 'left',
@@ -52,6 +52,11 @@ export const DrawText: React.FC<DrawTextProps> = ({
   const drawId = useId();
   const registry = useOptionalDrawRegistry();
   const progress = useDrawAnimationProgress(drawId, start, duration, easing);
+
+  // When no fontSize prop is given, fall back to the theme's body scale token
+  // so that omitting fontSize "inherits" the theme's default rather than a
+  // hard-coded 48px that ignores the design system.
+  const fontSize = fontSizeProp ?? theme.typeScale.body;
 
   const strokeColor = strokeColorProp ?? theme.colors.ink;
   const strokeWidth =

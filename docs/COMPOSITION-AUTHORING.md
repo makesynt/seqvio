@@ -1,6 +1,8 @@
 # TSX Composition Authoring
 
-Seqvio renders **handwritten React/TSX** compositions to MP4, similar to Remotion. There is no JSON storyboard or template auto-layout layer.
+Seqvio renders **React/TSX** compositions to MP4, similar to Remotion.
+
+TSX is the production source: it is what gets bundled, rendered, reviewed, and hand-edited. For agent-assisted generation, a host agent may first produce Storyboard IR JSON, then `seqvio-generate` validates and compiles that IR into TSX. Seqvio does not call AI or planner APIs itself.
 
 ## Quick start
 
@@ -124,6 +126,14 @@ seqvio-render --component <path.tsx> --output <path.mp4> [options]
 
 Options: `--width`, `--height`, `--fps`, `--quality low|medium|high|4k`, `--pixelRatio 1|2` (default **2** for sharper strokes), `--duration`, `--startFrame`, `--endFrame`, `--keepFrames`.
 
+Storyboard IR helper:
+
+```bash
+seqvio-generate plan-agent --input article.md --write-prompt task.md
+seqvio-generate validate --ir storyboard.json --json
+seqvio-generate compile --ir storyboard.json --out examples/compositions/generated/storyboard.tsx
+```
+
 ## Rendering pipeline
 
 ```mermaid
@@ -138,7 +148,7 @@ flowchart LR
 ## What not to use
 
 - `seqvio-render-storyboard` (removed)
-- Storyboard JSON with empty `elements` and `kind` templates (removed)
+- Seqvio-side automatic planners or template auto-layout (removed)
 - `npm run validate:storyboard` (removed)
 
-Author layout explicitly in TSX.
+Use TSX as the editable production source. Use Storyboard IR only as a structured input from a host agent or future editor.

@@ -5,10 +5,16 @@ This reference describes what Seqvio supports today in this repository. Treat pl
 ## Production loop
 
 ```text
-TSX composition -> audio manifest -> TTS synthesis -> seqvio-render -> MP4
+content -> host agent -> storyboard IR -> TSX composition -> audio manifest -> TTS synthesis -> seqvio-render -> MP4
 ```
 
-Agents and contributors should follow this loop unless the task is explicitly a silent whiteboard render.
+For new storyboard-driven topics, prefer:
+
+```text
+seqvio-generate plan-agent -> host agent returns IR -> validate -> compile -> seqvio-render
+```
+
+Seqvio does not call AI or planner APIs. The host agent creates the IR; Seqvio validates and compiles it deterministically.
 
 ## Authoring
 
@@ -46,6 +52,10 @@ Unknown transition names fall back to `fade`.
 
 From `@seqvio/renderer`:
 
+- `seqvio-generate plan-agent` — write a host-agent task for storyboard IR generation
+- `seqvio-generate` — storyboard IR to TSX
+- `seqvio-generate validate` — IR validation
+- `seqvio-generate validate --json` — agent-friendly validation diagnostics
 - `seqvio-render` — TSX to MP4
 - `seqvio-audio extract` — narration manifest extraction
 - `seqvio-audio synthesize` — TTS synthesis and resolved manifest generation
@@ -105,10 +115,9 @@ Local render intermediates belong in `output/` and are gitignored.
 
 Do not assume these exist just because they appear in roadmap or proposal docs:
 
-- AI scene generation CLI
 - visual editor / studio workflow
-- storyboard JSON authoring
-- template auto-layout
+- automatic custom SVG illustration generation per topic
+- Seqvio-side AI planning or planner API calls
 - transitions beyond `fade`, `slide`, and `wipe`
 
 When in doubt, verify against source code and [`docs/COMPOSITION-AUTHORING.md`](../../../docs/COMPOSITION-AUTHORING.md).

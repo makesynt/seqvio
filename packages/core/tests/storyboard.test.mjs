@@ -29,15 +29,27 @@ describe('validateStoryboard', () => {
     assert.deepStrictEqual(validateStoryboard(validBoard), []);
   });
 
-  it('rejects a non-object', () => {
+  it('rejects a non-object with agent-friendly diagnostics', () => {
     const issues = validateStoryboard(null);
     assert.ok(issues.some((i) => i.severity === 'error'));
+    assert.strictEqual(issues[0].code, 'expected_storyboard_object');
+    assert.strictEqual(issues[0].path, '$');
+    assert.ok(issues[0].suggestion);
+  });
+
+  it('rejects unsupported styles', () => {
+    const issues = validateStoryboard({
+      id: 'x',
+      style: 'flat',
+      scenes: [{ id: 's', elements: [] }],
+    });
+    assert.ok(issues.some((i) => i.code === 'unsupported_style'));
   });
 
   it('rejects a missing id and empty scenes', () => {
     const issues = validateStoryboard({ scenes: [] });
-    assert.ok(issues.some((i) => /id/.test(i.message)));
-    assert.ok(issues.some((i) => /scenes/.test(i.message)));
+    assert.ok(issues.some((i) => i.code === 'missing_storyboard_id'));
+    assert.ok(issues.some((i) => i.code === 'missing_scenes'));
   });
 
   it('rejects an unsupported element type', () => {
@@ -45,7 +57,7 @@ describe('validateStoryboard', () => {
       id: 'x',
       scenes: [{ id: 's', elements: [{ type: 'video' }] }],
     });
-    assert.ok(issues.some((i) => /type/.test(i.message)));
+    assert.ok(issues.some((i) => i.code === 'unsupported_element_type'));
   });
 
   it('requires from/to for directional shapes', () => {
@@ -53,7 +65,7 @@ describe('validateStoryboard', () => {
       id: 'x',
       scenes: [{ id: 's', elements: [{ type: 'shape', shape: 'arrow' }] }],
     });
-    assert.ok(issues.some((i) => /from/.test(i.message)));
+    assert.ok(issues.some((i) => i.code === 'missing_directional_points'));
   });
 
   it('flags duplicate scene ids', () => {
@@ -64,7 +76,7 @@ describe('validateStoryboard', () => {
         { id: 'dup', elements: [] },
       ],
     });
-    assert.ok(issues.some((i) => /duplicated/.test(i.message)));
+    assert.ok(issues.some((i) => i.code === 'duplicate_scene_id'));
   });
 });
 
@@ -76,6 +88,8 @@ describe('compileStoryboardToTsx', () => {
     assert.match(code, /<VideoComposition/);
     assert.match(code, /<DrawText/);
     assert.match(code, /<DrawShape/);
+    assert.doesNotMatch(code, /@seqvio\/motion/);
+    assert.doesNotMatch(code, /@seqvio\/presentation/);
   });
 
   it('carries narration into the audio manifest', () => {
@@ -135,29 +149,5 @@ describe('compileStoryboardToTsx', () => {
     };
     const { code } = compileStoryboardToTsx(board);
     assert.match(code, /<Transition type="fade"/);
-  });
-
-  it('targets the presentation style when style is presentation', () => {
-    const board = {
-      id: 'p',
-      style: 'presentation',
-      scenes: [
-        {
-          id: 's',
-          elements: [
-            { type: 'text', text: 'Title', position: { x: 1, y: 1 }, start: 0, duration: 18 },
-            { type: 'text', text: 'Point one', position: { x: 1, y: 1 }, start: 20, duration: 16 },
-            { type: 'text', text: 'Point two', position: { x: 1, y: 1 }, start: 34, duration: 16 },
-          ],
-        },
-      ],
-    };
-    const { code } = compileStoryboardToTsx(board);
-    assert.match(code, /from '@seqvio\/presentation'/);
-    assert.doesNotMatch(code, /from '@seqvio\/whiteboard'/);
-    assert.match(code, /<PresentationScene/);
-    assert.match(code, /<SlideTitle[^>]*text=\{"Title"\}/);
-    // First text -> title; remaining texts -> bullet list.
-    assert.match(code, /<BulletList items=\{\["Point one", "Point two"\]\}/);
   });
 });

@@ -59,7 +59,7 @@ export function resolveComponentPath(componentPath: string): string {
   throw new Error(`Component file not found: ${componentPath}`);
 }
 
-function writeRenderShell(outDir: string, width: number, height: number): string {
+export function writeRenderShell(outDir: string, width: number, height: number): string {
   const shellPath = path.join(outDir, 'render-shell.html');
   const html = `<!DOCTYPE html>
 <html>
@@ -195,14 +195,16 @@ export async function bundleScene(options: BundleSceneOptions): Promise<BundleSc
     '@seqvio/whiteboard': whiteboardEntry,
     '@seqvio/core': coreEntry,
   };
-  // Presentation is an optional style package; alias it when installed so
-  // presentation-style compositions bundle, without making it a hard dependency.
-  try {
-    alias['@seqvio/presentation'] = resolvePackageModuleEntry('@seqvio/presentation');
-  } catch {
-    // Not installed — whiteboard compositions still bundle fine.
-  }
 
+  // Optional style packages — alias only if installed/resolvable, so the
+  // renderer stays decoupled from any specific style package.
+  for (const optionalStylePkg of ['@seqvio/scatterbrain']) {
+    try {
+      alias[optionalStylePkg] = resolvePackageModuleEntry(optionalStylePkg);
+    } catch {
+      // Not installed in this workspace — skip silently.
+    }
+  }
   try {
     await esbuild.build({
       entryPoints: [entryPath],

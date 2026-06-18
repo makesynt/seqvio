@@ -84,12 +84,8 @@ export function roughCircle(
   style: RoughStyle
 ): string {
   const gen = getGenerator();
-  const drawable = gen.circle(
-    center.x - diameter / 2,
-    center.y - diameter / 2,
-    diameter,
-    roughOptions(style)
-  );
+  // roughjs circle(x, y, diameter) takes the CENTER coordinates
+  const drawable = gen.circle(center.x, center.y, diameter, roughOptions(style));
   return drawableToPathD(gen, drawable);
 }
 

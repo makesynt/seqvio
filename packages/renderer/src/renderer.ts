@@ -14,7 +14,7 @@ import {
   loadCaptionCues,
   resolveMaybeRelativePath,
 } from './audio/manifest';
-import { bundleScene, resolveComponentPath } from './bundle-scene';
+import { bundleScene, resolveComponentPath, writeRenderShell } from './bundle-scene';
 import { getMetaFromPage, loadRenderShell, setFrameAndWait } from './browser-shell';
 // @ts-ignore
 import ffmpegPath from '@ffmpeg-installer/ffmpeg';
@@ -89,8 +89,12 @@ export class VideoRenderer {
   private audioManifestBaseDir: string | undefined;
   private resolvedAudioTracks: ResolvedAudioTrack[] = [];
   private onProgress?: (progress: RenderProgress) => void;
+  private cliWidth: number | undefined;
+  private cliHeight: number | undefined;
 
   constructor(options: RenderOptions, onProgress?: (progress: RenderProgress) => void) {
+    this.cliWidth = options.width;
+    this.cliHeight = options.height;
     this.options = {
       component: options.component,
       output: options.output,
@@ -225,6 +229,27 @@ export class VideoRenderer {
     await loadRenderShell(this.page, this.shellPath);
 
     const pageMeta = await getMetaFromPage(this.page);
+
+    // If meta declares dimensions and the caller didn't override them on the
+    // CLI, re-open at the correct size. Only the HTML shell and viewport need
+    // updating — the JS bundle is size-independent, so no esbuild re-run.
+    const metaWidth = pageMeta.width;
+    const metaHeight = pageMeta.height;
+    if (!this.cliWidth && metaWidth) this.options.width = metaWidth;
+    if (!this.cliHeight && metaHeight) this.options.height = metaHeight;
+    if (
+      this.options.width !== this.page.viewport()!.width ||
+      this.options.height !== this.page.viewport()!.height
+    ) {
+      this.shellPath = writeRenderShell(this.options.tempDir, this.options.width, this.options.height);
+      await this.page.setViewport({
+        width: this.options.width,
+        height: this.options.height,
+        deviceScaleFactor: this.options.pixelRatio,
+      });
+      await loadRenderShell(this.page, this.shellPath);
+    }
+
     this.effectiveFps = Math.max(1, this.options.fps || pageMeta.fps || 30);
     const metaManifest = buildManifestFromMeta(pageMeta);
     this.audioManifest = explicitManifest?.manifest ?? metaManifest;
