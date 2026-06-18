@@ -1,0 +1,8 @@
+{
+  "name": "scatter-list",
+  "description": "Scatterbrain pinned sticky-note list for bullet points or process steps",
+  "style": "scatterbrain",
+  "packages": ["@seqvio/scatterbrain", "@seqvio/core"],
+  "file": "scatter-list.tsx",
+  "destName": "scene-scatter-list.tsx"
+}

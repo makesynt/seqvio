@@ -1,0 +1,8 @@
+{
+  "name": "stat-card",
+  "description": "Whiteboard stat/metric card with animated number and label",
+  "style": "whiteboard/default",
+  "packages": ["@seqvio/whiteboard", "@seqvio/core"],
+  "file": "stat-card.tsx",
+  "destName": "scene-stat-card.tsx"
+}
