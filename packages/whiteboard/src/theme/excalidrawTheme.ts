@@ -33,4 +33,20 @@ export const excalidrawTheme: Partial<WhiteboardTheme> = {
     noto: './NotoSansSC-Regular.woff',
     dejavu: './DejaVuSans.ttf',
   },
+  // Type scale calibrated for a 1280×720 canvas — Excalidraw-style tends to
+  // use slightly larger display text and generous body for legibility.
+  typeScale: {
+    display: 80,
+    h1: 52,
+    h2: 36,
+    body: 26,
+    caption: 18,
+  },
+  spacing: {
+    padX: 80,
+    padY: 64,
+    gapLg: 52,
+    gapMd: 30,
+    gapSm: 14,
+  },
 };

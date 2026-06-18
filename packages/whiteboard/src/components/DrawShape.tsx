@@ -266,6 +266,14 @@ export const DrawShape: React.FC<DrawShapeProps> = ({
       : fillProgress
     : 0;
 
+  // For circles with fill: use a plain <circle> element for the fill background,
+  // because roughjs generates multiple sub-paths whose nonzero fill rule creates
+  // "holes" in the interior. The plain <circle> fills cleanly; roughjs only strokes.
+  const circleRadius =
+    type === 'circle' && shouldFill
+      ? (typeof size === 'number' ? size : size.width) / 2
+      : null;
+
   return (
     <svg
       style={{
@@ -277,13 +285,23 @@ export const DrawShape: React.FC<DrawShapeProps> = ({
       width="100%"
       height="100%"
     >
+      {circleRadius !== null && (
+        <circle
+          cx={position.x}
+          cy={position.y}
+          r={circleRadius}
+          fill={resolvedFillColor}
+          fillOpacity={fillOpacity}
+          stroke="none"
+        />
+      )}
       <path
         ref={pathRef}
         d={path}
         stroke={strokeColor}
         strokeWidth={strokeWidth}
-        fill={shouldFill ? resolvedFillColor : 'none'}
-        fillOpacity={fillOpacity}
+        fill={circleRadius !== null ? 'none' : (shouldFill ? resolvedFillColor : 'none')}
+        fillOpacity={circleRadius !== null ? 0 : fillOpacity}
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeDasharray={effectivePathLength || undefined}

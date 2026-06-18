@@ -5,6 +5,50 @@
 export type TextRenderMode = 'fill' | 'stroke' | 'stroke-wash';
 export type ShapeFillDefault = 'none' | 'wash';
 
+/**
+ * Font-size hierarchy for a WhiteboardScene canvas.
+ *
+ * All values are in CSS pixels at the scene's native resolution (typically
+ * 1280×720 or 1920×1080). Pick from these levels rather than inventing ad-hoc
+ * sizes — consistent scale is what makes a video feel polished.
+ *
+ * Intended semantics (not enforced by the renderer):
+ *   display  — hero title, one per scene
+ *   h1       — section heading
+ *   h2       — card / panel heading
+ *   body     — explanation text, list items
+ *   caption  — labels, marginal annotations, footer chrome
+ */
+export interface TypeScale {
+  display: number;
+  h1: number;
+  h2: number;
+  body: number;
+  caption: number;
+}
+
+/**
+ * Named spacing token set for a scene canvas.
+ *
+ * padX / padY — edge insets for content placed near the canvas border.
+ * gapLg / gapMd / gapSm — vertical (or horizontal) distance between elements.
+ *
+ * Using these tokens keeps layout rhythm consistent within a theme and makes
+ * per-theme layout adjustments trivial.
+ */
+export interface Spacing {
+  /** Left / right edge inset (pixels). */
+  padX: number;
+  /** Top / bottom edge inset (pixels). */
+  padY: number;
+  /** Distance between major sections. */
+  gapLg: number;
+  /** Distance between related elements. */
+  gapMd: number;
+  /** Distance between tightly coupled elements. */
+  gapSm: number;
+}
+
 export interface WhiteboardTheme {
   colors: {
     ink: string;
@@ -50,7 +94,42 @@ export interface WhiteboardTheme {
   textRoughness?: number;
   /** Pen tip cursor size in CSS pixels (Hand component). */
   penSize?: number;
+  /**
+   * Font-size hierarchy for DrawText elements.
+   *
+   * Use `theme.typeScale.body` etc. instead of hard-coded pixel values so
+   * that switching themes automatically adjusts the entire type ladder.
+   *
+   * DrawText falls back to `typeScale.body` when neither a `fontSize` prop
+   * nor any override is provided.
+   */
+  typeScale: TypeScale;
+  /**
+   * Named spacing tokens for layout.
+   *
+   * Use `theme.spacing.padX` etc. when positioning DrawText / DrawShape
+   * elements to keep scenes consistent with the theme's layout rhythm.
+   */
+  spacing: Spacing;
 }
+
+/** Default type scale — calibrated for a 1280 × 720 canvas. */
+export const defaultTypeScale: TypeScale = {
+  display: 72,
+  h1: 48,
+  h2: 34,
+  body: 24,
+  caption: 18,
+};
+
+/** Default spacing — calibrated for a 1280 × 720 canvas. */
+export const defaultSpacing: Spacing = {
+  padX: 80,
+  padY: 60,
+  gapLg: 48,
+  gapMd: 28,
+  gapSm: 14,
+};
 
 export const defaultWhiteboardTheme: WhiteboardTheme = {
   colors: {
@@ -78,6 +157,8 @@ export const defaultWhiteboardTheme: WhiteboardTheme = {
   },
   defaultBorderRadius: 10,
   penSize: 54,
+  typeScale: defaultTypeScale,
+  spacing: defaultSpacing,
 };
 
 export function getTextStrokeWidth(
@@ -99,5 +180,7 @@ export function mergeTheme(partial?: Partial<WhiteboardTheme>): WhiteboardTheme 
       ...defaultWhiteboardTheme.pathFontUrls,
       ...(partial.pathFontUrls ?? {}),
     },
+    typeScale: { ...defaultWhiteboardTheme.typeScale, ...partial.typeScale },
+    spacing: { ...defaultWhiteboardTheme.spacing, ...partial.spacing },
   };
 }

@@ -65,12 +65,32 @@ export { SceneLocalFrameProvider } from './context/SceneLocalFrame';
 export {
   WhiteboardThemeProvider,
   useWhiteboardTheme,
+  useTypeScale,
+  useSpacing,
   defaultWhiteboardTheme,
+  defaultTypeScale,
+  defaultSpacing,
   mergeTheme,
   getTextStrokeWidth,
   excalidrawTheme,
+  neonLightboardTheme,
+  neonPalette,
+  NEON_GLOW_FILTER_ID,
+  neonGlowFilterMarkup,
+  pinAndPaperTheme,
+  pinPalette,
+  fieldNoteTheme,
+  fieldNotePalette,
+  studioTheme,
+  studioPalette,
 } from './theme';
-export type { WhiteboardTheme, TextRenderMode, ShapeFillDefault } from './theme';
+export type {
+  WhiteboardTheme,
+  TextRenderMode,
+  ShapeFillDefault,
+  TypeScale,
+  Spacing,
+} from './theme';
 
 // Utilities
 export * from './utils/pathUtils';
