@@ -6,7 +6,8 @@
     [
       "@seqvio/core",
       "@seqvio/whiteboard",
-      "@seqvio/renderer"
+      "@seqvio/renderer",
+      "@seqvio/scatterbrain"
     ]
   ],
   "linked": [],
