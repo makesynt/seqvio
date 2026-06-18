@@ -1,28 +1,21 @@
 /**
- * Storyboard IR -> TSX source compiler.
+ * Storyboard IR -> whiteboard TSX source compiler.
  *
- * Emits TSX *source text* (not React elements) for two reasons:
- *  1. @seqvio/core must not import any style package, so it cannot reference
- *     whiteboard components directly. The generated file imports them itself.
- *  2. A committed .tsx file stays in version control, diffable and hand-editable
- *     — the storyboard is a starting point, not a black box.
- *
- * The output mirrors the structure of the hand-written examples
- * (examples/compositions/*.tsx) so generated and authored compositions render
- * through the exact same path.
+ * Emits TSX source text so @seqvio/core stays free of React style-package
+ * imports while generated compositions remain editable and diffable.
  */
 
 import {
   STORYBOARD_DEFAULTS,
+  type IconElement,
+  type ImageElement,
   type ShapeElement,
+  type Size,
   type Storyboard,
   type StoryboardElement,
   type StoryboardScene,
   type TextElement,
-  type ImageElement,
-  type IconElement,
   type Vec2,
-  type Size,
 } from './schema';
 
 function resolved(board: Storyboard) {
@@ -157,54 +150,6 @@ ${elements}
 }`;
 }
 
-/**
- * Presentation style maps IR elements onto slide primitives: the first text
- * becomes the SlideTitle, remaining texts become a staggered BulletList, and
- * icons/shapes are not represented in this style (a warning is surfaced by the
- * caller). This is a deliberate, readable mapping — the same IR renders as a
- * keynote-style slide instead of a hand-drawn board.
- */
-function compilePresentationScene(
-  scene: StoryboardScene,
-  componentName: string
-): string {
-  const texts = scene.elements.filter(
-    (el): el is TextElement => el.type === 'text'
-  );
-  const [titleEl, ...bulletEls] = texts;
-
-  const lines: string[] = [];
-  if (titleEl) {
-    lines.push(
-      `      <SlideTitle` +
-        jsxAttr('text', titleEl.text) +
-        jsxAttr('start', titleEl.start ?? 0) +
-        jsxAttr('duration', titleEl.duration ?? 18) +
-        jsxAttr('color', titleEl.strokeColor) +
-        ` />`
-    );
-  }
-  if (bulletEls.length > 0) {
-    const items = `[${bulletEls.map((b) => JSON.stringify(b.text)).join(', ')}]`;
-    const start = bulletEls[0].start ?? (titleEl ? (titleEl.start ?? 0) + 20 : 20);
-    lines.push(`      <BulletList items={${items}} start={${start}} />`);
-  }
-
-  return `function ${componentName}() {
-  return (
-    <PresentationScene width={W} height={H}>
-${lines.join('\n')}
-    </PresentationScene>
-  );
-}`;
-}
-
-/**
- * Frames a scene needs based on its elements (latest element end), with a tail
- * pad so the last stroke is visible before cutting. Used so generated
- * compositions render correctly *before* any audio is synthesized; once audio
- * exists, lockToAudio extends scenes to match narration length.
- */
 const SCENE_TAIL_PAD = 18;
 
 function sceneDurationFrames(scene: StoryboardScene): number {
@@ -219,54 +164,44 @@ function sceneDurationFrames(scene: StoryboardScene): number {
   return Math.max(1, maxEnd + SCENE_TAIL_PAD);
 }
 
+export interface CompileStoryboardOptions {}
+
 export interface CompileResult {
   /** Generated TSX source text. */
   code: string;
 }
 
 /**
- * Compile a validated storyboard into TSX source text. (Callers should run
- * validateStoryboard / assertValidStoryboard first.)
+ * Compile a validated storyboard into TSX source text. Callers should run
+ * validateStoryboard / assertValidStoryboard first.
  */
-export function compileStoryboardToTsx(board: Storyboard): CompileResult {
+export function compileStoryboardToTsx(
+  board: Storyboard,
+  _options: CompileStoryboardOptions = {}
+): CompileResult {
   const r = resolved(board);
-  const style = board.style ?? STORYBOARD_DEFAULTS.style;
-
   const sceneNames = board.scenes.map((scene, index) =>
     sceneComponentName(scene.id, index)
   );
 
   const sceneFns = board.scenes
-    .map((scene, index) =>
-      style === 'presentation'
-        ? compilePresentationScene(scene, sceneNames[index])
-        : compileWhiteboardScene(scene, sceneNames[index], r)
-    )
+    .map((scene, index) => compileWhiteboardScene(scene, sceneNames[index], r))
     .join('\n\n');
 
-  const styleImport =
-    style === 'presentation'
-      ? `import {
-  PresentationScene,
-  SlideTitle,
-  BulletList,
-  Callout,
-} from '@seqvio/presentation';`
-      : `import {
-  DrawShape,
-  DrawText,
-  DrawImage,
-  DrawIcon,
-  Hand,
-  WhiteboardScene,
-  excalidrawTheme,
-} from '@seqvio/whiteboard';`;
+  const narratedScenes = board.scenes.filter(
+    (scene) => scene.narration && scene.narration.trim().length > 0
+  );
+  const hasNarration = narratedScenes.length > 0;
 
-  // Scene/Transition tree inside <VideoComposition>. Each scene carries an
-  // explicit duration so the composition renders correctly before audio exists.
+  const sceneDurations = board.scenes.map(sceneDurationFrames);
+  const totalDuration =
+    sceneDurations.reduce((sum, d) => sum + d, 0) +
+    Math.max(0, board.scenes.length - 1) * r.transitionDuration;
+
   const sceneTree = board.scenes
     .map((scene, index) => {
-      const tag = `      <Scene id=${JSON.stringify(scene.id)} duration={${sceneDurationFrames(scene)}}>\n        <${sceneNames[index]} />\n      </Scene>`;
+      const durationAttr = ` duration={${sceneDurations[index]}}`;
+      const tag = `      <Scene id=${JSON.stringify(scene.id)}${durationAttr}>\n        <${sceneNames[index]} />\n      </Scene>`;
       const needsTransition = index < board.scenes.length - 1 && r.transitionDuration > 0;
       const transition = needsTransition
         ? `\n      <Transition type="fade" duration={${r.transitionDuration}} />`
@@ -275,11 +210,6 @@ export function compileStoryboardToTsx(board: Storyboard): CompileResult {
     })
     .join('\n');
 
-  // Narration cues for the audio manifest.
-  const narratedScenes = board.scenes.filter(
-    (scene) => scene.narration && scene.narration.trim().length > 0
-  );
-  const hasNarration = narratedScenes.length > 0;
   const narrationCues = narratedScenes
     .map(
       (scene) =>
@@ -291,7 +221,15 @@ export function compileStoryboardToTsx(board: Storyboard): CompileResult {
 import React from 'react';
 import type { RenderableMeta } from '@seqvio/core';
 import { VideoComposition, Scene, Transition } from '@seqvio/core';
-${styleImport}
+import {
+  DrawShape,
+  DrawText,
+  DrawImage,
+  DrawIcon,
+  Hand,
+  WhiteboardScene,
+  excalidrawTheme,
+} from '@seqvio/whiteboard';
 
 const W = ${r.width};
 const H = ${r.height};
@@ -317,6 +255,9 @@ ${
   hasNarration
     ? `export const meta: RenderableMeta = {
   fps: FPS,
+  duration: ${totalDuration},
+  width: W,
+  height: H,
   audio: {
     fps: FPS,
     lockToAudio: ${r.lockToAudio},
@@ -327,6 +268,9 @@ ${narrationCues}
 };`
     : `export const meta: RenderableMeta = {
   fps: FPS,
+  duration: ${totalDuration},
+  width: W,
+  height: H,
 };`
 }
 `;
