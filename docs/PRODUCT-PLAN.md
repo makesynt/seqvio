@@ -4,7 +4,7 @@
 
 Seqvio should be positioned as an AI-friendly explainer video generation framework for education and product communication.
 
-It is not primarily a general-purpose video editor, a full Remotion replacement, or a whiteboard-only animation library. Whiteboard is one visual style package inside a broader framework.
+It is not primarily a general-purpose video editor or a full Remotion replacement. The current product should stay focused on a deterministic whiteboard explainer workflow.
 
 ### Core Promise
 
@@ -30,7 +30,7 @@ Structured content to explainer video.
 
 - Uses TSX as the production surface, so advanced users can customize everything.
 - Uses handwritten TSX compositions as the production and AI surface (Remotion-style).
-- Supports multiple visual styles instead of locking every video into whiteboard.
+- Keeps the first visual surface narrow: whiteboard scenes compiled from a validated IR.
 - Produces real video files through a programmatic render pipeline.
 
 ## 2. Current System Assessment
@@ -48,7 +48,7 @@ Structured content to explainer video.
 - The hand component does not automatically follow drawing paths.
 - Renderer frame synchronization currently knows about whiteboard through a best-effort module lookup.
 - `core` timeline/composition APIs are not yet integrated into the renderer.
-- Storyboard JSON and template auto-layout have been removed; TSX-only authoring is required.
+- Template auto-layout has been removed. TSX is the editable production source, while Storyboard IR is a deterministic input contract for host agents and future editors.
 - There is no theme system or AI codegen CLI yet.
 - Documentation promises a broader framework than the current implementation supports.
 
@@ -68,7 +68,7 @@ The renderer is infrastructure. The product is fast, repeatable explainer video 
 
 - Short-form explainer videos from 15 seconds to 3 minutes.
 - Structured scene generation from handwritten TypeScript/TSX compositions.
-- Whiteboard, slide, product-demo, motion-graphics, screencast, and hybrid styles.
+- Whiteboard explainers with structured narration, timing, and drawable elements.
 - Programmatic rendering to MP4.
 - AI-assisted scene generation, style selection, and narration planning.
 - Reusable TSX composition patterns (examples, not server-side templates).
@@ -83,18 +83,12 @@ The renderer is infrastructure. The product is fast, repeatable explainer video 
 
 ## 4. Visual Style Strategy
 
-Whiteboard should become the first style package, not the identity of the whole system.
+Whiteboard is the product style for the current framework.
 
-Recommended style packages:
-
-- `whiteboard`: handwriting, shapes, arrows, erasing, emphasis marks.
-- `presentation`: slide-based lecture and keynote-style explainers.
-- `product-demo`: UI screenshots, device frames, callouts, cursor path, zooms.
-- `motion`: cards, icons, charts, counters, process lines, kinetic typography.
-- `screencast`: recorded UI clips plus annotations and captions.
-- `hybrid`: combines whiteboard, slides, and product UI in one video.
-
-The common contract is TSX-based. Different style packages can share composition structure with different visual components.
+The whiteboard package should focus on handwriting, rough shapes, arrows,
+images, icons, emphasis marks, captions, and audio-aligned timing. Future style
+packages can be explored later, but they should not be part of the current
+Storyboard IR or default generation workflow.
 
 ## 5. Proposed Architecture
 
@@ -125,12 +119,9 @@ Reference TSX files agents and users copy from:
 
 Each package owns its visual components and scene renderers.
 
-Examples:
+Current package:
 
 - `packages/whiteboard`
-- `packages/presentation`
-- `packages/product-demo`
-- `packages/motion`
 
 ### Layer 4: Core Runtime
 
@@ -155,9 +146,7 @@ packages/
       themes/
   renderer/
   whiteboard/
-  presentation/
   product-demo/
-  motion/
   cli/
 examples/
   compositions/
@@ -168,7 +157,95 @@ docs/
   COMPOSITION-AUTHORING.md
 ```
 
-## 7. Roadmap
+## 7. Commercial Tool Gap Priorities
+
+Commercial tools such as Golpo AI have moved beyond raw rendering into an end-to-end product loop: prompt or document input, automatic scene planning, editable generated videos, style presets, multilingual narration, and product/demo-specific assets. Seqvio should not copy every no-code SaaS feature directly. Its stronger position is an open, local, deterministic explainer video compiler that agents and developers can inspect, customize, and version-control.
+
+These priorities capture the most important gaps to close while preserving Seqvio's code-first advantage.
+
+### 1. Host-Agent Prompt or Document to Video Flow
+
+Goal: make the default user path start from content, not from a blank TSX file.
+
+Proposed workflow:
+
+```text
+prompt/document -> host agent -> Storyboard IR -> TSX composition -> audio manifest -> MP4
+```
+
+Deliverables:
+
+- Add `seqvio-generate plan-agent` to write a host-agent task for prompt, Markdown, plain text, and later PDF/PPT/webpage inputs.
+- Let the host agent generate a scene breakdown, narration, visual plan, and Storyboard IR JSON.
+- Let users choose target style, language, duration, orientation, and audience.
+- Preserve generated TSX as the editable production source.
+- Add structured validation diagnostics so host agents can repair IR before rendering.
+
+### 2. Internal Scene Plan IR
+
+Goal: keep TSX as the public production surface while giving AI generation, validation, and future Studio editing a stable intermediate contract.
+
+The IR should be a structured agent/editor contract, not a replacement for hand-authored TSX as the production workflow. It should describe:
+
+- Video metadata: title, audience, language, aspect ratio, target duration, style.
+- Scene metadata: `id`, narration, duration, visual intent, layout type, assets, and transitions.
+- Caption and audio cues: text, timing intent, speaker, and localization keys.
+- Style hints: whiteboard theme, texture, handwriting mode, and visual density.
+
+Use this IR to compile to TSX, validate host-agent output, regenerate individual scenes, and support multilingual or style variants from the same content plan.
+
+### 3. High-Quality Whiteboard Output
+
+Goal: make the first visual style credible enough to compare with polished commercial whiteboard generators.
+
+Deliverables:
+
+- Convert text to SVG paths for real handwriting animation.
+- Implement automatic hand path following for text and shapes.
+- Add eraser, highlight, focus box, emphasis mark, arrow callout, and underline components.
+- Make rough shape generation deterministic through seeded randomness.
+- Add style presets such as clean whiteboard, marker sketch, chalkboard, technical diagram, and light infographic.
+- Add visual regression snapshots for representative handwriting, shape, and caption frames.
+
+### 4. Lightweight Studio and Preview Workflow
+
+Goal: give non-engineers and reviewers a way to inspect and adjust generated videos without becoming TSX authors.
+
+This should be a focused preview/edit surface rather than a full nonlinear editor. Prioritize:
+
+- Scene list with duration, narration, and render status.
+- Frame-accurate preview with scrubber and current frame display.
+- Editable text, narration, timing, colors, style preset, and selected assets.
+- Re-render selected scene or frame range instead of the full video every time.
+- Layout diagnostics for overflowing text, overlapping elements, missing assets, and caption timing issues.
+- Export the final edits back to TSX and any internal scene plan file.
+
+### 5. Multilingual Narration and Caption Workflow
+
+Goal: make one source video reusable across languages and voice providers.
+
+Deliverables:
+
+- Support language variants from a shared scene plan, for example `en`, `zh`, and `ja`.
+- Separate on-screen text language from narration language when needed.
+- Add automatic caption segmentation and timing alignment.
+- Support uploaded narration tracks in addition to generated TTS.
+- Add background music mixing with narration ducking.
+- Preserve provider-neutral audio metadata so ElevenLabs, OpenAI, MiniMax, edge-tts, and future providers share the same contract.
+
+### 6. Product Demo and Screencast Style Package
+
+Goal: differentiate Seqvio from whiteboard-only tools by making technical product communication a first-class use case.
+
+Deliverables:
+
+- Add or expand `@seqvio/product-demo` for screenshots, device frames, browser frames, UI callouts, cursor paths, and zoom highlights.
+- Support recorded UI clips with annotation layers, captions, and narration.
+- Add before/after, step-by-step walkthrough, release note, API walkthrough, and onboarding examples.
+- Provide asset helpers for screenshots, logos, watermarks, product images, and short video clips.
+- Ensure any future product-demo scenes share the same timing, narration, caption, and rendering contracts as whiteboard scenes.
+
+## 8. Roadmap
 
 ### Phase 0: Stabilize the Current MVP
 
@@ -207,16 +284,16 @@ Deliverables:
 - Add layout helpers for common education scenes.
 - Add visual regression screenshots for key frames.
 
-### Phase 3: Presentation and Product Demo Styles
+### Phase 3: Whiteboard Product Quality
 
-Goal: prove the framework is not whiteboard-only.
+Goal: make whiteboard explainers polished enough for real education and product communication.
 
 Deliverables:
 
-- Add `packages/presentation` with slide layouts, title cards, bullet reveals, charts, and transitions.
-- Add `packages/product-demo` with screenshots, device frames, cursor paths, zoom callouts, and feature highlights.
-- Allow the same TSX composition structure to render in `whiteboard`, `presentation`, or `product-demo`.
-- Add product onboarding example video.
+- Add stronger whiteboard layout helpers for title, process, comparison, and summary scenes.
+- Add screenshots/images with callouts for lightweight product explainers inside the whiteboard style.
+- Improve hand path following, highlights, focus boxes, and caption timing.
+- Add product onboarding example video using whiteboard primitives.
 
 ### Phase 4: AI-Assisted Generation
 
@@ -243,7 +320,7 @@ Deliverables:
 - Documentation for plugin/style package authors.
 - Versioned public API.
 
-## 8. Todo List
+## 9. Todo List
 
 ### P0: Immediate Engineering Tasks
 
@@ -257,11 +334,12 @@ Deliverables:
 
 ### P1: Product Foundation
 
-- [x] TSX-only authoring guide (`docs/COMPOSITION-AUTHORING.md`).
+- [x] TSX production authoring guide (`docs/COMPOSITION-AUTHORING.md`).
 - [x] `seqvio-render` CLI for TSX compositions.
 - [x] Multi-scene `VideoComposition` + transitions in renderer.
 - [ ] Add more handwritten composition examples (education, product intro, technical).
-- [ ] ~~Storyboard JSON + template engine~~ (removed; superseded by TSX-only).
+- [x] Storyboard IR validate + compile path for host-agent output.
+- [ ] ~~Template auto-layout engine~~ (removed; superseded by deterministic IR -> TSX compile).
 
 ### P2: Visual Quality
 
@@ -272,14 +350,12 @@ Deliverables:
 - [ ] Add theme tokens for educational and product styles.
 - [ ] Add visual QA snapshots for representative frames.
 
-### P3: Multi-Style Expansion
+### P3: Whiteboard Expansion
 
-- [ ] Add `presentation` package.
-- [ ] Add `product-demo` package.
-- [ ] Add `motion` package.
-- [ ] Add shared layout primitives.
+- [ ] Add reusable whiteboard layout primitives.
+- [ ] Add screenshot callouts inside whiteboard scenes.
 - [ ] Add shared transition primitives.
-- [ ] Render one TSX composition through at least two style packages.
+- [ ] Add polished education and product onboarding examples.
 
 ### P4: AI Workflow
 
@@ -289,7 +365,7 @@ Deliverables:
 - [ ] Add narration and caption fields.
 - [ ] Add examples of agent-generated composition files.
 
-## 9. Success Metrics
+## 10. Success Metrics
 
 ### MVP Success
 
@@ -305,14 +381,14 @@ Deliverables:
 - Users can customize style without rewriting scene code.
 - Rendering is deterministic enough for repeatable builds.
 
-## 10. Recommended Next Step
+## 11. Recommended Next Step
 
 Expand handwritten composition examples and agent authoring guides.
 
-The renderer proves TSX can become MP4 with multi-scene support. The product surface is **TSX-only** (no JSON template layer). Agents should generate full compositions with explicit coordinates and frame timing.
+The renderer proves TSX can become MP4 with multi-scene support. The production surface is **TSX**, while Storyboard IR is the structured input contract for host agents. Agents should generate IR first; Seqvio validates and compiles it deterministically.
 
 The next concrete milestone:
 
 ```text
-script -> TSX composition (agent-authored) -> MP4
+script -> host-agent Storyboard IR -> TSX composition -> MP4
 ```
