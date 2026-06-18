@@ -211,13 +211,18 @@ export function mountBrowserRuntime(
     writeRuntimeGlobal('resolvedAudioManifest', options.resolvedAudioManifest);
   }
 
-  writeRuntimeGlobal('getMeta', () => ({
-    ...(readRuntimeGlobal<RenderableMeta>('compositionMeta') ?? {}),
-    duration: readRuntimeGlobal<RenderableMeta>('compositionMeta')?.duration ?? sceneMeta.duration,
-    fps: readRuntimeGlobal<RenderableMeta>('compositionMeta')?.fps ?? sceneMeta.fps,
-    audio: readRuntimeGlobal<RenderableMeta>('compositionMeta')?.audio ?? sceneMeta.audio,
-    captions: readRuntimeGlobal<RenderableMeta>('compositionMeta')?.captions ?? sceneMeta.captions,
-  }));
+  writeRuntimeGlobal('getMeta', () => {
+    const compositionMeta = readRuntimeGlobal<RenderableMeta>('compositionMeta') ?? {};
+    return {
+      ...compositionMeta,
+      duration: compositionMeta.duration ?? sceneMeta.duration,
+      fps: compositionMeta.fps ?? sceneMeta.fps,
+      width: compositionMeta.width ?? meta?.width,
+      height: compositionMeta.height ?? meta?.height,
+      audio: compositionMeta.audio ?? sceneMeta.audio,
+      captions: compositionMeta.captions ?? sceneMeta.captions,
+    };
+  });
 
   writeRuntimeGlobal('setFrame', async (frame: number) => {
     writeRuntimeGlobal('frameReady', false);

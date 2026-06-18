@@ -1,14 +1,10 @@
 #!/usr/bin/env node
 /**
- * seqvio-generate — compile a Storyboard IR (JSON) into a TSX composition.
+ * seqvio-generate — deterministic Storyboard IR pipeline.
  *
- *   seqvio-generate --ir story.json --out scene.tsx
+ *   seqvio-generate plan-agent --input article.md --write-prompt task.md
  *   seqvio-generate validate --ir story.json
- *
- * This is the deterministic half of the AI input pipeline:
- *   prompt/document -> [LLM] -> Storyboard IR -> (this) -> TSX -> MP4
- * The LLM step is intentionally not wired here yet; once it produces IR JSON,
- * it flows straight into `validate` + compile with no other change.
+ *   seqvio-generate compile --ir story.json --out scene.tsx
  */
 
 import * as fs from 'fs';
@@ -18,19 +14,27 @@ import {
   validateStoryboard,
   type Storyboard,
 } from '@seqvio/core';
+import { formatAgentPlanningPrompt, type AgentPlanningOptions } from './agent-contract';
 
-type CommandName = 'compile' | 'validate';
+type CommandName = 'compile' | 'validate' | 'plan-agent';
 
 function printUsage(): void {
   console.log(`Usage:
-  seqvio-generate --ir <path> --out <path>     Compile storyboard JSON to TSX
-  seqvio-generate validate --ir <path>          Validate storyboard JSON
+  seqvio-generate plan-agent --input <path> --write-prompt <path.md>
+  seqvio-generate validate --ir <path>
+  seqvio-generate compile --ir <path> --out <path.tsx>
+  seqvio-generate --ir <path> --out <path.tsx>
 
 Options:
-  --ir <path>     Path to storyboard IR JSON (required)
-  --out <path>    Output TSX path (required for compile)
-  --style <name>  Override style: whiteboard | presentation
-  --force         Overwrite an existing --out file
+  --input <path>                  Source content for plan-agent
+  --write-prompt <path>           Write host-agent task markdown
+  --ir <path>                     Path to storyboard IR JSON
+  --out <path>                    Output TSX path
+  --language <code>               zh | en | auto (default: auto)
+  --domain <name>                 history | science | auto (default: auto)
+  --max-scenes <n>                Target scene count for the host agent (default: 5)
+  --json                          Print validation issues as JSON
+  --force                         Overwrite an existing output file
   --help
 `);
 }
@@ -42,7 +46,11 @@ function parseArgs(argv: string[]): {
   const [maybeCommand, ...rest] = argv;
   let command: CommandName = 'compile';
   let tokens = argv;
-  if (maybeCommand === 'validate' || maybeCommand === 'compile') {
+  if (
+    maybeCommand === 'validate' ||
+    maybeCommand === 'compile' ||
+    maybeCommand === 'plan-agent'
+  ) {
     command = maybeCommand;
     tokens = rest;
   }
@@ -52,7 +60,7 @@ function parseArgs(argv: string[]): {
     const token = tokens[i];
     if (!token.startsWith('--')) continue;
     const key = token.slice(2);
-    if (key === 'help' || key === 'force') {
+    if (key === 'help' || key === 'force' || key === 'json') {
       args.set(key, true);
       continue;
     }
@@ -88,22 +96,62 @@ function loadStoryboard(irPath: string): unknown {
   }
 }
 
-function reportIssues(issues: ReturnType<typeof validateStoryboard>): boolean {
+function writeOutput(outPath: string, content: string, force: boolean): void {
+  if (fs.existsSync(outPath) && !force) {
+    throw new Error(`Output already exists (use --force to overwrite): ${outPath}`);
+  }
+  fs.mkdirSync(path.dirname(outPath), { recursive: true });
+  fs.writeFileSync(outPath, content, 'utf8');
+}
+
+function planningOptions(args: Map<string, string | boolean>): AgentPlanningOptions {
+  return {
+    language: String(args.get('language') ?? 'auto') as AgentPlanningOptions['language'],
+    maxScenes: args.get('max-scenes') ? Number(args.get('max-scenes')) : 5,
+    domain: String(args.get('domain') ?? 'auto') as AgentPlanningOptions['domain'],
+  };
+}
+
+function reportIssues(
+  issues: ReturnType<typeof validateStoryboard>,
+  json: boolean
+): boolean {
+  const ok = !issues.some((issue) => issue.severity === 'error');
+  if (json) {
+    console.log(JSON.stringify({ ok, issues }, null, 2));
+    return ok;
+  }
   if (issues.length === 0) {
     console.log('Storyboard is valid.');
     return true;
   }
   for (const issue of issues) {
     const prefix = issue.severity === 'error' ? 'ERROR' : 'WARN ';
-    console.log(`[${prefix}] ${issue.message}`);
+    const pathText = issue.path ? `${issue.path}: ` : '';
+    const suggestionText = issue.suggestion ? ` Suggestion: ${issue.suggestion}` : '';
+    console.log(`[${prefix}] ${pathText}${issue.message}${suggestionText}`);
   }
-  return !issues.some((issue) => issue.severity === 'error');
+  return ok;
 }
 
-function main(): void {
+async function main(): Promise<void> {
   const { command, args } = parseArgs(process.argv.slice(2));
   if (args.get('help')) {
     printUsage();
+    return;
+  }
+
+  if (command === 'plan-agent') {
+    const inputPath = path.resolve(requireString(args, 'input'));
+    const promptPath = path.resolve(requireString(args, 'write-prompt'));
+    if (!fs.existsSync(inputPath)) {
+      throw new Error(`Input not found: ${inputPath}`);
+    }
+    const content = fs.readFileSync(inputPath, 'utf8');
+    const prompt = formatAgentPlanningPrompt(content, planningOptions(args));
+    writeOutput(promptPath, prompt, Boolean(args.get('force')));
+    console.log(`Wrote host-agent planning task to ${promptPath}`);
+    console.log('Run the task in your agent, then validate and compile the returned IR.');
     return;
   }
 
@@ -111,45 +159,24 @@ function main(): void {
   const issues = validateStoryboard(storyboard);
 
   if (command === 'validate') {
-    const ok = reportIssues(issues);
+    const ok = reportIssues(issues, Boolean(args.get('json')));
     process.exit(ok ? 0 : 1);
   }
 
-  // compile
-  const blocking = issues.filter((issue) => issue.severity === 'error');
-  if (blocking.length > 0) {
-    reportIssues(issues);
+  const ok = reportIssues(issues, Boolean(args.get('json')));
+  if (!ok) {
     throw new Error('Refusing to compile an invalid storyboard.');
-  }
-  // Surface warnings but proceed.
-  for (const warning of issues) {
-    console.log(`[WARN ] ${warning.message}`);
   }
 
   const outPath = path.resolve(requireString(args, 'out'));
-  if (fs.existsSync(outPath) && !args.get('force')) {
-    throw new Error(`Output already exists (use --force to overwrite): ${outPath}`);
-  }
-
-  // --style overrides the storyboard's own style field, so one IR can be
-  // compiled to whiteboard or presentation without editing the JSON.
-  const styleOverride = args.get('style');
   const board = storyboard as Storyboard;
-  const effectiveBoard =
-    typeof styleOverride === 'string'
-      ? { ...board, style: styleOverride as Storyboard['style'] }
-      : board;
-
-  const { code } = compileStoryboardToTsx(effectiveBoard);
-  fs.mkdirSync(path.dirname(outPath), { recursive: true });
-  fs.writeFileSync(outPath, code, 'utf8');
+  const { code } = compileStoryboardToTsx(board);
+  writeOutput(outPath, code, Boolean(args.get('force')));
   console.log(`Wrote composition to ${outPath}`);
 }
 
-try {
-  main();
-} catch (error) {
+main().catch((error) => {
   const message = error instanceof Error ? error.message : String(error);
   console.error(`seqvio-generate failed: ${message}`);
   process.exit(1);
-}
+});
