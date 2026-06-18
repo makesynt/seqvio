@@ -1,14 +1,24 @@
 ---
 name: seqvio
-description: Create or edit Seqvio explainer video compositions in TSX and render them to MP4 with optional narration and captions. Use when working in this repository on whiteboard animations, explainer videos, multi-scene compositions, scene timing, transitions, seqvio-render, or seqvio-audio workflows. Covers @seqvio/whiteboard, @seqvio/core, examples/compositions, and the current authoring/rendering contract. Prefer this skill over inventing future CLI commands, JSON storyboard flows, or unimplemented runtime features.
+description: Create or edit Seqvio whiteboard explainer video compositions in TSX and render them to MP4 with optional narration and captions. Use when working in this repository on whiteboard animations, explainer videos, multi-scene compositions, storyboard IR planning, seqvio-generate plan-agent, scene timing, transitions, seqvio-render, or seqvio-audio workflows. Covers @seqvio/whiteboard, @seqvio/core, examples/compositions, and the current deterministic authoring/rendering contract.
 ---
 
 # Seqvio
 
-Seqvio turns structured TSX compositions into narrated explainer videos. The production loop is:
+Seqvio turns structured content into narrated explainer videos. Preferred production loop for **new topics**:
+
+1. write a host-agent task with `seqvio-generate plan-agent`
+2. let the host agent produce one storyboard IR JSON
+3. validate + compile IR to TSX with `seqvio-generate`
+4. render with `seqvio-render`
+5. optionally extract/synthesize narration with `seqvio-audio`
+
+Seqvio itself does not call AI or planner APIs. Creative planning happens in the host agent; Seqvio validates, compiles, and renders deterministically.
+
+Manual TSX authoring is still valid for polish:
 
 1. author or edit a composition in TSX
-2. use `@seqvio/whiteboard` for scene visuals
+2. use `@seqvio/whiteboard`
 3. optionally wrap multiple scenes with `@seqvio/core`
 4. extract and synthesize narration with `seqvio-audio` when needed
 5. render with `seqvio-render`
@@ -57,6 +67,7 @@ The skill alone does not install npm packages or render MP4 output.
 
 ## Example Prompts
 
+- "Using `/seqvio`, write a plan-agent task for a Chinese history explainer, then validate and compile the returned IR."
 - "Using `/seqvio`, create a 4-scene Chinese product overview with whiteboard visuals, ElevenLabs narration, and burned-in captions."
 - "Edit `examples/compositions/seqvio-overview-en.tsx` to add a new scene explaining the audio workflow, then render the final MP4."
 - "Fix timing in this composition so each scene aligns with its narration cue after synthesis."
@@ -68,6 +79,14 @@ The skill alone does not install npm packages or render MP4 output.
 - For file contracts and code patterns, read [references/authoring-patterns.md](references/authoring-patterns.md).
 - For build and render commands, read [references/render-workflow.md](references/render-workflow.md).
 - For narration extraction, synthesis, and muxing, read [references/audio-workflow.md](references/audio-workflow.md).
+- For host-agent storyboard IR planning, read [references/planning-workflow.md](references/planning-workflow.md).
+
+### Visual styles
+
+Two parallel, style-agnostic ways to render a composition. Pick one per `<Scene>` — do not mix their components.
+
+- **Whiteboard** (`@seqvio/whiteboard`) — SVG hand-drawn animation; `WhiteboardScene` / `DrawText` / `DrawShape` / `Hand`. Themes select the look (default, pin-and-paper, studio, field-note, …). For the Pin & Paper theme, read [references/pin-and-paper-theme.md](references/pin-and-paper-theme.md).
+- **Scatterbrain** (`@seqvio/scatterbrain`) — div/CSS sticky-note / cork-board look (rotation, gradients, soft shadows, pins, tape, doodles); `ScatterScene` / `StickyNote` / `Scrawl` / `PinnedList` / `Doodle` / `Polaroid`. A separate style package, parallel to whiteboard, depending only on `@seqvio/core`. Read [references/scatterbrain-style.md](references/scatterbrain-style.md).
 
 ## Working Model
 
@@ -114,16 +133,17 @@ Each scene usually wraps its own `WhiteboardScene`. Scene-local draw timings sta
   - `meta` with at least `duration` and `fps`
 - All timing is in **frames**, not seconds.
 - For audio-aligned work, prefer one narration cue per scene or beat and set `sceneId` on each cue.
-- In audio-aligned multi-scene compositions, `Scene duration` may be omitted and derived from the resolved audio manifest at render time.
-- In audio-aligned work, `VideoComposition duration` may also be omitted if the final total duration should follow resolved narration timing plus transitions.
+- **Always set `meta.duration` and each `Scene duration` even when using `lockToAudio: true`.** Without a resolved audio manifest, narration cues carry no timing and `resolveCompositionDurationFrames` returns 0, producing a single-frame render. The fallback values are overridden automatically once `--audioManifest` points to a resolved manifest.
+- Estimate each `Scene duration` from its draw timing: find the last `start + duration` across all children and add a small buffer.
 - `WhiteboardScene` defaults to `singlePen={true}`: authored overlaps are serialized into one active stroke at a time.
 - If a scene duration feels short, calculate against serialized draw timing, not just authored `start`.
 - Only `fade`, `slide`, and `wipe` are implemented transitions. Unknown transition names fall back to `fade`.
 - Use only real imports from this repo:
   - `@seqvio/whiteboard`
+  - `@seqvio/scatterbrain`
   - `@seqvio/core`
 - Do not reintroduce removed or imaginary workflows such as:
-  - storyboard JSON
+  - Seqvio-side AI planning
   - template auto-layout
   - AI CLI commands not present in source
 
@@ -158,6 +178,9 @@ Each scene usually wraps its own `WhiteboardScene`. Scene-local draw timings sta
 | How to structure TSX files and timing | [references/authoring-patterns.md](references/authoring-patterns.md) |
 | How to build and render | [references/render-workflow.md](references/render-workflow.md) |
 | How to extract, synthesize, and mux narration | [references/audio-workflow.md](references/audio-workflow.md) |
+| How to produce storyboard IR with a host agent | [references/planning-workflow.md](references/planning-workflow.md) |
+| Whiteboard Pin & Paper theme authoring | [references/pin-and-paper-theme.md](references/pin-and-paper-theme.md) |
+| Scatterbrain sticky-note style authoring | [references/scatterbrain-style.md](references/scatterbrain-style.md) |
 
 ## Handoff Checklist
 
