@@ -181,6 +181,10 @@ Each scene usually wraps its own `WhiteboardScene`. Scene-local draw timings sta
 | How to produce storyboard IR with a host agent | [references/planning-workflow.md](references/planning-workflow.md) |
 | Whiteboard Pin & Paper theme authoring | [references/pin-and-paper-theme.md](references/pin-and-paper-theme.md) |
 | Scatterbrain sticky-note style authoring | [references/scatterbrain-style.md](references/scatterbrain-style.md) |
+| Drive GSAP / Lottie / Three.js from the render clock | [references/seekable-animations.md](references/seekable-animations.md) |
+| Parallel render (--workers) and preset flags | [references/parallel-render.md](references/parallel-render.md) |
+| Design token spec for AI layout authoring | [references/frame-spec.md](references/frame-spec.md) |
+| Copy reusable blocks with seqvio-add | [references/catalog.md](references/catalog.md) |
 
 ## Handoff Checklist
 

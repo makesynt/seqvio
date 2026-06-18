@@ -1,0 +1,8 @@
+{
+  "name": "cover-card",
+  "description": "Whiteboard title card with animated display heading and subtitle",
+  "style": "whiteboard/default",
+  "packages": ["@seqvio/whiteboard", "@seqvio/core"],
+  "file": "cover-card.tsx",
+  "destName": "scene-cover-card.tsx"
+}

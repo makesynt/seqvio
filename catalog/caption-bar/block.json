@@ -1,0 +1,8 @@
+{
+  "name": "caption-bar",
+  "description": "Bottom caption bar overlay for burned-in subtitle style",
+  "style": "whiteboard/default",
+  "packages": ["@seqvio/core"],
+  "file": "caption-bar.tsx",
+  "destName": "component-caption-bar.tsx"
+}
