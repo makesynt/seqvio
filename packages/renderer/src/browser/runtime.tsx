@@ -21,6 +21,7 @@ import {
   runtimeGlobalName,
   SeqvioRuntimeKey,
 } from '../brand';
+import { flushSeekables } from '@seqvio/core';
 
 export interface BrowserRuntimeOptions {
   width: number;
@@ -104,10 +105,12 @@ async function waitForFrame(): Promise<void> {
 
 function applyFrame(frame: number): void {
   const timeline = readRuntimeGlobal<TimelineLike>('timeline');
+  const fps = sceneMeta.fps;
   if (timeline && typeof timeline.seekToFrame === 'function') {
     timeline.seekToFrame(frame);
   }
   setGlobalFrame(frame);
+  flushSeekables(frame, fps);
 }
 
 function CaptionOverlay({
