@@ -79,6 +79,7 @@ The skill alone does not install npm packages or render MP4 output.
 - For file contracts and code patterns, read [references/authoring-patterns.md](references/authoring-patterns.md).
 - For build and render commands, read [references/render-workflow.md](references/render-workflow.md).
 - For narration extraction, synthesis, and muxing, read [references/audio-workflow.md](references/audio-workflow.md).
+- For production craft rules from real narrated explainer work, read [references/production-techniques.md](references/production-techniques.md).
 - For host-agent storyboard IR planning, read [references/planning-workflow.md](references/planning-workflow.md).
 
 ### Visual styles
@@ -133,6 +134,9 @@ Each scene usually wraps its own `WhiteboardScene`. Scene-local draw timings sta
   - `meta` with at least `duration` and `fps`
 - All timing is in **frames**, not seconds.
 - For audio-aligned work, prefer one narration cue per scene or beat and set `sceneId` on each cue.
+- For narrated videos, **voice is the clock**: do not pad scenes with silence to hit a target duration. If the video must be longer, expand the script and synthesize more narration.
+- After synthesis or audio editing, check for long silent spans before handoff. Use FFmpeg `silencedetect` or an equivalent audio QA step; visual timing must adapt to the final audio, not the other way around.
+- When matching a reference style, analyze its visual language before authoring: shape vocabulary, icon density, palette, line weights, containers, arrows, labels, pacing, and scene transitions. Do not reduce a diagram-heavy reference to only rectangles and text.
 - **Always set `meta.duration` and each `Scene duration` even when using `lockToAudio: true`.** Without a resolved audio manifest, narration cues carry no timing and `resolveCompositionDurationFrames` returns 0, producing a single-frame render. The fallback values are overridden automatically once `--audioManifest` points to a resolved manifest.
 - Estimate each `Scene duration` from its draw timing: find the last `start + duration` across all children and add a small buffer.
 - `WhiteboardScene` defaults to `singlePen={true}`: authored overlaps are serialized into one active stroke at a time.
@@ -178,6 +182,7 @@ Each scene usually wraps its own `WhiteboardScene`. Scene-local draw timings sta
 | How to structure TSX files and timing | [references/authoring-patterns.md](references/authoring-patterns.md) |
 | How to build and render | [references/render-workflow.md](references/render-workflow.md) |
 | How to extract, synthesize, and mux narration | [references/audio-workflow.md](references/audio-workflow.md) |
+| Production craft rules for narrated explainers | [references/production-techniques.md](references/production-techniques.md) |
 | How to produce storyboard IR with a host agent | [references/planning-workflow.md](references/planning-workflow.md) |
 | Whiteboard Pin & Paper theme authoring | [references/pin-and-paper-theme.md](references/pin-and-paper-theme.md) |
 | Scatterbrain sticky-note style authoring | [references/scatterbrain-style.md](references/scatterbrain-style.md) |
@@ -193,4 +198,6 @@ Each scene usually wraps its own `WhiteboardScene`. Scene-local draw timings sta
 - Transition names are implemented ones.
 - Render command points at an existing TSX file.
 - For narrated work, resolved audio manifest path and caption flags are included.
+- For narrated work, there are no unintentional long silent gaps, and any target-duration mismatch is resolved by script length, not silence padding.
+- For reference-style work, the output uses the reference's shape language, not only its colors or background.
 - Validation status is reported honestly if build or render was not run.

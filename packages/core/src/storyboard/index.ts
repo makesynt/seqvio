@@ -8,5 +8,6 @@
  */
 
 export * from './schema';
+export * from './layout-registry';
 export * from './validate';
 export * from './compile';

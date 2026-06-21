@@ -24,6 +24,8 @@ function resolved(board: Storyboard) {
     width: board.width ?? STORYBOARD_DEFAULTS.width,
     height: board.height ?? STORYBOARD_DEFAULTS.height,
     fps: board.fps ?? STORYBOARD_DEFAULTS.fps,
+    styleId: board.styleId ?? STORYBOARD_DEFAULTS.styleId,
+    density: board.density ?? STORYBOARD_DEFAULTS.density,
     backgroundColor: board.backgroundColor ?? STORYBOARD_DEFAULTS.backgroundColor,
     texture: board.texture ?? STORYBOARD_DEFAULTS.texture,
     lockToAudio: board.lockToAudio ?? STORYBOARD_DEFAULTS.lockToAudio,
@@ -142,7 +144,13 @@ function compileWhiteboardScene(
   const elements = scene.elements.map(compileElement).join('\n');
   return `function ${componentName}() {
   return (
-    <WhiteboardScene width={W} height={H} texture=${JSON.stringify(board.texture)} theme={excalidrawTheme}>
+    <WhiteboardScene
+      width={W}
+      height={H}
+      texture={STYLE.texture ?? ${JSON.stringify(board.texture)}}
+      background={STYLE.background}
+      theme={STYLE.theme ?? excalidrawTheme}
+    >
 ${elements}
       <Hand action="write" follow={true} visible={true} />
     </WhiteboardScene>
@@ -229,11 +237,18 @@ import {
   Hand,
   WhiteboardScene,
   excalidrawTheme,
+  getSeqvioStylePreset,
 } from '@seqvio/whiteboard';
 
 const W = ${r.width};
 const H = ${r.height};
 const FPS = ${r.fps};
+const STYLE_ID = ${JSON.stringify(r.styleId)};
+const STYLE = getSeqvioStylePreset(STYLE_ID) ?? {
+  texture: ${JSON.stringify(r.texture)},
+  background: ${JSON.stringify(r.backgroundColor)},
+  theme: excalidrawTheme,
+};
 
 ${sceneFns}
 

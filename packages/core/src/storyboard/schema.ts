@@ -17,6 +17,18 @@
 
 export type StoryboardStyle = 'whiteboard';
 
+export type {
+  StoryboardDensity,
+  StoryboardLayoutId,
+  StoryboardSceneRole,
+} from './layout-registry';
+
+import type {
+  StoryboardDensity,
+  StoryboardLayoutId,
+  StoryboardSceneRole,
+} from './layout-registry';
+
 export type ElementAlign = 'left' | 'center' | 'right';
 
 export type ElementEasing = 'linear' | 'ease-in' | 'ease-out' | 'ease-in-out';
@@ -108,6 +120,12 @@ export const SHAPE_KINDS: ShapeKind[] = [
 
 export interface StoryboardScene {
   id: string;
+  /** Registered layout recipe used for validation and future auto-layout. */
+  layout?: StoryboardLayoutId;
+  /** Narrative role within the video arc. */
+  sceneRole?: StoryboardSceneRole;
+  /** Local density override. Defaults to the board-level density. */
+  density?: StoryboardDensity;
   /** Narration spoken over this scene. Compiled into the audio manifest. */
   narration?: string;
   /** Optional explicit scene length in frames (otherwise driven by audio/elements). */
@@ -125,6 +143,10 @@ export interface Storyboard {
   /** Identifier used for the generated composition. */
   id: string;
   style?: StoryboardStyle;
+  /** Concrete visual preset id, for example "whiteboard/field-note". */
+  styleId?: string;
+  audience?: string;
+  density?: StoryboardDensity;
   width?: number;
   height?: number;
   fps?: number;
@@ -140,6 +162,8 @@ export interface Storyboard {
 
 export const STORYBOARD_DEFAULTS = {
   style: 'whiteboard' as StoryboardStyle,
+  styleId: 'whiteboard/default',
+  density: 'speaker-led' as StoryboardDensity,
   width: 1280,
   height: 720,
   fps: 30,

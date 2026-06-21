@@ -8,6 +8,12 @@ import {
   type Storyboard,
   type StoryboardElement,
 } from './schema';
+import {
+  STORYBOARD_DENSITIES,
+  STORYBOARD_LAYOUT_IDS,
+  STORYBOARD_SCENE_ROLES,
+  getStoryboardLayout,
+} from './layout-registry';
 
 export interface StoryboardIssue {
   severity: 'error' | 'warning';
@@ -251,6 +257,36 @@ export function validateStoryboard(input: unknown): StoryboardIssue[] {
     });
   }
 
+  if (
+    board.density !== undefined &&
+    (typeof board.density !== 'string' ||
+      !STORYBOARD_DENSITIES.includes(board.density as never))
+  ) {
+    issue(issues, {
+      severity: 'error',
+      path: 'density',
+      code: 'unsupported_density',
+      message: `density must be one of ${STORYBOARD_DENSITIES.join(', ')}`,
+      expected: STORYBOARD_DENSITIES.join(' | '),
+      received: board.density,
+      repairable: true,
+      suggestion: 'Use speaker-led for low-density videos or reading-first for denser explainers.',
+    });
+  }
+
+  if (board.styleId !== undefined && typeof board.styleId !== 'string') {
+    issue(issues, {
+      severity: 'error',
+      path: 'styleId',
+      code: 'invalid_style_id',
+      message: 'styleId must be a string when provided',
+      expected: 'string',
+      received: board.styleId,
+      repairable: true,
+      suggestion: 'Use a registered style id such as "whiteboard/default".',
+    });
+  }
+
   if (typeof board.id !== 'string' || board.id.length === 0) {
     issue(issues, {
       severity: 'error',
@@ -334,6 +370,95 @@ export function validateStoryboard(input: unknown): StoryboardIssue[] {
       });
     } else {
       seenSceneIds.add(scene.id);
+    }
+
+    const layoutId = scene.layout;
+    const sceneRole = scene.sceneRole;
+    const sceneDensity = scene.density ?? board.density;
+    const layout = typeof layoutId === 'string' ? getStoryboardLayout(layoutId) : undefined;
+
+    if (
+      layoutId !== undefined &&
+      (typeof layoutId !== 'string' || !STORYBOARD_LAYOUT_IDS.includes(layoutId as never))
+    ) {
+      issue(issues, {
+        severity: 'error',
+        path: `${scenePath}.layout`,
+        code: 'unsupported_layout',
+        message: `${scenePath}.layout must be one of ${STORYBOARD_LAYOUT_IDS.join(', ')}`,
+        expected: STORYBOARD_LAYOUT_IDS.join(' | '),
+        received: layoutId,
+        repairable: true,
+        suggestion: 'Pick a registered layout recipe that matches this scene intent.',
+      });
+    }
+
+    if (
+      sceneRole !== undefined &&
+      (typeof sceneRole !== 'string' ||
+        !STORYBOARD_SCENE_ROLES.includes(sceneRole as never))
+    ) {
+      issue(issues, {
+        severity: 'error',
+        path: `${scenePath}.sceneRole`,
+        code: 'unsupported_scene_role',
+        message: `${scenePath}.sceneRole must be one of ${STORYBOARD_SCENE_ROLES.join(', ')}`,
+        expected: STORYBOARD_SCENE_ROLES.join(' | '),
+        received: sceneRole,
+        repairable: true,
+        suggestion: 'Use the story arc roles: hook, context, core, shift, takeaway.',
+      });
+    }
+
+    if (
+      scene.density !== undefined &&
+      (typeof scene.density !== 'string' ||
+        !STORYBOARD_DENSITIES.includes(scene.density as never))
+    ) {
+      issue(issues, {
+        severity: 'error',
+        path: `${scenePath}.density`,
+        code: 'unsupported_density',
+        message: `${scenePath}.density must be one of ${STORYBOARD_DENSITIES.join(', ')}`,
+        expected: STORYBOARD_DENSITIES.join(' | '),
+        received: scene.density,
+        repairable: true,
+        suggestion: 'Use speaker-led or reading-first.',
+      });
+    }
+
+    if (
+      layout &&
+      typeof sceneRole === 'string' &&
+      STORYBOARD_SCENE_ROLES.includes(sceneRole as never) &&
+      !layout.sceneRoles.includes(sceneRole as never)
+    ) {
+      issue(issues, {
+        severity: 'warning',
+        path: `${scenePath}.layout`,
+        code: 'layout_role_mismatch',
+        message: `${layout.id} is unusual for sceneRole "${sceneRole}"`,
+        received: { layout: layout.id, sceneRole },
+        repairable: true,
+        suggestion: `Prefer one of these roles for ${layout.id}: ${layout.sceneRoles.join(', ')}.`,
+      });
+    }
+
+    if (
+      layout &&
+      typeof sceneDensity === 'string' &&
+      STORYBOARD_DENSITIES.includes(sceneDensity as never) &&
+      !layout.density.includes(sceneDensity as never)
+    ) {
+      issue(issues, {
+        severity: 'warning',
+        path: `${scenePath}.density`,
+        code: 'layout_density_mismatch',
+        message: `${layout.id} is unusual for density "${sceneDensity}"`,
+        received: { layout: layout.id, density: sceneDensity },
+        repairable: true,
+        suggestion: `Prefer one of these density modes for ${layout.id}: ${layout.density.join(', ')}.`,
+      });
     }
 
     if (!Array.isArray(scene.elements)) {

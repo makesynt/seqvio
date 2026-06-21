@@ -83,6 +83,9 @@ export {
   fieldNotePalette,
   studioTheme,
   studioPalette,
+  getSeqvioStylePreset,
+  listSeqvioStylePresets,
+  seqvioStylePresets,
 } from './theme';
 export type {
   WhiteboardTheme,
@@ -90,6 +93,11 @@ export type {
   ShapeFillDefault,
   TypeScale,
   Spacing,
+  SeqvioStyleDensity,
+  SeqvioStyleFormality,
+  SeqvioStyleId,
+  SeqvioStylePreset,
+  SeqvioStyleScheme,
 } from './theme';
 
 // Utilities

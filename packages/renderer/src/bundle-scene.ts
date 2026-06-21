@@ -198,7 +198,7 @@ export async function bundleScene(options: BundleSceneOptions): Promise<BundleSc
 
   // Optional style packages — alias only if installed/resolvable, so the
   // renderer stays decoupled from any specific style package.
-  for (const optionalStylePkg of ['@seqvio/scatterbrain']) {
+  for (const optionalStylePkg of ['@seqvio/scatterbrain', '@seqvio/product-demo']) {
     try {
       alias[optionalStylePkg] = resolvePackageModuleEntry(optionalStylePkg);
     } catch {

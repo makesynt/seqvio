@@ -281,6 +281,7 @@ export class VideoRenderer {
 
     this.browser = await puppeteer.launch({
       headless: true,
+      protocolTimeout: 1_200_000,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',

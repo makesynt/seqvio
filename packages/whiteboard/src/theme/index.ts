@@ -10,3 +10,15 @@ export {
 export { pinAndPaperTheme, pinPalette } from './pinAndPaperTheme';
 export { fieldNoteTheme, fieldNotePalette } from './fieldNoteTheme';
 export { studioTheme, studioPalette } from './studioTheme';
+export {
+  getSeqvioStylePreset,
+  listSeqvioStylePresets,
+  seqvioStylePresets,
+} from './styleManifest';
+export type {
+  SeqvioStyleDensity,
+  SeqvioStyleFormality,
+  SeqvioStyleId,
+  SeqvioStylePreset,
+  SeqvioStyleScheme,
+} from './styleManifest';

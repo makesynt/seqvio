@@ -43,7 +43,8 @@
     "seqvio-audio": "dist/audio-cli.js",
     "seqvio-generate": "dist/generate-cli.js",
     "seqvio-preview": "dist/preview-cli.js",
-    "seqvio-add": "dist/add-cli.js"
+    "seqvio-add": "dist/add-cli.js",
+    "seqvio-qa": "dist/qa-cli.js"
   },
   "scripts": {
     "build": "tsc",
