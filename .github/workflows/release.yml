@@ -30,8 +30,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          # No registry-url on purpose: it writes an always-auth .npmrc that
-          # breaks OIDC trusted publishing. The default registry is npmjs.org.
+          registry-url: https://registry.npmjs.org
 
       # npm trusted publishing (OIDC) requires npm >= 11.5.1; Node 20 ships an
       # older npm, so upgrade explicitly.
@@ -59,3 +58,5 @@ jobs:
           title: "chore: version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

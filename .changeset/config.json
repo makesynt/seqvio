@@ -7,7 +7,8 @@
       "@seqvio/core",
       "@seqvio/whiteboard",
       "@seqvio/renderer",
-      "@seqvio/scatterbrain"
+      "@seqvio/scatterbrain",
+      "@seqvio/product-demo"
     ]
   ],
   "linked": [],
