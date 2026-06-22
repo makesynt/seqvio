@@ -34,6 +34,7 @@ node packages/renderer/dist/cli.js \
 | `seqvio-alignment-demo.tsx` | Scene-duration derivation from resolved audio |
 | `seqvio-style-manifest-demo.tsx` | Whiteboard style preset manifest demo |
 | `seqvio-product-demo-preview.tsx` | Product walkthrough component demo |
+| `seqvio-product-demo-validation.tsx` | Short product-demo renderer validation composition |
 | `seqvio-scatterbrain.tsx` | Sticky-note / workshop style demo |
 | `loop-engineering-explainer.tsx` | Long-form narrated explainer composition |
 | `generated/style-layout-demo.tsx` | Storyboard IR compiled TSX demo |
