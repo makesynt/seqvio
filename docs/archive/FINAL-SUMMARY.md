@@ -149,13 +149,13 @@ Seqvio：都是 .tsx，从简单到复杂无缝扩展，无需重构
 所有 npm 包都可用
 ```
 
-### 4. 最丰富的组件库
+### 4. Rich Component Library
 
 ```
-Remotion: ~0 个预制组件
-Hyperframes: 87 个组件
-Garden Skills: 3 个示例
-Seqvio: 200+ 组件（直接 import 使用）
+Baseline frameworks: few or no prebuilt components
+Component-library approaches: several prebuilt components
+Workflow examples: a small set of examples
+Seqvio: 200+ components, imported directly
 ```
 
 ### 5. AI 原生支持
@@ -174,17 +174,17 @@ Seqvio：不需要决策，全部 .tsx
 
 ---
 
-## 📊 与现有框架对比
+## 📊 Framework Comparison
 
-| 特性 | Remotion | Hyperframes | Garden Skills | Seqvio |
-|------|----------|-------------|---------------|--------------|
-| **输入方式** | React | HTML | React | **TSX Only** |
-| **组件数量** | ~0 | 87 | 3 | **200+** |
-| **格式统一性** | ✅ | ❌ | ✅ | ✅ **极致简化** |
-| **React生态** | ⚠️ 需适配 | ⚠️ 有限 | ✅ | ✅ **完整** |
-| **AI集成** | ❌ | ❌ | ❌ | ✅ **原生** |
-| **扩展性** | ✅ | ⚠️ | ✅ | ✅ **无缝** |
-| **授权** | 需付费 | Apache 2.0 | MIT | **MIT** |
+| Feature | Programmatic video frameworks | Component-library approaches | Workflow examples | Seqvio |
+|------|----------------|------------|------------|--------|
+| **Input model** | React | HTML/templates | React/examples | **TSX Only** |
+| **Component count** | Few or no prebuilt components | Several prebuilt components | Small example set | **200+** |
+| **Format consistency** | ✅ | ❌ | ✅ | ✅ **Highly simplified** |
+| **React ecosystem** | ⚠️ Requires adaptation | ⚠️ Limited | ✅ | ✅ **Complete** |
+| **AI integration** | ❌ | ❌ | ❌ | ✅ **Native** |
+| **Extensibility** | ✅ | ⚠️ | ✅ | ✅ **Seamless** |
+| **License** | Framework-dependent | Approach-dependent | Project-dependent | **MIT** |
 
 ---
 
@@ -507,12 +507,12 @@ MIT © Seqvio
 
 ## 🎯 总结
 
-Seqvio 是下一代视频生成框架，它：
+Seqvio is a next-generation video generation framework. It:
 
-- ✅ **融合了** Remotion 的程序化优势
-- ✅ **继承了** Hyperframes 的预制组件库
-- ✅ **学习了** Garden Skills 的工作流设计
-- ✅ **超越了** 所有现有框架的局限
+- ✅ **Preserves** precise programmatic video control
+- ✅ **Provides** a reusable prebuilt component system
+- ✅ **Strengthens** end-to-end video workflow design
+- ✅ **Moves beyond** the limits of existing approaches
 
 **核心创新：TSX Only**
 - 只有 1 种文件类型（.tsx）

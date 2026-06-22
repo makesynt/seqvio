@@ -918,4 +918,4 @@ Seqvio 通过模块化的架构设计，实现了：
 5. ✅ **丰富生态** - 组件注册表 + 插件系统
 6. ✅ **AI 集成** - 原生支持 AI 辅助创作
 
-这个架构既保持了 Remotion 的程序化优势，又融合了 Hyperframes 的易用性和 Garden Skills 的工作流完整性。
+This architecture preserves precise programmatic video control while supporting prebuilt component usability and complete end-to-end workflows.
