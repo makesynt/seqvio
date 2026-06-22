@@ -16,9 +16,12 @@ This project follows a simple keep-a-changelog style:
   `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, and `SUPPORT.md`.
 - Added `.env.example` and documented environment-variable-based provider
   configuration for audio synthesis workflows.
-- Standardized repo docs on `pnpm` as the canonical package manager.
+- Standardized repo docs on npm workspaces and `package-lock.json` for local
+  repository development.
 - Corrected stale support and contribution links in package-level docs.
 - Added troubleshooting guidance for renderer, audio, and environment setup.
+- Updated README and docs indexes for the 0.4.0 package set, product-demo
+  components, scatterbrain styles, storyboard validation, and visual QA.
 
 ## 0.1.0
 

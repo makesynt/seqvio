@@ -14,6 +14,7 @@ If you are trying to use Seqvio today, read these first:
 | [`TROUBLESHOOTING.md`](./TROUBLESHOOTING.md) | Common setup, render, and audio workflow failures |
 | [`../examples/compositions/README.md`](../examples/compositions/README.md) | Composition examples and render command |
 | [`../packages/whiteboard/README.md`](../packages/whiteboard/README.md) | Whiteboard component API and examples |
+| [`../packages/product-demo/package.json`](../packages/product-demo/package.json) | Product walkthrough component package metadata |
 
 ## Current Source of Truth
 
@@ -24,6 +25,7 @@ These docs describe the repository as it exists today:
 | [`COMPOSITION-AUTHORING.md`](./COMPOSITION-AUTHORING.md) | TSX authoring model, render contract, transitions, and timing rules |
 | [`../examples/compositions/README.md`](../examples/compositions/README.md) | End-to-end examples |
 | [`../packages/whiteboard/AI-USAGE.md`](../packages/whiteboard/AI-USAGE.md) | AI-assistant-oriented usage for the whiteboard package |
+| [`../skills/seqvio/references/production-techniques.md`](../skills/seqvio/references/production-techniques.md) | Voice-first timing, reference-style analysis, and visual QA checklist |
 
 ## Product and Planning Docs
 

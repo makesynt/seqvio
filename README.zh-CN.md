@@ -2,15 +2,15 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-green.svg)](https://nodejs.org/)
-[![pnpm](https://img.shields.io/badge/pnpm-%3E%3D8-orange.svg)](https://pnpm.io/)
+[![npm](https://img.shields.io/badge/npm-workspaces-red.svg)](https://docs.npmjs.com/cli/using-npm/workspaces)
 
 [English](./README.md) | 简体中文
 
 **将结构化内容变成带旁白的讲解视频。**
 
-Seqvio 是一个面向讲解视频的结构化工作流，适合把课程、产品 walkthrough 和技术概念说明变成短视频。它把场景编排、白板风格视觉元素、旁白元数据、字幕和本地 MP4 渲染放在同一套可版本管理的流程中。
+Seqvio 是一个面向讲解视频的结构化工作流，适合把课程、产品 walkthrough 和技术概念说明变成短视频。它把场景编排、白板风格视觉元素、产品演示组件、旁白元数据、字幕、视觉 QA 和本地 MP4 渲染放在同一套可版本管理的流程中。
 
-> **当前状态：** Seqvio 支持显式 React/TSX composition、白板风格场景、音频/字幕元数据以及本地 MP4 渲染。更高层的 AI 创作和 Studio 工作流记录在 [Roadmap](#roadmap) 中。
+> **当前状态：** Seqvio `0.4.0` 已发布 `@seqvio/core`、`@seqvio/whiteboard`、`@seqvio/scatterbrain`、`@seqvio/product-demo` 和 `@seqvio/renderer`。仓库支持显式 React/TSX composition、storyboard IR 校验/编译、style presets、产品 walkthrough 场景、音频/字幕元数据、视觉 QA 快照和本地 MP4 渲染。更高层的 AI 创作和 Studio 工作流记录在 [Roadmap](#roadmap) 中。
 
 ## Demo
 
@@ -31,7 +31,7 @@ Seqvio 分两部分，需要分别安装：
 | 组件 | 作用 | 安装方式 |
 | --- | --- | --- |
 | **Agent skill** | 教 Cursor 等 agent 如何编写 TSX composition 并走渲染流程 | `npx skills add ...` |
-| **Renderer CLI** | 执行 `seqvio-render`、`seqvio-audio`，输出 MP4 | `npm install @seqvio/renderer` 或本地仓库 build |
+| **Renderer CLI** | 执行 `seqvio-render`、`seqvio-audio`、`seqvio-qa` | `npm install @seqvio/renderer` 或本地仓库 build |
 
 **只执行 `npx skills add` 不够**，还需要安装 CLI（或 clone 本仓库并 build）才能真正渲染视频。
 
@@ -60,16 +60,22 @@ npm install -g @seqvio/renderer
 seqvio-render --help
 ```
 
-已发布包：`@seqvio/renderer`、`@seqvio/core`、`@seqvio/whiteboard`。
+已发布包：`@seqvio/core`、`@seqvio/whiteboard`、`@seqvio/scatterbrain`、`@seqvio/product-demo`、`@seqvio/renderer`。
+
+当 composition 直接 import 可选视觉包时，可额外安装：
+
+```bash
+npm install @seqvio/product-demo @seqvio/scatterbrain
+```
 
 **方案 B — 本地仓库（贡献者与示例开发推荐）**
 
 ```bash
 git clone https://github.com/makesynt/seqvio.git
 cd seqvio
-pnpm install
-pnpm build
-pnpm --filter @seqvio/renderer exec seqvio-render --help
+npm ci
+npm run build
+node packages/renderer/dist/cli.js --help
 ```
 
 需要直接使用 [`examples/compositions/`](./examples/compositions/) 或 monorepo smoke 脚本时，选此方案。
@@ -103,9 +109,9 @@ seqvio-render \
   --width 1280 --height 720 --fps 30 --quality medium
 ```
 
-若在本地仓库中开发，通过 `pnpm --filter @seqvio/renderer exec` 调用同一命令。更多细节见 [手动安装](#手动安装)。
+若在本地仓库中开发，通过 `node packages/renderer/dist/cli.js` 调用已构建的 CLI。更多细节见 [手动安装](#手动安装)。
 
-**环境要求：** Node.js `>=18`、Chromium（Puppeteer）、FFmpeg（`@seqvio/renderer` 已内置）。本地仓库开发还需 pnpm `>=8`。
+**环境要求：** Node.js `>=18`、Chromium（Puppeteer）、FFmpeg（`@seqvio/renderer` 已内置）。本地仓库开发使用 npm workspaces 和 `package-lock.json`。
 
 ## 可以做什么
 
@@ -122,6 +128,10 @@ seqvio-render \
 | [`seqvio-overview-zh.tsx`](./examples/compositions/seqvio-overview-zh.tsx) | 中文旁白产品介绍 |
 | [`seqvio-overview-en.tsx`](./examples/compositions/seqvio-overview-en.tsx) | 英文旁白产品介绍 |
 | [`seqvio-audio-demo.tsx`](./examples/compositions/seqvio-audio-demo.tsx) | 音频和字幕元数据 |
+| [`seqvio-style-manifest-demo.tsx`](./examples/compositions/seqvio-style-manifest-demo.tsx) | 白板 style preset manifest 示例 |
+| [`seqvio-product-demo-preview.tsx`](./examples/compositions/seqvio-product-demo-preview.tsx) | 产品 walkthrough 组件示例 |
+| [`seqvio-scatterbrain.tsx`](./examples/compositions/seqvio-scatterbrain.tsx) | 便签 / workshop 风格示例 |
+| [`loop-engineering-explainer.tsx`](./examples/compositions/loop-engineering-explainer.tsx) | 长篇旁白讲解 composition |
 | [`packages/whiteboard/examples/`](./packages/whiteboard/examples/) | 单场景白板示例 |
 
 ## 工作原理
@@ -130,10 +140,11 @@ seqvio-render \
 TSX composition -> audio manifest -> TTS synthesis -> seqvio-render -> MP4
 ```
 
-1. 用 `@seqvio/whiteboard` 和可选的 `@seqvio/core` 编写 TSX composition。
+1. 用 `@seqvio/core` 以及 `@seqvio/whiteboard`、`@seqvio/scatterbrain`、`@seqvio/product-demo` 等视觉包编写 TSX composition。
 2. 需要旁白时，在 `meta.audio.narration` 中声明 narration。
 3. 用 `seqvio-audio` 提取并合成音频。
-4. 用 `seqvio-render` 渲染画面并混流旁白。
+4. 需要检查画面布局时，用 `seqvio-qa` 输出关键帧快照。
+5. 用 `seqvio-render` 渲染画面并混流旁白。
 
 完整 authoring contract 见 [`docs/COMPOSITION-AUTHORING.md`](./docs/COMPOSITION-AUTHORING.md)。
 
@@ -146,6 +157,8 @@ Skill 主文件：[`skills/seqvio/SKILL.md`](./skills/seqvio/SKILL.md)，参考�
 | [`authoring-patterns.md`](./skills/seqvio/references/authoring-patterns.md) | TSX composition 模式与 timing 规则 |
 | [`audio-workflow.md`](./skills/seqvio/references/audio-workflow.md) | 提取、合成、混流旁白 |
 | [`render-workflow.md`](./skills/seqvio/references/render-workflow.md) | build、render、smoke test 命令 |
+| [`production-techniques.md`](./skills/seqvio/references/production-techniques.md) | voice-first timing、参考风格分析和视觉 QA 规则 |
+| [`planning-workflow.md`](./skills/seqvio/references/planning-workflow.md) | storyboard IR planning 和 agent handoff |
 
 安装 skill（见 [快速开始](#快速开始)）：
 
@@ -160,18 +173,24 @@ Skill 负责教流程和命令；要输出 MP4 还需单独安装 `@seqvio/rende
 Seqvio 不是完整替代 Remotion，也不是通用 HTML-to-video 引擎。它更聚焦结构化讲解视频。
 
 - **讲解视频优先**：场景、旁白、字幕、视觉步骤放在同一 composition 中
-- **白板风格内建**：手写文字、草图形状、图片、画笔/手势节奏
+- **白板风格内建**：手写文字、草图形状、图片、图标、style presets、画笔/手势节奏
+- **专用视觉包**：`@seqvio/scatterbrain` 提供便签/workshop 场景，`@seqvio/product-demo` 提供产品 walkthrough 场景
 - **结构化旁白契约**：视觉 timing 与音频元数据靠近维护
+- **视觉 QA 闭环**：先输出关键帧快照，提前发现空画面或布局问题
 - **适合 AI 协作**：小 contract、显式帧时间、示例齐全
 - **本地可复现渲染**：Puppeteer + FFmpeg，从源码 composition 输出 MP4
 
 ## 当前能力
 
 - 带 `meta` duration / fps 的 React/TSX composition
-- `@seqvio/whiteboard`：`WhiteboardScene`、`DrawText`、`DrawShape`、`DrawImage`、`Hand`
+- `@seqvio/whiteboard`：`WhiteboardScene`、`DrawText`、`DrawShape`、`DrawImage`、`DrawIcon`、`Hand` 和 style presets
+- `@seqvio/scatterbrain`：便签 / cork-board 风格组件
+- `@seqvio/product-demo`：`ProductDemoScene`、`BrowserFrame`、`ScreenshotPlaceholder`、`CursorPath`、`Callout`、`ProductTitle`
 - `@seqvio/core`：`VideoComposition`、`Scene`、`Transition`
+- Storyboard IR schema、layout registry、validation 和 TSX compile helpers
 - `seqvio-render`：TSX 到 MP4
 - `seqvio-audio`：manifest 提取与 TTS 合成
+- `seqvio-qa`：关键帧视觉快照和轻量 render check
 - TTS provider：ElevenLabs、OpenAI、MiniMax、edge-tts
 
 ## 手动安装
@@ -184,23 +203,23 @@ Seqvio 不是完整替代 Remotion，也不是通用 HTML-to-video 引擎。它�
 npm install -g @seqvio/renderer
 ```
 
-会全局安装 `seqvio-render` 和 `seqvio-audio`，并自动拉取 `@seqvio/core`、`@seqvio/whiteboard`。
+会全局安装 `seqvio-render`、`seqvio-audio`、`seqvio-generate`、`seqvio-preview`、`seqvio-add` 和 `seqvio-qa`，并自动拉取 `@seqvio/core`、`@seqvio/whiteboard`。如果 composition 在 monorepo 外直接 import `@seqvio/product-demo` 或 `@seqvio/scatterbrain`，需要额外安装对应包。
 
 ### Clone 并 build 仓库
 
 ```bash
 git clone https://github.com/makesynt/seqvio.git
 cd seqvio
-pnpm install
-pnpm build
+npm ci
+npm run build
 ```
 
 ### 渲染 composition
 
 ```bash
-pnpm --filter @seqvio/renderer exec seqvio-render \
-  --component ../../examples/compositions/seqvio-intro.tsx \
-  --output ../../output/seqvio-intro.mp4 \
+node packages/renderer/dist/cli.js \
+  --component examples/compositions/seqvio-intro.tsx \
+  --output output/seqvio-intro.mp4 \
   --width 1280 --height 720 --fps 30 --quality medium
 ```
 
@@ -209,20 +228,20 @@ pnpm --filter @seqvio/renderer exec seqvio-render \
 ### 带旁白渲染
 
 ```bash
-pnpm --filter @seqvio/renderer exec seqvio-audio extract \
-  --component ../../examples/compositions/seqvio-overview-zh.tsx \
-  --out ../../output/seqvio-overview-zh.manifest.json
+node packages/renderer/dist/audio-cli.js extract \
+  --component examples/compositions/seqvio-overview-zh.tsx \
+  --out output/seqvio-overview-zh.manifest.json
 
-pnpm --filter @seqvio/renderer exec seqvio-audio synthesize \
+node packages/renderer/dist/audio-cli.js synthesize \
   --provider elevenlabs \
-  --manifest ../../output/seqvio-overview-zh.manifest.json \
-  --outDir ../../output/seqvio-overview-zh-audio
+  --manifest output/seqvio-overview-zh.manifest.json \
+  --outDir output/seqvio-overview-zh-audio
 
-pnpm --filter @seqvio/renderer exec seqvio-render \
-  --component ../../examples/compositions/seqvio-overview-zh.tsx \
-  --output ../../output/seqvio-overview-zh.mp4 \
+node packages/renderer/dist/cli.js \
+  --component examples/compositions/seqvio-overview-zh.tsx \
+  --output output/seqvio-overview-zh.mp4 \
   --width 1280 --height 720 --fps 30 --quality medium \
-  --audioManifest ../../output/seqvio-overview-zh-audio/audio-manifest.resolved.json \
+  --audioManifest output/seqvio-overview-zh-audio/audio-manifest.resolved.json \
   --burnCaptions
 ```
 
@@ -234,6 +253,8 @@ pnpm --filter @seqvio/renderer exec seqvio-render \
 | --- | --- |
 | [`@seqvio/whiteboard`](./packages/whiteboard) | 白板绘制组件和 timing helpers |
 | [`@seqvio/core`](./packages/core) | Composition 容器、场景、转场和 timeline runtime |
+| [`@seqvio/scatterbrain`](./packages/scatterbrain) | 便签 / cork-board 风格组件 |
+| [`@seqvio/product-demo`](./packages/product-demo) | 浏览器框、光标路径、截图占位、callout 和产品 walkthrough 组件 |
 | [`@seqvio/renderer`](./packages/renderer) | TSX bundler，以及 `seqvio-render` / `seqvio-audio` CLI |
 
 ## 文档
@@ -246,6 +267,7 @@ pnpm --filter @seqvio/renderer exec seqvio-render \
 - [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md)
 - [`examples/compositions/README.md`](./examples/compositions/README.md)
 - [`skills/seqvio/SKILL.md`](./skills/seqvio/SKILL.md)
+- [`skills/seqvio/references/production-techniques.md`](./skills/seqvio/references/production-techniques.md)
 
 如果文档与代码冲突，以代码和 [`docs/COMPOSITION-AUTHORING.md`](./docs/COMPOSITION-AUTHORING.md) 为准。
 
@@ -256,7 +278,7 @@ pnpm --filter @seqvio/renderer exec seqvio-render \
 - AI-assisted scene generation CLI
 - 更完整的 script-to-voice authoring
 - Visual editor / studio workflow
-- Storyboard JSON 或 template auto-layout
+- Storyboard JSON 和 template auto-layout 在当前 validation/layout registry 基础上的扩展
 - 更丰富的 transition catalog（当前：`fade`、`slide`、`wipe`）
 
 设计提案和历史说明：
