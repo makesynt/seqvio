@@ -806,8 +806,10 @@ export class VideoRenderer {
       await ffmpegExit;
     } catch (error) {
       failed = true;
+      reorder.abort(error instanceof Error ? error : new Error(String(error)));
       ffmpeg.stdin.destroy();
       ffmpeg.kill();
+      await Promise.allSettled(tasks);
       throw error;
     }
   }

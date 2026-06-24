@@ -137,6 +137,7 @@ Each scene usually wraps its own `WhiteboardScene`. Scene-local draw timings sta
 - For audio-aligned work, prefer one narration cue per scene or beat and set `sceneId` on each cue.
 - For narrated videos, **voice is the clock**: do not pad scenes with silence to hit a target duration. If the video must be longer, expand the script and synthesize more narration.
 - After synthesis or audio editing, check for long silent spans before handoff. Use FFmpeg `silencedetect` or an equivalent audio QA step; visual timing must adapt to the final audio, not the other way around.
+- For render validation clips, **do not use `--duration` to mean "render N frames"** on narrated or captioned compositions. `meta.audio` / captions can extend the resolved duration beyond the CLI value. Use `--startFrame` and `--endFrame` for exact frame ranges, and verify the CLI log says `Rendering N frames`.
 - When matching a reference style, analyze its visual language before authoring: shape vocabulary, icon density, palette, line weights, containers, arrows, labels, pacing, and scene transitions. Do not reduce a diagram-heavy reference to only rectangles and text.
 - **Always set `meta.duration` and each `Scene duration` even when using `lockToAudio: true`.** Without a resolved audio manifest, narration cues carry no timing and `resolveCompositionDurationFrames` returns 0, producing a single-frame render. The fallback values are overridden automatically once `--audioManifest` points to a resolved manifest.
 - Estimate each `Scene duration` from its draw timing: find the last `start + duration` across all children and add a small buffer.
@@ -198,6 +199,7 @@ Each scene usually wraps its own `WhiteboardScene`. Scene-local draw timings sta
 - `meta.duration` covers the whole scene or composition unless audio lock derives it.
 - Transition names are implemented ones.
 - Render command points at an existing TSX file.
+- Validation clips use `--startFrame` / `--endFrame` for exact ranges; the render log's `Rendering N frames` count matches the intended sample.
 - For narrated work, resolved audio manifest path and caption flags are included.
 - For narrated work, there are no unintentional long silent gaps, and any target-duration mismatch is resolved by script length, not silence padding.
 - For reference-style work, the output uses the reference's shape language, not only its colors or background.

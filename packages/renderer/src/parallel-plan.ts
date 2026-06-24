@@ -18,6 +18,7 @@ export interface WorkerFrameAssignment {
 export interface FrameReorderBuffer {
   waitForTurn(outputIndex: number): Promise<void>;
   advanceTo(nextOutputIndex: number): void;
+  abort(reason?: Error): void;
   current(): number;
 }
 
@@ -82,31 +83,45 @@ export function createFrameReorderBuffer(
   endOutputIndexExclusive: number
 ): FrameReorderBuffer {
   let cursor = startOutputIndex;
-  const pending = new Map<number, Array<() => void>>();
+  let abortedReason: Error | null = null;
+  const pending = new Map<
+    number,
+    Array<{ resolve: () => void; reject: (reason: Error) => void }>
+  >();
 
   const flush = (outputIndex: number) => {
     const waiters = pending.get(outputIndex);
     if (!waiters) return;
     pending.delete(outputIndex);
-    for (const resolve of waiters) resolve();
+    for (const waiter of waiters) waiter.resolve();
   };
 
   return {
     waitForTurn(outputIndex: number): Promise<void> {
+      if (abortedReason) return Promise.reject(abortedReason);
       if (outputIndex < startOutputIndex || outputIndex >= endOutputIndexExclusive) {
         return Promise.reject(new Error(`Frame output index ${outputIndex} is outside streaming range`));
       }
       if (outputIndex === cursor) return Promise.resolve();
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         const waiters = pending.get(outputIndex);
-        if (waiters) waiters.push(resolve);
-        else pending.set(outputIndex, [resolve]);
+        const waiter = { resolve, reject };
+        if (waiters) waiters.push(waiter);
+        else pending.set(outputIndex, [waiter]);
       });
     },
     advanceTo(nextOutputIndex: number): void {
       if (nextOutputIndex <= cursor) return;
       cursor = nextOutputIndex;
       flush(cursor);
+    },
+    abort(reason?: Error): void {
+      if (abortedReason) return;
+      abortedReason = reason ?? new Error('Frame streaming aborted');
+      for (const waiters of pending.values()) {
+        for (const waiter of waiters) waiter.reject(abortedReason);
+      }
+      pending.clear();
     },
     current(): number {
       return cursor;

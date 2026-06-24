@@ -74,4 +74,15 @@ describe('parallel frame planning', () => {
     await third;
     assert.deepEqual(order, [0, 1, 2]);
   });
+
+  it('rejects pending frame waiters when the stream is aborted', async () => {
+    const reorder = createFrameReorderBuffer(0, 3);
+    const waiter = reorder.waitForTurn(2);
+    const reason = new Error('capture failed');
+
+    reorder.abort(reason);
+
+    await assert.rejects(waiter, /capture failed/);
+    await assert.rejects(reorder.waitForTurn(1), /capture failed/);
+  });
 });

@@ -68,6 +68,26 @@ Frame range:
 - `--duration <n>` — override total source duration in frames
 - `--keepFrames` — keep captured frames on disk (otherwise streamed only)
 
+Important: `--duration` is not a reliable way to say "render N frames" for
+narrated or captioned compositions. Seqvio resolves final duration as the max of
+the base duration, `meta.audio` narration cue ends, resolved audio manifest
+timings, and captions. If `meta.audio` ends at frame 10296, then
+`--duration 90` can still render 10296 frames.
+
+For exact validation clips, always use an explicit inclusive frame range:
+
+```bash
+node packages/renderer/dist/cli.js \
+  --component examples/compositions/coding-agent-controllers.tsx \
+  --output output/coding-agent-controllers-frames-0-89.mp4 \
+  --startFrame 0 --endFrame 89 \
+  --preset preview --workers 2
+```
+
+Before treating timing or performance numbers as meaningful, read the CLI log
+and confirm it says the intended count, for example `Rendering 90 frames`.
+If it says thousands of frames, stop and fix the frame range instead of waiting.
+
 Audio and captions:
 
 - `--audioManifest <path>` — resolved audio manifest for narrated renders
@@ -125,8 +145,10 @@ npm run render:caption-smoke -w @seqvio/renderer
 1. `npm run build` succeeds
 2. Target TSX file exports default component and `meta`
 3. Render command uses an existing composition path
-4. For narrated work, `audio-manifest.resolved.json` exists before render
-5. Output MP4 path is under `output/` unless intentionally refreshing tracked demo assets in `docs/assets/videos/`
+4. For validation clips, use `--startFrame` / `--endFrame` and confirm the
+   `Rendering N frames` log matches the intended sample size
+5. For narrated work, `audio-manifest.resolved.json` exists before render
+6. Output MP4 path is under `output/` unless intentionally refreshing tracked demo assets in `docs/assets/videos/`
 
 ## Troubleshooting
 

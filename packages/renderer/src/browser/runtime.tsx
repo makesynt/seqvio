@@ -22,6 +22,7 @@ import {
   SeqvioRuntimeKey,
 } from '../brand';
 import { flushSeekables } from '@seqvio/core';
+import { svgDataUrl, waitForImageReady } from '../whiteboard-layer-cache';
 
 export interface BrowserRuntimeOptions {
   width: number;
@@ -72,17 +73,14 @@ function resetWhiteboardLayerCache(): void {
   }
 }
 
-function svgDataUrl(svg: string): string {
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-}
-
-function applyWhiteboardLayerCache(frame: number): void {
+async function applyWhiteboardLayerCache(frame: number): Promise<void> {
   if (window.__seqvio_whiteboardOptimize !== 'bitmap-layer') return;
   if (frame < lastLayerCacheFrame) {
     resetWhiteboardLayerCache();
   }
   lastLayerCacheFrame = frame;
 
+  const pendingImages: HTMLImageElement[] = [];
   for (const scene of Array.from(document.querySelectorAll<HTMLElement>('.whiteboard-scene'))) {
     const width = scene.clientWidth || scene.getBoundingClientRect().width;
     const height = scene.clientHeight || scene.getBoundingClientRect().height;
@@ -130,7 +128,10 @@ function applyWhiteboardLayerCache(frame: number): void {
       element.setAttribute('data-seqvio-layer-hidden', 'true');
     }
     scene.setAttribute('data-seqvio-layer-cache-count', String(completed.length));
+    pendingImages.push(image);
   }
+
+  await Promise.all(pendingImages.map((image) => waitForImageReady(image)));
 }
 
 function readRuntimeGlobal<T>(key: SeqvioRuntimeKey): T | undefined {
@@ -177,7 +178,7 @@ async function waitForInitialResources(): Promise<void> {
  */
 async function waitForFrame(): Promise<void> {
   await waitForPendingImages();
-  applyWhiteboardLayerCache(readRuntimeGlobal<number>('frame') ?? 0);
+  await applyWhiteboardLayerCache(readRuntimeGlobal<number>('frame') ?? 0);
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 }
 
