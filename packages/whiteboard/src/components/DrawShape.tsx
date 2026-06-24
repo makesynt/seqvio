@@ -30,6 +30,7 @@ import {
   roughUnderline,
 } from '../utils/roughPath';
 import { useWhiteboardTheme } from '../theme';
+import { areSerializablePropsEqual } from '../utils/propEquality';
 
 function createStarPath(center: { x: number; y: number }, size: number): string {
   const points = 5;
@@ -52,7 +53,7 @@ function isRectType(type: DrawShapeProps['type']): boolean {
   return type === 'rectangle' || type === 'rounded-rectangle';
 }
 
-export const DrawShape: React.FC<DrawShapeProps> = ({
+const DrawShapeComponent: React.FC<DrawShapeProps> = ({
   type,
   position = { x: 100, y: 100 },
   size = 100,
@@ -275,8 +276,11 @@ export const DrawShape: React.FC<DrawShapeProps> = ({
       : null;
 
   return (
-    <svg
-      style={{
+      <svg
+        className="seqvio-drawable"
+        data-seqvio-draw-start={start}
+        data-seqvio-draw-end={start + duration}
+        style={{
         position: 'absolute',
         left: 0,
         top: 0,
@@ -311,6 +315,7 @@ export const DrawShape: React.FC<DrawShapeProps> = ({
   );
 };
 
+export const DrawShape = React.memo(DrawShapeComponent, areSerializablePropsEqual);
 DrawShape.displayName = 'DrawShape';
 
 export default DrawShape;

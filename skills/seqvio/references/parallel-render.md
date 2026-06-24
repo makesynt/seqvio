@@ -35,28 +35,64 @@ seqvio-render --component my.tsx --output preview.mp4 \
 
 ## Parallel workers (`--workers`)
 
-Opens **N pages** in **one browser**, captures frames in parallel to numbered
-files, then runs a single FFmpeg pass to encode. No concat, no seams.
+Captures frames in parallel and streams them into a **single** FFmpeg process
+via `image2pipe` (FFmpeg stdin). Frames never touch disk (unless `--keepFrames`
+is set); a small in-memory reorder buffer serializes writes so the encoder still
+receives frames in order. No concat, no seams.
+
+Each worker beyond worker 0 runs in its **own separate browser instance** (not
+an extra page in the shared browser). An earlier multi-page design could place
+those `file://` pages in the same Chrome renderer process, where concurrent
+seek/screenshot work starves CDP and `page.evaluate` eventually times out on
+heavy SVG compositions. Separate browsers isolate renderer processes and keep
+long parallel renders stable — at the cost of more RAM per worker.
 
 ```bash
-# 4 parallel capture workers on a multi-core machine:
+# 4 parallel streaming workers on a multi-core machine:
 seqvio-render --component my.tsx --output out.mp4 --workers 4
+
+# Let seqvio pick a conservative worker count by sampling the composition:
+seqvio-render --component my.tsx --output out.mp4 --workers auto
 ```
 
 ### When to use
 
-- `--workers 1` (default): serial image2pipe path. Zero disk IO; rendering and
-  encoding overlap. Best for fast machines or short compositions.
-- `--workers N > 1`: parallel capture to disk, single encode. Useful for long
-  compositions on machines with ≥4 cores where screenshot is the bottleneck.
-  Each extra page adds ~30–50 MB RAM; stay under available memory.
+- `--workers 1` (default): single-worker image2pipe path. Zero disk IO;
+  rendering and encoding overlap. Best for fast machines or short compositions.
+  Only this path supports `--staticFrameDedup`.
+- `--workers N > 1`: N parallel browsers stream into one encoder. Useful for
+  long compositions on machines with ≥4 cores where screenshot is the
+  bottleneck. Each worker is a full browser instance, so budget RAM accordingly.
+- `--workers auto`: samples ~5 representative frames, measures p95 capture time,
+  and picks a conservative count capped at `min(8, cpuCount, floor(frames/30))`.
+  Short renders (<120 frames) always resolve to 1 worker.
 
 ### What is NOT supported
 
 - `--workers N` across multiple machines (cross-machine slice+concat). This
   is an orchestration-layer concern and requires an external job scheduler.
-- `--workers N` combined with `image2pipe` streaming — multi-page capture must
-  write numbered frame files because order cannot be guaranteed across pages.
+- `--staticFrameDedup` with `--workers N > 1`. Static-frame deduplication is
+  applied only on the single-worker path; with multiple workers it is skipped
+  and a notice is logged.
+
+## Static frame dedup (`--staticFrameDedup`)
+
+On the single-worker path, hashes the rendered DOM per frame and reuses the
+previous screenshot buffer when consecutive frames are byte-identical (skipping
+the screenshot entirely). Automatically disabled when the scene contains
+`<canvas>`/`<video>` or any active CSS animation/transition.
+
+## JPEG screenshot quality (`--jpegQuality`)
+
+When `--frameFormat jpeg`, sets the screenshot JPEG quality (30–100, default 90;
+the `preview` preset lowers it to 80). Ignored for `png`.
+
+## Whiteboard optimization (`--whiteboardOptimize`)
+
+Experimental whiteboard render optimizations for benchmarking. Accepts
+`none | react-static | bitmap-layer | frame-dedup` (or numeric aliases
+`1`=react-static, `2`=bitmap-layer, `3`=frame-dedup). `frame-dedup` also turns
+on single-worker static frame dedup.
 
 ## Timing summary
 

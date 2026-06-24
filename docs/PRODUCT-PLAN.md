@@ -4,7 +4,7 @@
 
 Seqvio should be positioned as an AI-friendly explainer video generation framework for education and product communication.
 
-It is not primarily a general-purpose video editor or a full Remotion replacement. The current product should stay focused on a deterministic whiteboard explainer workflow.
+It is not primarily a general-purpose video editor or a generic HTML-to-video engine. The current product should stay focused on a deterministic whiteboard explainer workflow.
 
 ### Core Promise
 
@@ -29,7 +29,7 @@ Structured content to explainer video.
 ### Differentiation
 
 - Uses TSX as the production surface, so advanced users can customize everything.
-- Uses handwritten TSX compositions as the production and AI surface (Remotion-style).
+- Uses handwritten TSX compositions as the production and AI surface (code-as-composition).
 - Keeps the first visual surface narrow: whiteboard scenes compiled from a validated IR.
 - Produces real video files through a programmatic render pipeline.
 

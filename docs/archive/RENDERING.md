@@ -3,6 +3,8 @@
 > Historical log note
 >
 > This file reads like a rendering progress log from an earlier iteration and contains legacy paths and assumptions. Use `packages/renderer`, the current smoke scripts, and `docs/COMPOSITION-AUTHORING.md` for present-day rendering guidance.
+>
+> In particular, the renderer no longer writes per-frame PNGs to `temp/` and then re-encodes; frames are streamed directly into a single FFmpeg process (image2pipe) and only persist on disk when `--keepFrames` is set. CRF depends on `--quality` (low=28, medium=20, high=18, 4k=15), not a fixed CRF 18.
 
 ## 当前状态
 
@@ -105,11 +107,8 @@ function renderFrame(frame) {
 运行以下命令查看实时进度：
 
 ```bash
-# 查看日志
-cat C:\Users\Lenovo\AppData\Local\Temp\claude\...\bqzkgkzso.output
-
-# 或者查看临时文件数量（Windows）
-dir /B D:\video-agent\unified-video-framework\temp | find /C "frame"
+# 查看临时文件数量（仅当使用 --keepFrames 时帧才会落盘；Windows）
+dir /B output\temp | find /C "frame"
 ```
 
 ---
@@ -130,7 +129,7 @@ dir /B D:\video-agent\unified-video-framework\temp | find /C "frame"
 
 视频将保存在：
 ```
-D:\video-agent\unified-video-framework\output\framework-intro.mp4
+output/framework-intro.mp4
 ```
 
 可以使用任何视频播放器观看：
@@ -162,9 +161,9 @@ npx puppeteer browsers install chrome
 Reduce duration while testing:
 
 ```bash
-pnpm --filter @seqvio/renderer exec seqvio-render \
-  --component ../../examples/compositions/seqvio-intro.tsx \
-  --output ../../output/short-test.mp4 \
+node packages/renderer/dist/cli.js \
+  --component examples/compositions/seqvio-intro.tsx \
+  --output output/short-test.mp4 \
   --duration 300
 ```
 
@@ -190,11 +189,10 @@ pnpm --filter @seqvio/renderer exec seqvio-render \
 
 位置: `@seqvio/renderer` CLI（`seqvio-render`）
 
-简化版渲染器，直接使用 HTML/SVG，无需 React 构建。
+渲染器用 esbuild 打包 React/TSX composition，在无头 Chromium 中逐帧渲染。
 
 **特点:**
-- ✅ 零配置
-- ✅ 纯 JavaScript
+- ✅ React/TSX composition
 - ✅ SVG 描边动画
 - ✅ 帧精确控制
 

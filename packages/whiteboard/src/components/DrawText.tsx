@@ -28,8 +28,9 @@ import {
 } from '../utils/textBounds';
 import { hashRoughSeed } from '../utils/roughPath';
 import { getTextStrokeWidth, useWhiteboardTheme } from '../theme';
+import { areSerializablePropsEqual } from '../utils/propEquality';
 
-export const DrawText: React.FC<DrawTextProps> = ({
+const DrawTextComponent: React.FC<DrawTextProps> = ({
   text,
   font: fontProp,
   fontSize: fontSizeProp,
@@ -244,6 +245,9 @@ export const DrawText: React.FC<DrawTextProps> = ({
 
     return (
       <svg
+        className="seqvio-drawable"
+        data-seqvio-draw-start={start}
+        data-seqvio-draw-end={start + duration}
         style={{
           position: 'absolute',
           left: 0,
@@ -293,6 +297,9 @@ export const DrawText: React.FC<DrawTextProps> = ({
 
     return (
       <svg
+        className="seqvio-drawable"
+        data-seqvio-draw-start={start}
+        data-seqvio-draw-end={start + duration}
         style={{
           position: 'absolute',
           left: 0,
@@ -345,6 +352,9 @@ export const DrawText: React.FC<DrawTextProps> = ({
 
   return (
     <svg
+      className="seqvio-drawable"
+      data-seqvio-draw-start={start}
+      data-seqvio-draw-end={start + duration}
       style={{
         position: 'absolute',
         left: 0,
@@ -376,6 +386,7 @@ export const DrawText: React.FC<DrawTextProps> = ({
   );
 };
 
+export const DrawText = React.memo(DrawTextComponent, areSerializablePropsEqual);
 DrawText.displayName = 'DrawText';
 
 export default DrawText;

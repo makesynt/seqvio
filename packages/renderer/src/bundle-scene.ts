@@ -23,6 +23,7 @@ export interface BundleSceneOptions {
   burnCaptions?: boolean;
   captions?: CaptionCue[];
   resolvedAudioManifest?: CompositionAudioManifest;
+  whiteboardOptimize?: string;
 }
 
 export interface BundleSceneResult {
@@ -111,6 +112,7 @@ mountBrowserRuntime(Scene, sceneMeta, {
   burnCaptions: ${options.burnCaptions ? 'true' : 'false'},
   captions: ${JSON.stringify(options.captions ?? null)},
   resolvedAudioManifest: ${JSON.stringify(options.resolvedAudioManifest ?? null)},
+  whiteboardOptimize: ${JSON.stringify(options.whiteboardOptimize ?? 'none')},
 });
 `;
 

@@ -2,6 +2,12 @@
 
 本文记录 Seqvio 渲染性能的完整改进计划。它是 roadmap/proposal，不改变当前实现契约；当前真实渲染流程仍以 `seqvio-render`、`seqvio-audio` 和 TSX composition 为准。
 
+> **实现状态（已落地）**：本计划的多个阶段已经实现，下文“背景/已确认问题”描述的是优化**之前**的基线，仅作历史参照。当前实现：
+> - 单 worker 与多 worker 均走 **image2pipe 流式编码**，帧不再落盘（除非 `--keepFrames`）。
+> - `--workers <n|auto>` 已实现，多 worker 为“每 worker 独立浏览器 + 单 FFmpeg 流式编码”。
+> - `--preset preview|standard|final|high`、`--frameFormat`、`--jpegQuality`、`--staticFrameDedup`、`--whiteboardOptimize` 均已实现。
+> - 实际 CRF 由 `--quality` 决定：low=28、medium=20、high=18、4k=15。
+
 ## 背景
 
 在渲染 `examples/compositions/claude-cowork-best-practices-zh.tsx` 时，最终视频参数为：
@@ -35,7 +41,7 @@
 
 ## 非目标
 
-- 不在第一阶段重写 Seqvio 为完整 Remotion 替代品。
+- 不在第一阶段把 Seqvio 重写为通用视频渲染框架。
 - 不改变 `@seqvio/whiteboard`、`@seqvio/core` 的公共 API。
 - 不要求用户放弃 TSX composition。
 - 不把 AI storyboard、Studio 或模板自动布局纳入本性能计划。
@@ -143,12 +149,14 @@ node packages/renderer/dist/cli.js \
 
 ### 建议映射
 
-| Preset | Width/Height | FPS | Pixel ratio | CRF | 用途 |
-| --- | --- | --- | --- | --- | --- |
-| preview | 1280x720 | 24 | 1 | 30 | 快速看构图和字幕 |
-| standard | 1280x720 | 30 | 1 | 24 | 日常交付 |
-| final | 1280x720 | 30 | 2 | 20 | 清晰白板线条 |
-| high | 1920x1080 | 30 | 2 | 18 | 高质量导出 |
+下表为已实现映射。CRF 由 `--quality` 档位决定（low=28、medium=20、high=18、4k=15），preset 通过设置 `--quality` 间接影响 CRF：
+
+| Preset | FPS | Pixel ratio | Quality | CRF | frameFormat | 用途 |
+| --- | --- | --- | --- | --- | --- | --- |
+| preview | 24 | 1 | low | 28 | jpeg (q80) | 快速看构图和字幕 |
+| standard | 30 | 1 | medium | 20 | png | 日常交付 |
+| final | 30 | 2 | medium | 20 | png | 清晰白板线条 |
+| high | 30 | 2 | high | 18 | png | 高质量导出 |
 
 ### 代码位置
 
@@ -347,9 +355,9 @@ node packages/renderer/dist/cli.js \
 
 如果 Seqvio 要承担更高频生产任务，可以考虑更深的架构升级。
 
-### 选项 A：Remotion 后端适配
+### 选项 A：外部渲染后端适配
 
-保留 Seqvio composition API，但输出到 Remotion renderer。
+保留 Seqvio composition API，但输出到一个成熟的第三方视频渲染后端。
 
 优点：
 
@@ -408,7 +416,7 @@ node packages/renderer/dist/cli.js \
 ### P3：长期
 
 - production renderer 架构重构。
-- Remotion adapter 或离屏 canvas/SVG renderer 调研。
+- 外部渲染后端适配或离屏 canvas/SVG renderer 调研。
 
 ## 建议的第一批代码变更
 
@@ -481,6 +489,6 @@ Seqvio 当前慢的核心原因是逐帧、串行、浏览器截图、PNG 落盘
 1. 先用 preset、`pixelRatio=1`、`fps=24` 解决 preview 慢。
 2. 再用 benchmark 定位 renderer 热点。
 3. 然后推进 frame pipeline、并行抓帧和白板缓存。
-4. 最后再考虑 Remotion adapter 或离屏渲染等更大架构改造。
+4. 最后再考虑外部渲染后端适配或离屏渲染等更大架构改造。
 
 这样可以在保持 Seqvio 当前 TSX authoring contract 的同时，让渲染速度逐步接近可日常生产的水平。

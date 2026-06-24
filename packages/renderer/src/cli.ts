@@ -3,6 +3,7 @@
 import * as path from 'path';
 import { render, RenderOptions, RenderResult } from './renderer';
 import { SEQVIO_BRAND } from './brand';
+import { normalizeWhiteboardOptimize } from './whiteboard-optimization';
 
 function printUsage(): void {
   console.log(`Usage:
@@ -12,8 +13,8 @@ Options:
   --component <path>    Path to TSX/TS scene component (required)
   --output <path>       Output MP4 path (required)
   --preset <value>      preview | standard | final | high — set defaults for fps/pixelRatio/quality/frameFormat.
-                        Explicit flags always override the preset.
-                        preview:  fps=24, pixelRatio=1, quality=low, frameFormat=jpeg (fastest)
+                          Explicit flags always override the preset.
+                        preview:  fps=24, pixelRatio=1, quality=low, frameFormat=jpeg, jpegQuality=80 (fastest)
                         standard: fps=30, pixelRatio=1, quality=medium, frameFormat=png
                         final:    fps=30, pixelRatio=2, quality=medium, frameFormat=png
                         high:     fps=30, pixelRatio=2, quality=high,   frameFormat=png
@@ -24,10 +25,16 @@ Options:
                         Use --frameFormat jpeg for faster screenshot capture (preview workflows).
   --frameFormat <v>     png | jpeg — per-frame screenshot format (default: png). jpeg is faster
                         for preview passes; png is lossless for final delivery.
+  --jpegQuality <n>     JPEG screenshot quality 30-100 when --frameFormat jpeg (default: 90)
   --pixelRatio <n>      Screenshot scale factor 1 or 2 (default: 2, sharper strokes)
-  --workers <n>         Parallel capture pages (default: 1). workers>1 opens N pages in one
-                        browser, captures frames in parallel to numbered files, then runs a
-                        single FFmpeg pass (no concat, no seams). Useful for multi-core machines.
+  --workers <n|auto>    Parallel capture workers (default: 1). workers>1 captures in parallel
+                        and streams frames into one FFmpeg pass (no concat, no seams).
+                        auto samples the composition before choosing a conservative count.
+  --staticFrameDedup    Reuse adjacent static screenshots on the workers=1 streaming path
+  --whiteboardOptimize <v>
+                        none | 1 | 2 | 3 | react-static | bitmap-layer | frame-dedup
+                        Experimental whiteboard render optimizations for benchmarking.
+                        1=react-static, 2=bitmap-layer, 3=frame-dedup.
   --startFrame <n>      First source frame to render (default: 0)
   --endFrame <n>        Last source frame to render (inclusive)
   --duration <n>        Override total source duration in frames
@@ -45,7 +52,7 @@ Options:
 type Preset = 'preview' | 'standard' | 'final' | 'high';
 
 const PRESET_DEFAULTS: Record<Preset, Partial<RenderOptions>> = {
-  preview:  { fps: 24, pixelRatio: 1, quality: 'low',    frameFormat: 'jpeg' },
+  preview:  { fps: 24, pixelRatio: 1, quality: 'low',    frameFormat: 'jpeg', jpegQuality: 80 },
   standard: { fps: 30, pixelRatio: 1, quality: 'medium', frameFormat: 'png'  },
   final:    { fps: 30, pixelRatio: 2, quality: 'medium', frameFormat: 'png'  },
   high:     { fps: 30, pixelRatio: 2, quality: 'high',   frameFormat: 'png'  },
@@ -61,6 +68,7 @@ function applyPreset(opts: RenderOptions, preset: string): void {
   if (opts.pixelRatio === undefined)  opts.pixelRatio  = defaults.pixelRatio;
   if (opts.quality === undefined)     opts.quality     = defaults.quality;
   if (opts.frameFormat === undefined) opts.frameFormat = defaults.frameFormat;
+  if (opts.jpegQuality === undefined) opts.jpegQuality = defaults.jpegQuality;
 }
 
 function parseArgs(argv: string[]): { options: RenderOptions; preset?: string } {
@@ -70,7 +78,7 @@ function parseArgs(argv: string[]): { options: RenderOptions; preset?: string } 
     const token = argv[i];
     if (!token.startsWith('--')) continue;
     const key = token.slice(2);
-    if (key === 'keepFrames' || key === 'help' || key === 'burnCaptions') {
+    if (key === 'keepFrames' || key === 'help' || key === 'burnCaptions' || key === 'staticFrameDedup') {
       args.set(key, true);
       continue;
     }
@@ -105,12 +113,14 @@ function parseArgs(argv: string[]): { options: RenderOptions; preset?: string } 
   const tempDir     = args.get('tempDir');
   const pixelRatio  = args.get('pixelRatio');
   const frameFormat = args.get('frameFormat');
+  const jpegQuality = args.get('jpegQuality');
   const workers     = args.get('workers');
   const audioManifest = args.get('audioManifest');
   const audioTrack  = args.get('audioTrack');
   const captions    = args.get('captions');
   const mixMusic    = args.get('mixMusic');
   const preset      = args.get('preset');
+  const whiteboardOptimize = args.get('whiteboardOptimize');
 
   const options: RenderOptions = {
     component:    path.resolve(component),
@@ -126,12 +136,18 @@ function parseArgs(argv: string[]): { options: RenderOptions; preset?: string } 
     keepFrames:   Boolean(args.get('keepFrames')),
     pixelRatio:   typeof pixelRatio  === 'string' ? Number(pixelRatio)  : undefined,
     frameFormat:  typeof frameFormat === 'string' ? (frameFormat as RenderOptions['frameFormat']) : undefined,
-    workers:      typeof workers     === 'string' ? Number(workers)     : undefined,
+    jpegQuality:  typeof jpegQuality === 'string' ? Number(jpegQuality) : undefined,
+    workers:      typeof workers     === 'string' ? (workers === 'auto' ? 'auto' : Number(workers)) : undefined,
+    staticFrameDedup: Boolean(args.get('staticFrameDedup')),
     audioManifest: typeof audioManifest === 'string' ? path.resolve(audioManifest) : undefined,
     audioTrack:   typeof audioTrack  === 'string' ? path.resolve(audioTrack) : undefined,
     captions:     typeof captions    === 'string' ? path.resolve(captions)   : undefined,
     burnCaptions: Boolean(args.get('burnCaptions')),
     mixMusic:     typeof mixMusic    === 'string' ? path.resolve(mixMusic)   : undefined,
+    whiteboardOptimize:
+      typeof whiteboardOptimize === 'string'
+        ? normalizeWhiteboardOptimize(whiteboardOptimize)
+        : undefined,
   };
 
   return { options, preset: typeof preset === 'string' ? preset : undefined };

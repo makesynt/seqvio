@@ -4,26 +4,24 @@ This page covers the most common local setup and render issues for Seqvio.
 
 ## Build and Package Manager
 
-### `pnpm` is missing
+### Install fails or dependencies are missing
 
-Seqvio documents `pnpm >=8` as the canonical package manager.
-
-Install it first, then run:
+Local repo development uses **npm workspaces** and `package-lock.json`. From the
+repository root:
 
 ```bash
-pnpm install
-pnpm build
+npm ci
+npm run build
 ```
 
-If you use `npm` successfully for local experiments, treat that as best-effort
-compatibility, not the primary supported path.
+Use `npm ci` (not `npm install`) for a clean, lockfile-exact install.
 
 ### Build succeeds in one package but not the repo
 
 Run the workspace build from repo root:
 
 ```bash
-pnpm build
+npm run build
 ```
 
 This catches package-to-package typing issues that are easy to miss when only
@@ -60,9 +58,12 @@ Try one or more of these:
 Useful smoke commands:
 
 ```bash
-pnpm --filter @seqvio/renderer run render:smoke
-pnpm --filter @seqvio/renderer run render:composition-smoke
+npm run render:smoke -w @seqvio/renderer
+npm run render:composition-smoke -w @seqvio/renderer
 ```
+
+You can also enable `--workers auto` (parallel capture) or `--preset preview`
+(fast jpeg pass) for large compositions.
 
 ### Video duration looks wrong
 

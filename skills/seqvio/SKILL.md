@@ -60,7 +60,7 @@ Or work from a local repository checkout:
 
 ```bash
 git clone https://github.com/makesynt/seqvio.git
-cd seqvio && pnpm install && pnpm build
+cd seqvio && npm ci && npm run build
 ```
 
 The skill alone does not install npm packages or render MP4 output.
@@ -86,7 +86,7 @@ The skill alone does not install npm packages or render MP4 output.
 
 Two parallel, style-agnostic ways to render a composition. Pick one per `<Scene>` — do not mix their components.
 
-- **Whiteboard** (`@seqvio/whiteboard`) — SVG hand-drawn animation; `WhiteboardScene` / `DrawText` / `DrawShape` / `Hand`. Themes select the look (default, pin-and-paper, studio, field-note, …). For the Pin & Paper theme, read [references/pin-and-paper-theme.md](references/pin-and-paper-theme.md).
+- **Whiteboard** (`@seqvio/whiteboard`) — SVG hand-drawn animation; `WhiteboardScene` / `DrawText` / `DrawShape` / `DrawImage` / `DrawIcon` / `Hand`. Themes select the look (default, pin-and-paper, studio, field-note, …). For the Pin & Paper theme, read [references/pin-and-paper-theme.md](references/pin-and-paper-theme.md).
 - **Scatterbrain** (`@seqvio/scatterbrain`) — div/CSS sticky-note / cork-board look (rotation, gradients, soft shadows, pins, tape, doodles); `ScatterScene` / `StickyNote` / `Scrawl` / `PinnedList` / `Doodle` / `Polaroid`. A separate style package, parallel to whiteboard, depending only on `@seqvio/core`. Read [references/scatterbrain-style.md](references/scatterbrain-style.md).
 
 ## Working Model
@@ -117,6 +117,7 @@ Use a `WhiteboardScene` with drawable children:
 - `DrawText`
 - `DrawShape`
 - `DrawImage`
+- `DrawIcon`
 - `Hand`
 
 This is the simplest path for title cards, diagrams, tutorials, and whiteboard explainers.

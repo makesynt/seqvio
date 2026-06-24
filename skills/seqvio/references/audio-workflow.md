@@ -29,9 +29,9 @@ Example starting points:
 ## Step 1 — Extract manifest
 
 ```bash
-pnpm --filter @seqvio/renderer exec seqvio-audio extract \
-  --component ../../examples/compositions/seqvio-overview-en.tsx \
-  --out ../../output/seqvio-overview-en.manifest.json
+node packages/renderer/dist/audio-cli.js extract \
+  --component examples/compositions/seqvio-overview-en.tsx \
+  --out output/seqvio-overview-en.manifest.json
 ```
 
 This reads narration metadata from the composition and writes a manifest JSON file.
@@ -47,10 +47,10 @@ export ELEVENLABS_API_KEY=your_key
 # Windows (PowerShell)
 # $env:ELEVENLABS_API_KEY="your_key"
 
-pnpm --filter @seqvio/renderer exec seqvio-audio synthesize \
+node packages/renderer/dist/audio-cli.js synthesize \
   --provider elevenlabs \
-  --manifest ../../output/seqvio-overview-en.manifest.json \
-  --outDir ../../output/seqvio-overview-en-audio
+  --manifest output/seqvio-overview-en.manifest.json \
+  --outDir output/seqvio-overview-en-audio
 ```
 
 The output directory contains:
@@ -87,14 +87,14 @@ See [`.env.example`](../../../.env.example) for the full template.
 ## Step 3 — Render with resolved audio
 
 ```bash
-pnpm --filter @seqvio/renderer exec seqvio-render \
-  --component ../../examples/compositions/seqvio-overview-en.tsx \
-  --output ../../output/seqvio-overview-en.mp4 \
+node packages/renderer/dist/cli.js \
+  --component examples/compositions/seqvio-overview-en.tsx \
+  --output output/seqvio-overview-en.mp4 \
   --width 1280 \
   --height 720 \
   --fps 30 \
   --quality medium \
-  --audioManifest ../../output/seqvio-overview-en-audio/audio-manifest.resolved.json \
+  --audioManifest output/seqvio-overview-en-audio/audio-manifest.resolved.json \
   --burnCaptions
 ```
 

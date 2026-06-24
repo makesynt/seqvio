@@ -22,7 +22,7 @@ export const meta = {
 Use this when one scene is enough:
 
 ```tsx
-import { WhiteboardScene, DrawText, DrawShape, Hand } from '@seqvio/whiteboard';
+import { WhiteboardScene, DrawText, DrawShape, DrawImage, DrawIcon, Hand } from '@seqvio/whiteboard';
 
 export default function Scene() {
   return (
@@ -120,8 +120,8 @@ import {
 </WhiteboardScene>
 ```
 
-See `examples/compositions/adk-explainer.tsx` for a complete neon scene
-(brand mark + diagram nodes + the inline `NeonGlowDefs` filter).
+Define the glow filter inline (e.g. a `NeonGlowDefs` `<filter>`) and reference it
+via `style={{ filter: \`url(#...)\` }}` on the `WhiteboardScene`.
 
 This is a **generic visual style** — use it freely, but don't recreate a specific
 existing video's content, layout, or narration structure (that's the part

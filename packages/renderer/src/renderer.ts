@@ -4,6 +4,7 @@
  */
 
 import { execFile, spawn } from 'node:child_process';
+import { cpus } from 'node:os';
 import puppeteer, { Browser, Page } from 'puppeteer';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -16,6 +17,23 @@ import {
 } from './audio/manifest';
 import { bundleScene, resolveComponentPath, writeRenderShell } from './bundle-scene';
 import { getMetaFromPage, loadRenderShell, setFrameAndWait } from './browser-shell';
+import {
+  createFrameReorderBuffer,
+  frameFileName,
+  planInterleavedFrameAssignments,
+} from './parallel-plan';
+import {
+  normalizeJpegQuality,
+  resolveAutoWorkers,
+  shouldReuseStaticFrame,
+} from './render-optimizations';
+import {
+  normalizeWhiteboardOptimize,
+  usesStaticFrameDedup,
+  type WhiteboardOptimizeInput,
+  type WhiteboardOptimizeMode,
+} from './whiteboard-optimization';
+import { captureFrameBuffer } from './render-capture';
 // @ts-ignore
 import ffmpegPath from '@ffmpeg-installer/ffmpeg';
 
@@ -41,14 +59,16 @@ export interface RenderOptions {
    */
   frameFormat?: 'png' | 'jpeg';
   /**
-   * Number of concurrent browser pages used to capture frames (default: 1).
-   * With workers > 1 the renderer opens N pages in ONE browser, captures the
-   * frame range in parallel to numbered files, then encodes once with a single
-   * FFmpeg pass (Remotion-style local model — parallelism at the bottleneck
-   * step, encoding stays seam-free). workers=1 uses the streaming image2pipe
-   * path with identical behaviour to before.
+   * Number of concurrent browser workers used to capture frames (default: 1).
+   * Use 'auto' to sample the composition and choose a conservative worker count.
    */
-  workers?: number;
+  workers?: number | 'auto';
+  /** JPEG screenshot quality when frameFormat='jpeg' (default: 90, clamped 30-100). */
+  jpegQuality?: number;
+  /** Reuse adjacent static screenshots on the single-worker streaming path. */
+  staticFrameDedup?: boolean;
+  /** Experimental whiteboard runtime optimization mode for benchmarking. */
+  whiteboardOptimize?: WhiteboardOptimizeInput;
   audioManifest?: string;
   audioTrack?: string;
   captions?: string;
@@ -105,6 +125,10 @@ interface ResolvedRenderOptions {
   pixelRatio: number;
   frameFormat: 'png' | 'jpeg';
   workers: number;
+  autoWorkers: boolean;
+  jpegQuality: number;
+  staticFrameDedup: boolean;
+  whiteboardOptimize: WhiteboardOptimizeMode;
   audioManifest?: string;
   audioTrack?: string;
   captions?: string;
@@ -119,7 +143,6 @@ export class VideoRenderer {
   private effectiveFps = 30;
   private sceneDuration = 300;
   private shellPath = '';
-  private frameFileCount = 0;
   private componentDir = process.cwd();
   private audioManifest: CompositionAudioManifest | undefined;
   private audioManifestBaseDir: string | undefined;
@@ -128,9 +151,27 @@ export class VideoRenderer {
   private cliWidth: number | undefined;
   private cliHeight: number | undefined;
 
+  private browserLaunchOptions(): Parameters<typeof puppeteer.launch>[0] {
+    return {
+      headless: true,
+      protocolTimeout: 1_200_000,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--allow-file-access-from-files',
+      ],
+    };
+  }
+
   constructor(options: RenderOptions, onProgress?: (progress: RenderProgress) => void) {
     this.cliWidth = options.width;
     this.cliHeight = options.height;
+    const whiteboardOptimize = normalizeWhiteboardOptimize(options.whiteboardOptimize);
+    const numericWorkers =
+      typeof options.workers === 'number' && Number.isFinite(options.workers)
+        ? options.workers
+        : 1;
     this.options = {
       component: options.component,
       output: options.output,
@@ -145,7 +186,11 @@ export class VideoRenderer {
       keepFrames: options.keepFrames || false,
       pixelRatio: options.pixelRatio ?? 2,
       frameFormat: options.frameFormat ?? 'png',
-      workers: Math.max(1, Math.floor(options.workers ?? 1)),
+      workers: options.workers === 'auto' ? 1 : Math.max(1, Math.floor(numericWorkers)),
+      autoWorkers: options.workers === 'auto',
+      jpegQuality: normalizeJpegQuality(options.jpegQuality),
+      staticFrameDedup: usesStaticFrameDedup(whiteboardOptimize, options.staticFrameDedup),
+      whiteboardOptimize,
       audioManifest: options.audioManifest,
       audioTrack: options.audioTrack,
       captions: options.captions,
@@ -163,6 +208,54 @@ export class VideoRenderer {
     console.log(`[${progress.phase}] ${progress.message}`);
   }
 
+  private async captureFrameBuffer(page: Page): Promise<Buffer> {
+    return captureFrameBuffer(page, {
+      width: this.options.width,
+      height: this.options.height,
+      pixelRatio: this.options.pixelRatio,
+      frameFormat: this.options.frameFormat,
+      jpegQuality: this.options.jpegQuality,
+    });
+  }
+
+  private async getStaticFrameSignature(page: Page): Promise<string | null> {
+    return page.evaluate(() => {
+      const root = document.getElementById('root');
+      if (!root) return null;
+      if (root.querySelector('canvas,video')) return null;
+
+      const hasDuration = (value: string) =>
+        value
+          .split(',')
+          .map((part) => part.trim())
+          .some((part) => {
+            if (part.endsWith('ms')) return Number(part.slice(0, -2)) > 0;
+            if (part.endsWith('s')) return Number(part.slice(0, -1)) > 0;
+            return false;
+          });
+
+      const elements = [root, ...Array.from(root.querySelectorAll('*'))];
+      for (const element of elements) {
+        const style = window.getComputedStyle(element);
+        if (
+          (style.animationName !== 'none' && hasDuration(style.animationDuration)) ||
+          hasDuration(style.transitionDuration)
+        ) {
+          return null;
+        }
+      }
+
+      let hash = 2166136261;
+      const text = root.innerHTML;
+      for (let i = 0; i < text.length; i++) {
+        hash ^= text.charCodeAt(i);
+        hash = Math.imul(hash, 16777619);
+      }
+      const box = root.getBoundingClientRect();
+      return `${hash >>> 0}:${text.length}:${Math.round(box.width)}x${Math.round(box.height)}`;
+    });
+  }
+
   async render(): Promise<RenderResult> {
     try {
       const t0 = Date.now();
@@ -178,13 +271,16 @@ export class VideoRenderer {
       if (totalFrames <= 0) {
         throw new Error('Render frame range is empty. Check startFrame/endFrame/duration.');
       }
+      if (this.options.autoWorkers) {
+        await this.calibrateWorkers(totalFrames);
+      }
 
       this.reportProgress({
         phase: 'rendering',
         currentFrame: 0,
         totalFrames,
         percent: 0,
-        message: `Rendering ${totalFrames} frames...`,
+        message: `Rendering ${totalFrames} frames with ${this.options.workers} worker(s)...`,
       });
       const encodedVideoPath = await this.renderAndEncode(totalFrames);
       const tRender = Date.now();
@@ -276,19 +372,11 @@ export class VideoRenderer {
       burnCaptions: this.options.burnCaptions,
       captions: explicitCaptions ?? explicitManifest?.manifest.captions,
       resolvedAudioManifest: explicitManifest?.manifest,
+      whiteboardOptimize: this.options.whiteboardOptimize,
     });
     this.shellPath = bundleResult.shellPath;
 
-    this.browser = await puppeteer.launch({
-      headless: true,
-      protocolTimeout: 1_200_000,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--allow-file-access-from-files',
-      ],
-    });
+    this.browser = await puppeteer.launch(this.browserLaunchOptions());
 
     this.page = await this.browser.newPage();
     await this.page.setViewport({
@@ -356,6 +444,46 @@ export class VideoRenderer {
     return end >= start ? end - start + 1 : 0;
   }
 
+  private calibrationFrameOffsets(totalFrames: number): number[] {
+    const offsets = [0, 0.25, 0.5, 0.75, 1].map((ratio) =>
+      Math.min(totalFrames - 1, Math.floor((totalFrames - 1) * ratio))
+    );
+    return Array.from(new Set(offsets));
+  }
+
+  private async calibrateWorkers(totalFrames: number): Promise<void> {
+    if (totalFrames < 120) {
+      this.options.workers = 1;
+      this.reportProgress({
+        phase: 'setup',
+        message: `Auto workers: short render (${totalFrames} frames), selected 1 worker`,
+      });
+      return;
+    }
+
+    const durations: number[] = [];
+    for (const offset of this.calibrationFrameOffsets(totalFrames)) {
+      const sourceFrame = this.options.startFrame + offset;
+      const startedAt = Date.now();
+      await setFrameAndWait(this.page!, sourceFrame);
+      await this.captureFrameBuffer(this.page!);
+      durations.push(Date.now() - startedAt);
+    }
+
+    const sorted = [...durations].sort((a, b) => a - b);
+    const p95Index = Math.min(sorted.length - 1, Math.ceil(sorted.length * 0.95) - 1);
+    const measuredP95Ms = sorted[p95Index] ?? 0;
+    this.options.workers = resolveAutoWorkers({
+      totalFrames,
+      cpuCount: cpus().length,
+      measuredP95Ms,
+    });
+    this.reportProgress({
+      phase: 'setup',
+      message: `Auto workers: sampled p95 ${measuredP95Ms}ms, selected ${this.options.workers} worker(s)`,
+    });
+  }
+
   private crfForQuality(): number {
     const qualitySettings: Record<string, number> = {
       low: 28,
@@ -383,44 +511,6 @@ export class VideoRenderer {
     }
     args.push('-r', String(this.effectiveFps), targetPath);
     return args;
-  }
-
-  private buildEncodeArgsFromFiles(framePattern: string, targetPath: string): string[] {
-    const args = [
-      '-y',
-      '-f', 'image2',
-      '-framerate', String(this.effectiveFps),
-      '-i', framePattern,
-      '-c:v', 'libx264',
-      '-pix_fmt', 'yuv420p',
-      '-crf', String(this.crfForQuality()),
-      '-preset', 'medium',
-      '-movflags', '+faststart',
-    ];
-    if (this.options.pixelRatio > 1) {
-      args.push('-vf', `scale=${this.options.width}:${this.options.height}`);
-    }
-    args.push('-r', String(this.effectiveFps), targetPath);
-    return args;
-  }
-
-  private async encodeFromFiles(framePattern: string, targetPath: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const ffmpeg = spawn(
-        ffmpegPath.path,
-        this.buildEncodeArgsFromFiles(framePattern, targetPath),
-        { windowsHide: true }
-      );
-      let ffmpegStderr = '';
-      ffmpeg.stderr.on('data', (chunk) => {
-        ffmpegStderr += chunk.toString();
-      });
-      ffmpeg.on('error', reject);
-      ffmpeg.on('close', (code) => {
-        if (code === 0) resolve();
-        else reject(new Error(ffmpegStderr || `FFmpeg exited with code ${code}`));
-      });
-    });
   }
 
   /**
@@ -463,16 +553,34 @@ export class VideoRenderer {
         });
       });
 
+    let previousSignature: string | null = null;
+    let previousBuffer: Buffer | null = null;
+    let previousOutputIndex: number | null = null;
+    let reusedFrames = 0;
+
     try {
       for (let i = 0; i < frameCount; i++) {
         const sourceFrame = firstSourceFrame + i;
         await setFrameAndWait(page, sourceFrame);
 
-        const buffer = (await page.screenshot(
-          this.options.frameFormat === 'jpeg'
-            ? { type: 'jpeg', quality: 90, omitBackground: false }
-            : { type: 'png', omitBackground: false }
-        )) as Buffer;
+        const signature = this.options.staticFrameDedup
+          ? await this.getStaticFrameSignature(page)
+          : null;
+        const reusePrevious: boolean =
+          previousBuffer !== null &&
+          shouldReuseStaticFrame({
+            previousOutputIndex,
+            outputIndex: i,
+            previousSignature,
+            signature,
+            signatureReusable: this.options.staticFrameDedup,
+          });
+        const buffer: Buffer = reusePrevious
+          ? previousBuffer!
+          : await this.captureFrameBuffer(page);
+        if (reusePrevious) {
+          reusedFrames += 1;
+        }
 
         await writeFrame(buffer);
 
@@ -485,7 +593,17 @@ export class VideoRenderer {
           );
         }
 
+        previousSignature = signature;
+        previousBuffer = buffer;
+        previousOutputIndex = i;
         onFrame();
+      }
+
+      if (reusedFrames > 0) {
+        this.reportProgress({
+          phase: 'rendering',
+          message: `Static frame dedup reused ${reusedFrames}/${frameCount} screenshots`,
+        });
       }
 
       ffmpeg.stdin.end();
@@ -500,20 +618,18 @@ export class VideoRenderer {
   /**
    * Render all frames to an encoded (video-only) MP4.
    *
-   * Two paths depending on workers:
-   * - workers=1 (default): stream each frame directly into a single FFmpeg via
-   *   stdin (image2pipe). No disk IO; rendering and encoding overlap.
-   * - workers>1: open N pages in the same browser, capture frames in parallel
-   *   to numbered files, then encode once with a single FFmpeg pass. This is
-   *   the Remotion local model — parallel at the bottleneck (screenshot), single
-   *   encode at the end, no concat, no seams.
+   * Both paths stream frames into a single FFmpeg via stdin (image2pipe), so no
+   * frames touch disk (unless --keepFrames) and there is no concat / no seams:
+   * - workers=1 (default): capture each frame serially and write it to FFmpeg as
+   *   it is produced. Rendering and encoding overlap.
+   * - workers>1: N browsers capture in parallel; a small in-memory reorder
+   *   buffer serializes writes so the single encoder still receives frames in
+   *   order. Parallelism is applied at the bottleneck (screenshot capture).
    *
-   * NOTE: The approach that was previously prototyped and rejected was "slice +
-   * concat" — N Chrome processes each with their own FFmpeg, outputs merged with
-   * concat. That model contends for CPU and has seam artefacts. The multi-page
-   * capture + single encode model above is different and has NOT been disabled.
-   * Single-machine slice+concat is still inadvisable; cross-machine is a
-   * separate orchestration concern.
+   * NOTE: An alternative "slice + concat" model — N Chrome processes each with
+   * their own FFmpeg, outputs merged with concat — was prototyped and rejected:
+   * it contends for CPU and produces seam artefacts. Single-machine slice+concat
+   * remains inadvisable; cross-machine is a separate orchestration concern.
    */
   private async renderAndEncode(totalFrames: number): Promise<string> {
     const targetPath =
@@ -522,20 +638,17 @@ export class VideoRenderer {
         : this.options.output;
 
     if (this.options.workers > 1) {
-      const result = await this.renderFramesParallel(totalFrames);
-      this.frameFileCount = result;
-      this.reportProgress({ phase: 'encoding', percent: 0, message: 'Encoding frames...' });
-      const ext = this.options.frameFormat === 'jpeg' ? 'jpg' : 'png';
-      const framePattern = path.join(this.options.tempDir, `frame-%06d.${ext}`);
-      await this.encodeFromFiles(framePattern, targetPath);
-      if (!this.options.keepFrames) {
-        this.cleanupFrameFiles(ext);
+      if (this.options.staticFrameDedup) {
+        this.reportProgress({
+          phase: 'rendering',
+          message: 'Static frame dedup is currently applied only when workers=1',
+        });
       }
+      await this.renderAndEncodeParallelStreaming(totalFrames, targetPath);
       this.reportProgress({ phase: 'encoding', percent: 100, message: 'Encoding: 100%' });
       return targetPath;
     }
 
-    this.frameFileCount = 0;
     let done = 0;
     const onFrame = () => {
       done += 1;
@@ -557,92 +670,145 @@ export class VideoRenderer {
       targetPath,
       onFrame
     );
-    this.frameFileCount = done;
     this.reportProgress({ phase: 'encoding', percent: 100, message: 'Encoding: 100%' });
     return targetPath;
   }
 
   /**
-   * Remotion-style local parallel: open N pages in the same browser, distribute
-   * frame range across them, capture to numbered files, return total count.
-   * All pages share the same browser process so startup cost is paid once.
+   * Parallel capture + single streaming encoder.
+   *
+   * Workers capture interleaved output indices (0, N, 2N...) so all workers
+   * produce useful frames early. A small ordered barrier serializes writes to
+   * FFmpeg stdin, preserving image2pipe ordering without writing frames to disk.
+   *
+   * Each worker beyond worker 0 gets its own browser instance rather than an
+   * extra page in the shared browser. An earlier multi-page design could land
+   * those file:// pages in the same Chrome renderer process, where concurrent
+   * seek/screenshot work starves CDP and page.evaluate eventually times out on
+   * heavy SVG compositions. Separate browser instances isolate renderer
+   * processes and keep long parallel renders stable.
    */
-  private async renderFramesParallel(totalFrames: number): Promise<number> {
-    const n = this.options.workers;
+  private async renderAndEncodeParallelStreaming(
+    totalFrames: number,
+    targetPath: string
+  ): Promise<void> {
+    const assignments = planInterleavedFrameAssignments(
+      totalFrames,
+      this.options.startFrame,
+      this.options.workers
+    );
+    const n = assignments.length;
+    const reorder = createFrameReorderBuffer(0, totalFrames);
     const ext = this.options.frameFormat === 'jpeg' ? 'jpg' : 'png';
 
-    // Open N-1 extra pages (the primary page is already open).
-    const extraPages: Page[] = [];
-    for (let i = 1; i < n; i++) {
-      const p = await this.browser!.newPage();
-      await p.setViewport({
-        width: this.options.width,
-        height: this.options.height,
-        deviceScaleFactor: this.options.pixelRatio,
-      });
-      await loadRenderShell(p, this.shellPath);
-      extraPages.push(p);
-    }
-    const pages = [this.page!, ...extraPages];
+    const ffmpeg = spawn(ffmpegPath.path, this.buildEncodeArgs(targetPath), {
+      windowsHide: true,
+    });
 
-    let done = 0;
-    const onFrame = () => {
-      done += 1;
-      if (done % 30 === 0 || done === totalFrames) {
+    let ffmpegStderr = '';
+    ffmpeg.stderr.on('data', (chunk) => {
+      ffmpegStderr += chunk.toString();
+    });
+
+    const ffmpegExit = new Promise<void>((resolve, reject) => {
+      ffmpeg.on('error', reject);
+      ffmpeg.on('close', (code) => {
+        if (code === 0) resolve();
+        else reject(new Error(ffmpegStderr || `FFmpeg exited with code ${code}`));
+      });
+    });
+
+    const writeFrame = (buffer: Buffer): Promise<void> =>
+      new Promise((resolve, reject) => {
+        ffmpeg.stdin.write(buffer, (error) => {
+          if (error) reject(error);
+          else resolve();
+        });
+      });
+
+    let captured = 0;
+    let failed = false;
+    const onCaptured = () => {
+      captured += 1;
+      if (captured % 30 === 0 || captured === totalFrames) {
         this.reportProgress({
           phase: 'rendering',
-          currentFrame: done,
+          currentFrame: captured,
           totalFrames,
-          percent: Math.round((done / totalFrames) * 100),
-          message: `Rendered ${done}/${totalFrames} frames (${n} workers)`,
+          percent: Math.round((captured / totalFrames) * 100),
+          message: `Rendered ${captured}/${totalFrames} frames (${n} streaming workers)`,
         });
       }
     };
 
-    // Distribute frames: page i handles all source frames where (sourceFrame % n) === i.
-    // This gives round-robin interleaving so each page gets a similar variety of scenes.
-    const tasks = pages.map((page, workerIdx) =>
+    const tasks = assignments.map((assignment) =>
       (async () => {
-        for (let i = 0; i < totalFrames; i++) {
-          if (i % n !== workerIdx) continue;
-          const sourceFrame = this.options.startFrame + i;
-          await setFrameAndWait(page, sourceFrame);
+        const browser =
+          assignment.workerIndex === 0
+            ? this.browser!
+            : await puppeteer.launch(this.browserLaunchOptions());
+        const page =
+          assignment.workerIndex === 0
+            ? this.page!
+            : await browser.newPage();
 
-          const screenshotOpts =
-            this.options.frameFormat === 'jpeg'
-              ? ({ type: 'jpeg', quality: 90, omitBackground: false } as const)
-              : ({ type: 'png', omitBackground: false } as const);
-          const buffer = (await page.screenshot(screenshotOpts)) as Buffer;
+        if (assignment.workerIndex !== 0) {
+          await page.setViewport({
+            width: this.options.width,
+            height: this.options.height,
+            deviceScaleFactor: this.options.pixelRatio,
+          });
+          await loadRenderShell(page, this.shellPath);
+        }
 
-          // Global frame index for deterministic ordered file name.
-          const filename = `frame-${String(sourceFrame).padStart(6, '0')}.${ext}`;
-          fs.writeFileSync(path.join(this.options.tempDir, filename), buffer);
-          onFrame();
+        try {
+          for (const frame of assignment.frames) {
+            if (failed) return;
+            const startedAt = Date.now();
+            await setFrameAndWait(page, frame.sourceFrame);
+            const seekMs = Date.now() - startedAt;
+            if (seekMs > 10_000) {
+              this.reportProgress({
+                phase: 'rendering',
+                currentFrame: captured,
+                totalFrames,
+                message: `Worker ${assignment.workerIndex} slow seek at frame ${frame.sourceFrame}: ${seekMs}ms`,
+              });
+            }
+
+            const buffer = await this.captureFrameBuffer(page);
+            onCaptured();
+
+            await reorder.waitForTurn(frame.outputIndex);
+            if (failed) return;
+            await writeFrame(buffer);
+
+            if (this.options.keepFrames) {
+              fs.writeFileSync(
+                path.join(this.options.tempDir, frameFileName(frame.outputIndex, ext)),
+                buffer
+              );
+            }
+
+            reorder.advanceTo(frame.outputIndex + 1);
+          }
+        } finally {
+          if (assignment.workerIndex !== 0) {
+            await browser.close().catch(() => undefined);
+          }
         }
       })()
     );
 
     try {
       await Promise.all(tasks);
-    } finally {
-      for (const p of extraPages) {
-        await p.close().catch(() => undefined);
-      }
-    }
-
-    return done;
-  }
-
-  private cleanupFrameFiles(ext: string): void {
-    try {
-      const files = fs.readdirSync(this.options.tempDir).filter(
-        (f) => /^frame-\d{6}\./.test(f) && f.endsWith(`.${ext}`)
-      );
-      for (const f of files) {
-        fs.unlinkSync(path.join(this.options.tempDir, f));
-      }
-    } catch {
-      // Best-effort cleanup; don't fail the render.
+      ffmpeg.stdin.end();
+      await ffmpegExit;
+    } catch (error) {
+      failed = true;
+      ffmpeg.stdin.destroy();
+      ffmpeg.kill();
+      throw error;
     }
   }
 

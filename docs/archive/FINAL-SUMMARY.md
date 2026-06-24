@@ -401,7 +401,7 @@ packages/
 
 ## 📚 文档
 
-所有文档位于：`D:\video-agent\unified-video-framework\`
+所有文档位于仓库根目录及 `docs/`。
 
 ### 核心文档
 - **README.md** - 项目介绍和功能说明

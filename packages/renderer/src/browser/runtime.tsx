@@ -31,6 +31,7 @@ export interface BrowserRuntimeOptions {
   burnCaptions?: boolean;
   captions?: CaptionCue[];
   resolvedAudioManifest?: CompositionAudioManifest;
+  whiteboardOptimize?: string;
 }
 
 interface TimelineLike {
@@ -46,6 +47,7 @@ declare global {
     __seqvio_timeline?: TimelineLike;
     __seqvio_resolvedAudioManifest?: CompositionAudioManifest;
     __seqvio_compositionMeta?: RenderableMeta;
+    __seqvio_whiteboardOptimize?: string;
   }
 }
 
@@ -55,6 +57,81 @@ let sceneMeta: Required<Pick<RenderableMeta, 'duration' | 'fps'>> & {
   captions?: CaptionCue[];
 } = { duration: 300, fps: 30 };
 let setFrameState: ((frame: number) => void) | null = null;
+let lastLayerCacheFrame = -1;
+
+function resetWhiteboardLayerCache(): void {
+  for (const scene of Array.from(document.querySelectorAll<HTMLElement>('.whiteboard-scene'))) {
+    scene.querySelectorAll<HTMLElement>('[data-seqvio-layer-hidden="true"]').forEach((element) => {
+      element.style.visibility = '';
+      element.removeAttribute('data-seqvio-layer-hidden');
+    });
+    scene.querySelectorAll<HTMLElement>('[data-seqvio-static-layer="true"]').forEach((element) => {
+      element.remove();
+    });
+    scene.removeAttribute('data-seqvio-layer-cache-count');
+  }
+}
+
+function svgDataUrl(svg: string): string {
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+function applyWhiteboardLayerCache(frame: number): void {
+  if (window.__seqvio_whiteboardOptimize !== 'bitmap-layer') return;
+  if (frame < lastLayerCacheFrame) {
+    resetWhiteboardLayerCache();
+  }
+  lastLayerCacheFrame = frame;
+
+  for (const scene of Array.from(document.querySelectorAll<HTMLElement>('.whiteboard-scene'))) {
+    const width = scene.clientWidth || scene.getBoundingClientRect().width;
+    const height = scene.clientHeight || scene.getBoundingClientRect().height;
+    if (width <= 0 || height <= 0) continue;
+
+    const completed = Array.from(
+      scene.querySelectorAll<SVGSVGElement>('svg[data-seqvio-draw-end]')
+    ).filter((element) => {
+      if (element.getAttribute('data-seqvio-layer-hidden') === 'true') return true;
+      if (element.querySelector('text, foreignObject, image')) return false;
+      const end = Number(element.getAttribute('data-seqvio-draw-end'));
+      return Number.isFinite(end) && end <= frame;
+    });
+    if (completed.length === 0) continue;
+
+    const currentCount = Number(scene.getAttribute('data-seqvio-layer-cache-count') ?? '0');
+    if (currentCount === completed.length) continue;
+
+    const serialized = completed
+      .map((element) => element.outerHTML)
+      .join('');
+    const combinedSvg =
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" ` +
+      `viewBox="0 0 ${width} ${height}">${serialized}</svg>`;
+
+    scene.querySelectorAll<HTMLElement>('[data-seqvio-static-layer="true"]').forEach((element) => {
+      element.remove();
+    });
+
+    const image = document.createElement('img');
+    image.setAttribute('data-seqvio-static-layer', 'true');
+    image.decoding = 'sync';
+    image.src = svgDataUrl(combinedSvg);
+    Object.assign(image.style, {
+      position: 'absolute',
+      inset: '0',
+      width: '100%',
+      height: '100%',
+      pointerEvents: 'none',
+    });
+    scene.insertBefore(image, scene.firstChild);
+
+    for (const element of completed) {
+      element.style.visibility = 'hidden';
+      element.setAttribute('data-seqvio-layer-hidden', 'true');
+    }
+    scene.setAttribute('data-seqvio-layer-cache-count', String(completed.length));
+  }
+}
 
 function readRuntimeGlobal<T>(key: SeqvioRuntimeKey): T | undefined {
   const runtimeKey = runtimeGlobalName(key);
@@ -100,10 +177,12 @@ async function waitForInitialResources(): Promise<void> {
  */
 async function waitForFrame(): Promise<void> {
   await waitForPendingImages();
+  applyWhiteboardLayerCache(readRuntimeGlobal<number>('frame') ?? 0);
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 }
 
 function applyFrame(frame: number): void {
+  writeRuntimeGlobal('frame', frame);
   const timeline = readRuntimeGlobal<TimelineLike>('timeline');
   const fps = sceneMeta.fps;
   if (timeline && typeof timeline.seekToFrame === 'function') {
@@ -213,6 +292,7 @@ export function mountBrowserRuntime(
   if (options.resolvedAudioManifest) {
     writeRuntimeGlobal('resolvedAudioManifest', options.resolvedAudioManifest);
   }
+  window.__seqvio_whiteboardOptimize = options.whiteboardOptimize ?? 'none';
 
   writeRuntimeGlobal('getMeta', () => {
     const compositionMeta = readRuntimeGlobal<RenderableMeta>('compositionMeta') ?? {};

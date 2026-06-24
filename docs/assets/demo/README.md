@@ -21,4 +21,4 @@ Source compositions:
 
 Local CLI renders and audio intermediates should write to `output/` at the repository root (gitignored).
 
-To refresh tracked README videos after `pnpm build`, follow the narrated render flow in [`skills/seqvio/references/audio-workflow.md`](../../../skills/seqvio/references/audio-workflow.md), then copy the final MP4 into `docs/assets/videos/`.
+To refresh tracked README videos after `npm run build`, follow the narrated render flow in [`skills/seqvio/references/audio-workflow.md`](../../../skills/seqvio/references/audio-workflow.md), then copy the final MP4 into `docs/assets/videos/`.

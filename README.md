@@ -171,7 +171,7 @@ The skill teaches workflow and commands. Install `@seqvio/renderer` separately w
 
 ## Why Seqvio
 
-Seqvio is not trying to be a full Remotion replacement or a generic HTML-to-video engine. It focuses on structured explainer videos.
+Seqvio is not trying to be a general-purpose video editor or a generic HTML-to-video engine. It focuses on structured explainer videos.
 
 - **Explainer-first workflow** — scenes, narration, captions, and visual steps in one composition
 - **Whiteboard-native primitives** — handwritten-style text, shapes, images, icons, style presets, and pen/hand timing

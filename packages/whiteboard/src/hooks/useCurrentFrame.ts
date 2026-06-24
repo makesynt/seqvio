@@ -8,6 +8,7 @@
 
 export {
   useCurrentFrame,
+  useFrameValue,
   useFPS,
   setGlobalFrame,
   getGlobalFrame,

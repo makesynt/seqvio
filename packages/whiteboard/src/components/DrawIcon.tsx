@@ -19,10 +19,11 @@ import { useDrawAnimationProgress } from '../hooks/useDrawAnimationProgress';
 import { calculateStrokeDashoffset } from '../utils/animationUtils';
 import { ICON_PATHS, isIconName } from './icons';
 import { useWhiteboardTheme } from '../theme';
+import { areSerializablePropsEqual } from '../utils/propEquality';
 
 const ICON_VIEWBOX = 24;
 
-export const DrawIcon: React.FC<DrawIconProps> = ({
+const DrawIconComponent: React.FC<DrawIconProps> = ({
   name,
   position = { x: 100, y: 100 },
   size = 64,
@@ -99,6 +100,9 @@ export const DrawIcon: React.FC<DrawIconProps> = ({
 
   return (
     <svg
+      className="seqvio-drawable"
+      data-seqvio-draw-start={start}
+      data-seqvio-draw-end={start + duration}
       style={{ position: 'absolute', left: 0, top: 0, overflow: 'visible' }}
       width="100%"
       height="100%"
@@ -142,6 +146,7 @@ export const DrawIcon: React.FC<DrawIconProps> = ({
   );
 };
 
+export const DrawIcon = React.memo(DrawIconComponent, areSerializablePropsEqual);
 DrawIcon.displayName = 'DrawIcon';
 
 export default DrawIcon;

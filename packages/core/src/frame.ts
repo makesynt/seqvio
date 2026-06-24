@@ -17,6 +17,8 @@ import {
   createElement,
   useContext,
   useEffect,
+  useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -39,28 +41,53 @@ export function getGlobalFrame(): number {
   return globalFrame;
 }
 
+export function subscribeGlobalFrame(listener: (frame: number) => void): () => void {
+  frameListeners.add(listener);
+  return () => {
+    frameListeners.delete(listener);
+  };
+}
+
 /* ------------------------------------------------------------------ */
 /* Scene-local frame                                                   */
 /* ------------------------------------------------------------------ */
 
-const SceneLocalFrameContext = createContext<number | null>(null);
+type SceneLocalFrameContextValue =
+  | { type: 'frame'; frame: number }
+  | { type: 'global-start'; globalStart: number };
+
+const SceneLocalFrameContext = createContext<SceneLocalFrameContextValue | null>(null);
 
 export function SceneLocalFrameProvider({
   value,
+  globalStart,
   children,
 }: {
-  value: number;
+  value?: number;
+  globalStart?: number;
   children: ReactNode;
 }) {
+  const contextValue = useMemo<SceneLocalFrameContextValue>(
+    () =>
+      typeof globalStart === 'number'
+        ? { type: 'global-start', globalStart }
+        : { type: 'frame', frame: value ?? 0 },
+    [globalStart, value]
+  );
   return createElement(
     SceneLocalFrameContext.Provider,
-    { value },
+    { value: contextValue },
     children
   );
 }
 
 export function useSceneLocalFrame(): number | null {
-  return useContext(SceneLocalFrameContext);
+  const sceneFrame = useContext(SceneLocalFrameContext);
+  if (!sceneFrame) return null;
+  if (sceneFrame.type === 'global-start') {
+    return Math.max(0, globalFrame - sceneFrame.globalStart);
+  }
+  return sceneFrame.frame;
 }
 
 /* ------------------------------------------------------------------ */
@@ -93,19 +120,61 @@ export function useFPS(): number {
  * inside an active <Scene>, otherwise the global composition frame.
  */
 export function useCurrentFrame(): number {
-  const sceneLocalFrame = useSceneLocalFrame();
-  const [frame, setFrame] = useState(globalFrame);
+  return useFrameValue((frame) => frame);
+}
+
+/**
+ * Subscribe to the current frame through a selector, re-rendering only when the
+ * selected value changes (per `isEqual`). This keeps whiteboard draw components
+ * from re-rendering every frame when their derived value (e.g. animation
+ * progress) is unchanged.
+ *
+ * Subscription contract:
+ * - For `global-start` scenes and the global composition, the component
+ *   subscribes to global frame updates and re-evaluates the selector each frame.
+ * - For `frame`-type scenes (a fixed, pre-resolved scene-local frame), the value
+ *   never changes after mount, so no subscription is created — the selector is
+ *   evaluated once.
+ *
+ * `selector` and `isEqual` are part of the effect dependencies, so callers MUST
+ * pass stable (memoized) references — otherwise the subscription is torn down
+ * and re-created on every render. See `useDrawAnimationProgress` for the
+ * expected `useCallback` usage.
+ */
+export function useFrameValue<T>(
+  selector: (frame: number) => T,
+  isEqual: (a: T, b: T) => boolean = Object.is
+): T {
+  const sceneFrame = useContext(SceneLocalFrameContext);
+  const getFrame = () => {
+    if (!sceneFrame) return globalFrame;
+    if (sceneFrame.type === 'global-start') {
+      return Math.max(0, globalFrame - sceneFrame.globalStart);
+    }
+    return sceneFrame.frame;
+  };
+  const [value, setValue] = useState(() => selector(getFrame()));
+  const valueRef = useRef(value);
+  valueRef.current = value;
 
   useEffect(() => {
-    frameListeners.add(setFrame);
-    return () => {
-      frameListeners.delete(setFrame);
+    const update = () => {
+      const next = selector(getFrame());
+      if (!isEqual(valueRef.current, next)) {
+        valueRef.current = next;
+        setValue(next);
+      }
     };
-  }, []);
+    update();
 
-  if (sceneLocalFrame !== null) {
-    return sceneLocalFrame;
-  }
+    // A fixed scene-local frame never advances, so there is nothing to subscribe
+    // to — the single update() above already captured the final value.
+    if (sceneFrame?.type === 'frame') {
+      return undefined;
+    }
 
-  return frame;
+    return subscribeGlobalFrame(update);
+  }, [sceneFrame, selector, isEqual]);
+
+  return value;
 }

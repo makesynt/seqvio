@@ -43,12 +43,12 @@
  * @param traceMode - Trace mode: 'outline' | 'full' | 'edges' (default: 'outline')
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useId, useState } from 'react';
 import { DrawImageProps } from '../types';
-import { useCurrentFrame } from '../hooks/useCurrentFrame';
-import { calculateProgress } from '../utils/animationUtils';
+import { useDrawAnimationProgress } from '../hooks/useDrawAnimationProgress';
+import { areSerializablePropsEqual } from '../utils/propEquality';
 
-export const DrawImage: React.FC<DrawImageProps> = ({
+const DrawImageComponent: React.FC<DrawImageProps> = ({
   src,
   position = { x: 100, y: 100 },
   size = { width: 200, height: 200 },
@@ -57,11 +57,10 @@ export const DrawImage: React.FC<DrawImageProps> = ({
   easing = 'ease-out',
   traceMode = 'outline'
 }) => {
-  const frame = useCurrentFrame();
+  const drawId = useId();
   const [imageLoaded, setImageLoaded] = useState(false);
 
-  // Calculate animation progress
-  const progress = calculateProgress(frame, start, duration, easing);
+  const progress = useDrawAnimationProgress(drawId, start, duration, easing);
 
   // For MVP, we'll use a simple fade-in with scale effect
   // In production, you'd trace the image outline or edges
@@ -88,11 +87,18 @@ export const DrawImage: React.FC<DrawImageProps> = ({
   };
 
   return (
-    <div style={containerStyle}>
+    <div
+      className="seqvio-drawable"
+      data-seqvio-draw-start={start}
+      data-seqvio-draw-end={start + duration}
+      style={containerStyle}
+    >
       <img
         src={src}
         style={imageStyle}
-        onLoad={() => setImageLoaded(true)}
+        onLoad={() => {
+          setImageLoaded(true);
+        }}
         alt="Whiteboard drawing"
       />
       {traceMode === 'outline' && progress < 1 && (
@@ -113,5 +119,8 @@ export const DrawImage: React.FC<DrawImageProps> = ({
     </div>
   );
 };
+
+export const DrawImage = React.memo(DrawImageComponent, areSerializablePropsEqual);
+DrawImage.displayName = 'DrawImage';
 
 export default DrawImage;

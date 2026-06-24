@@ -170,7 +170,7 @@ Skill 负责教流程和命令；要输出 MP4 还需单独安装 `@seqvio/rende
 
 ## 为什么是 Seqvio
 
-Seqvio 不是完整替代 Remotion，也不是通用 HTML-to-video 引擎。它更聚焦结构化讲解视频。
+Seqvio 不是通用视频编辑器，也不是通用 HTML-to-video 引擎。它更聚焦结构化讲解视频。
 
 - **讲解视频优先**：场景、旁白、字幕、视觉步骤放在同一 composition 中
 - **白板风格内建**：手写文字、草图形状、图片、图标、style presets、画笔/手势节奏

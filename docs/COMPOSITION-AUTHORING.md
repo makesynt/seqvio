@@ -1,6 +1,6 @@
 # TSX Composition Authoring
 
-Seqvio renders **React/TSX** compositions to MP4, similar to Remotion.
+Seqvio renders **React/TSX** compositions to MP4 by mounting them in headless Chromium and capturing one screenshot per frame.
 
 TSX is the production source: it is what gets bundled, rendered, reviewed, and hand-edited. For agent-assisted generation, a host agent may first produce Storyboard IR JSON, then `seqvio-generate` validates and compiles that IR into TSX. Seqvio does not call AI or planner APIs itself.
 
@@ -34,7 +34,7 @@ Imports resolve via esbuild aliases:
 
 ## Single-scene layout
 
-Use one `WhiteboardScene` per file. Place `DrawText`, `DrawShape`, `DrawImage`, and `Hand` as children.
+Use one `WhiteboardScene` per file. Place `DrawText`, `DrawShape`, `DrawImage`, `DrawIcon`, and `Hand` as children.
 
 Timing uses **frames**, not seconds:
 
@@ -70,7 +70,7 @@ Each scene component wraps its own `WhiteboardScene`. Element `start`/`duration`
 - Set `singlePen={false}` to restore overlapping authored timelines.
 - Scene `duration` must cover the **serialized** end: sum of draw durations (plus any `start` gaps). Use `getSerializedSceneEnd()` from `@seqvio/whiteboard` when planning.
 
-Supported transitions (MVP): `fade`, `slide`, `wipe`, and others defined in `packages/core/src/transitions.ts`.
+Supported transitions: `fade`, `slide`, and `wipe` (defined in `packages/core/src/transitions.ts`). Unknown transition names fall back to `fade`.
 
 ## Examples
 

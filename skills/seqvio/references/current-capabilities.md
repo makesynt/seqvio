@@ -32,9 +32,15 @@ From `@seqvio/whiteboard`:
 - `DrawText`
 - `DrawShape`
 - `DrawImage`
+- `DrawIcon`
 - `Hand`
 
 `WhiteboardScene` defaults to `singlePen={true}`, so overlapping draw actions are serialized.
+
+Frame hooks (from `@seqvio/whiteboard`, re-exported from `@seqvio/core`):
+
+- `useCurrentFrame()` — the current frame for the calling component (scene-local inside a `<Scene>`, otherwise the global frame).
+- `useFrameValue(selector, isEqual?)` — subscribe through a selector and re-render only when the selected value changes. Pass memoized `selector`/`isEqual` (e.g. via `useCallback`) to keep the subscription stable.
 
 ## Core composition components
 
@@ -105,8 +111,10 @@ Local render intermediates belong in `output/` and are gitignored.
 | Path | Purpose |
 | --- | --- |
 | `packages/whiteboard` | Whiteboard components |
+| `packages/scatterbrain` | Scatterbrain sticky-note / cork-board style components |
 | `packages/core` | Scene and transition runtime |
 | `packages/renderer` | Bundler and CLIs |
+| `packages/product-demo` | Product walkthrough components |
 | `examples/compositions/` | Renderable compositions |
 | `skills/seqvio/` | Agent skill and references |
 | `docs/` | Human-facing docs |

@@ -233,7 +233,7 @@ export const Scene: React.FC<SceneProps> = ({ id, duration, children }) => {
   return (
     <div data-scene-id={id} style={sceneStyle}>
       <SceneLocalFrameProvider
-        value={Math.max(0, frame - registration.globalStart)}
+        globalStart={registration.globalStart}
       >
         {children}
       </SceneLocalFrameProvider>
