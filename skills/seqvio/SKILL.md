@@ -29,7 +29,9 @@ When narration and visuals must align, use the **resolved-audio workflow**:
 2. set `sceneId` on each cue
 3. set `lockToAudio: true` when final composition length should follow resolved narration
 4. run `seqvio-audio extract` then `seqvio-audio synthesize`
-5. render with `--audioManifest .../audio-manifest.resolved.json` and optional `--burnCaptions`
+5. render with `--audioManifest .../audio-manifest.resolved.json`
+
+Do **not** add `--burnCaptions` by default. Voiceover is muxed from the manifest; burned captions are an optional hard-subtitle overlay. Only use `--burnCaptions` for short on-screen lines with bottom safe area — not for full narration paragraphs or YouTube/Bilibili delivery. See [references/audio-workflow.md](references/audio-workflow.md#caption-burn-in-optional).
 
 The resolved manifest contains actual cue timings from synthesized audio. The framework can derive scene durations from those timings automatically.
 
@@ -68,7 +70,7 @@ The skill alone does not install npm packages or render MP4 output.
 ## Example Prompts
 
 - "Using `/seqvio`, write a plan-agent task for a Chinese history explainer, then validate and compile the returned IR."
-- "Using `/seqvio`, create a 4-scene Chinese product overview with whiteboard visuals, ElevenLabs narration, and burned-in captions."
+- \"Using `/seqvio`, create a 4-scene Chinese product overview with whiteboard visuals and ElevenLabs narration.\"
 - "Edit `examples/compositions/seqvio-overview-en.tsx` to add a new scene explaining the audio workflow, then render the final MP4."
 - "Fix timing in this composition so each scene aligns with its narration cue after synthesis."
 - "Render a silent whiteboard title card from a new single-scene TSX file."
@@ -200,7 +202,7 @@ Each scene usually wraps its own `WhiteboardScene`. Scene-local draw timings sta
 - Transition names are implemented ones.
 - Render command points at an existing TSX file.
 - Validation clips use `--startFrame` / `--endFrame` for exact ranges; the render log's `Rendering N frames` count matches the intended sample.
-- For narrated work, resolved audio manifest path and caption flags are included.
+- For narrated work, resolved audio manifest path is included; omit `--burnCaptions` unless the user explicitly requests hard-coded subtitles.
 - For narrated work, there are no unintentional long silent gaps, and any target-duration mismatch is resolved by script length, not silence padding.
 - For reference-style work, the output uses the reference's shape language, not only its colors or background.
 - Validation status is reported honestly if build or render was not run.

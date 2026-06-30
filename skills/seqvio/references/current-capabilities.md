@@ -85,7 +85,7 @@ Supported today:
 - per-cue `sceneId`
 - `lockToAudio: true`
 - resolved manifest driven scene timing
-- caption burn-in via `--burnCaptions`
+- optional caption burn-in via `--burnCaptions` (off by default; see audio-workflow.md)
 
 ## Example compositions
 

@@ -46,14 +46,31 @@ If those commands fail, install FFmpeg and make sure it is on `PATH`.
 
 ### Render is slow or times out
 
-Full renders can take several minutes, especially at `1280x720` or higher.
+Full renders can take several minutes, especially at `1280x720` with the default
+`pixelRatio=2` and `quality=high`.
+
+The renderer is dominated by **per-frame browser screenshots**, not FFmpeg
+encoding. `--quality low` only changes the final MP4 CRF and usually does not
+make capture much faster.
 
 Try one or more of these:
 
-- use a smoke command first
-- lower `--quality`
+- use `--preset preview` for iteration
 - lower `--pixelRatio` to `1`
+- lower `--fps` to `24`
+- use `--frameFormat jpeg` and `--pipeFrames` for preview renders
+- use `--workers 2` when piping is disabled
 - render a shorter range with `--startFrame` and `--endFrame`
+- use `--stillFrame` or `--contactSheet auto` for layout QA instead of a full MP4
+
+Fast preview example:
+
+```bash
+pnpm --filter @seqvio/renderer exec seqvio-render \
+  --component examples/compositions/seqvio-intro.tsx \
+  --output output/preview.mp4 \
+  --preset preview
+```
 
 Useful smoke commands:
 

@@ -241,9 +241,10 @@ node packages/renderer/dist/cli.js \
   --component examples/compositions/seqvio-overview-zh.tsx \
   --output output/seqvio-overview-zh.mp4 \
   --width 1280 --height 720 --fps 30 --quality medium \
-  --audioManifest output/seqvio-overview-zh-audio/audio-manifest.resolved.json \
-  --burnCaptions
+--audioManifest output/seqvio-overview-zh-audio/audio-manifest.resolved.json
 ```
+
+旁白会自动从 manifest 混入音轨。**默认不要**加 `--burnCaptions`；它会把字幕硬编码进画面（长旁白会遮挡下半屏）。YouTube/B 站请单独上传 SRT。详见 [`skills/seqvio/references/audio-workflow.md`](./skills/seqvio/references/audio-workflow.md#caption-burn-in-optional)。
 
 凭据从进程环境变量读取；CLI 不会自动加载 `.env`。参考 [`.env.example`](./.env.example)。
 

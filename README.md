@@ -242,11 +242,10 @@ node packages/renderer/dist/cli.js \
   --component examples/compositions/seqvio-overview-en.tsx \
   --output output/seqvio-overview-en.mp4 \
   --width 1280 --height 720 --fps 30 --quality medium \
-  --audioManifest output/seqvio-overview-en-audio/audio-manifest.resolved.json \
-  --burnCaptions
+--audioManifest output/seqvio-overview-en-audio/audio-manifest.resolved.json
 ```
 
-Credentials are read from process environment variables. The CLI does not auto-load `.env`. See [`.env.example`](./.env.example).
+Voiceover is muxed automatically from the manifest. **Do not** add `--burnCaptions` unless you intentionally want hard-coded subtitles in the frames (short lines + bottom safe area). For YouTube/Bilibili, upload SRT separately instead. See [`skills/seqvio/references/audio-workflow.md`](./skills/seqvio/references/audio-workflow.md#caption-burn-in-optional).
 
 ## Packages
 

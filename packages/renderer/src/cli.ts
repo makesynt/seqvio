@@ -43,7 +43,9 @@ Options:
   --audioTrack <p>      Path to an audio file to mux as narration
   --mixMusic <p>        Path to a music file to mix under narration
   --captions <p>        Path to captions JSON for burn-in rendering
-  --burnCaptions        Burn caption cues into the video frames
+  --burnCaptions         Optional: bake caption cues into frames (hard subtitles).
+                         Default: off. Do not use for full narration text or
+                         whiteboard content in the lower third.
   --keepFrames          Keep intermediate frame files after render
   --help                Show this help
 `);

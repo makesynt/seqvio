@@ -8,9 +8,10 @@ Use the audio workflow when:
 
 - the video needs voiceover
 - scene duration should follow synthesized narration
-- captions should be burned into the final MP4
 
 Silent whiteboard renders can skip this flow entirely.
+
+Hard-coded subtitle burn-in (`--burnCaptions`) is **not** part of the default narrated workflow. See [Caption burn-in (optional)](#caption-burn-in-optional) below.
 
 ## Authoring contract
 
@@ -94,14 +95,41 @@ node packages/renderer/dist/cli.js \
   --height 720 \
   --fps 30 \
   --quality medium \
-  --audioManifest output/seqvio-overview-en-audio/audio-manifest.resolved.json \
-  --burnCaptions
+--audioManifest output/seqvio-overview-en-audio/audio-manifest.resolved.json
 ```
 
 Important flags:
 
-- `--audioManifest` — path to `audio-manifest.resolved.json`
-- `--burnCaptions` — embed captions in the rendered MP4
+- `--audioManifest` — path to `audio-manifest.resolved.json` (required for narrated renders)
+
+Do **not** add `--burnCaptions` unless you explicitly want hard-coded subtitles in the video frames. Voiceover is already muxed from the manifest; burned captions are a separate visual overlay.
+
+## Caption burn-in (optional)
+
+`--burnCaptions` bakes caption cues into every frame as a bottom overlay (black bar + white text). It is **optional** and often the wrong default.
+
+**Use `--burnCaptions` only when all of these apply:**
+
+- You need silent autoplay with on-screen text (e.g. some social clips)
+- Captions are **short lines**, not full narration paragraphs per scene
+- The composition reserves bottom safe area (roughly the lower 140px)
+
+**Do not use `--burnCaptions` when:**
+
+- Publishing to YouTube, Bilibili, or similar — upload SRT/VTT separately instead
+- Each scene cue is the full voiceover script (overlay will cover much of the frame)
+- Whiteboard content extends into the lower third
+
+Example (only when burn-in is intentional):
+
+```bash
+pnpm --filter @seqvio/renderer exec seqvio-render \
+  --component ../../examples/compositions/seqvio-audio-demo.tsx \
+  --output ../../output/caption-demo.mp4 \
+  --width 1280 --height 720 --fps 30 --quality medium \
+  --audioManifest ../../output/seqvio-audio-demo-audio/audio-manifest.resolved.json \
+  --burnCaptions
+```
 
 ## Audio-aligned timing rules
 
@@ -131,6 +159,8 @@ After regenerating a narrated overview:
 
 - Missing provider credentials: switch provider or export the required env vars
 - Scene feels too short: check serialized whiteboard draw timing, not just authored `start`
-- Captions missing: confirm `--burnCaptions` and that narration metadata exists in the composition
+- Voiceover missing: confirm `--audioManifest` points to `audio-manifest.resolved.json`
+- Burned captions missing: only relevant if you intentionally passed `--burnCaptions`; otherwise upload subtitles on the target platform
+- Bottom of frame obscured: you likely used `--burnCaptions` with long per-scene caption text — re-render without it
 
 See [`docs/TROUBLESHOOTING.md`](../../../docs/TROUBLESHOOTING.md) for more detail.

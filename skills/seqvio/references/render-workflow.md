@@ -94,7 +94,7 @@ Audio and captions:
 - `--audioTrack <path>` — single narration track at offset 0
 - `--mixMusic <path>` — background music bed
 - `--captions <path>` — caption JSON file
-- `--burnCaptions` — burn captions into the video
+- `--burnCaptions` — optional hard-coded subtitle overlay (off by default; see [audio-workflow.md](audio-workflow.md#caption-burn-in-optional))
 
 Fastest possible preview:
 
@@ -123,9 +123,10 @@ node packages/renderer/dist/cli.js \
   --component examples/compositions/seqvio-overview-en.tsx \
   --output output/seqvio-overview-en.mp4 \
   --width 1280 --height 720 --fps 30 --quality medium \
-  --audioManifest output/seqvio-overview-en-audio/audio-manifest.resolved.json \
-  --burnCaptions
+  --audioManifest output/seqvio-overview-en-audio/audio-manifest.resolved.json
 ```
+
+Do **not** add `--burnCaptions` unless you intentionally want hard-coded subtitles in the frames.
 
 See [audio-workflow.md](audio-workflow.md) for provider selection and manifest details.
 
