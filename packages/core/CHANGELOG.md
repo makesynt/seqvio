@@ -1,5 +1,11 @@
 # @seqvio/core
 
+## 0.5.0
+
+### Minor Changes
+
+- Add expanded CJK handwriting font support, renderer font asset bundling, and production guidance for dark blackboard explainers.
+
 ## 0.4.0
 
 ### Minor Changes
