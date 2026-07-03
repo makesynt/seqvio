@@ -1,11 +1,14 @@
 # Bundled fonts
 
-| File | License | Use |
-|------|---------|-----|
-| `Virgil.woff2` | [OFL-1.1](https://github.com/excalidraw/virgil) | Latin handwriting (`theme.handDrawn`) |
-| `LongCang-Regular.ttf` | [OFL-1.1](https://github.com/google/fonts/tree/main/ofl/longcang) | CJK handwriting default (`handDrawn` + SVG text) |
-| `Yozai-Regular.ttf` | [OFL-1.1](https://github.com/lxgw/yozai-font) | optional alternate |
-| `Xiaolai-Regular.ttf` | [OFL-1.1](https://github.com/lxgw/kose-font) | optional alternate |
+| File                         | License                                                           | Use                                              |
+| ---------------------------- | ----------------------------------------------------------------- | ------------------------------------------------ |
+| `Virgil.woff2`               | [OFL-1.1](https://github.com/excalidraw/virgil)                   | Latin handwriting (`theme.handDrawn`)            |
+| `LongCang-Regular.ttf`       | [OFL-1.1](https://github.com/google/fonts/tree/main/ofl/longcang) | CJK handwriting default (`handDrawn` + SVG text) |
+| `Yozai-Regular.ttf`          | [OFL-1.1](https://github.com/lxgw/yozai-font)                     | optional alternate                               |
+| `Xiaolai-Regular.ttf`        | [OFL-1.1](https://github.com/lxgw/kose-font)                      | optional alternate                               |
+| `LXGWWenKaiLite-Regular.ttf` | [OFL-1.1](https://github.com/lxgw/LxgwWenKai-Lite)                | optional alternate                               |
+| `LiuJianMaoCao-Regular.ttf`  | OFL-1.1                                                           | optional alternate                               |
+| `ZhiMangXing-Regular.ttf`    | OFL-1.1                                                           | optional alternate                               |
 
 When `handDrawn` is on, Chinese uses **SVG `<text>` + clip** (`textRoughness: 0` by default).
 
@@ -23,10 +26,10 @@ Also bundled at render time: Noto Sans SC, DejaVu (opentype paths when `handDraw
 ```tsx
 const theme = {
   ...excalidrawTheme,
-  fontFamily: 'Virgil, Yozai, sans-serif',
+  fontFamily: "Virgil, Yozai, sans-serif",
   pathFontUrls: {
     ...excalidrawTheme.pathFontUrls,
-    longcang: './Yozai-Regular.ttf',
+    longcang: "./Yozai-Regular.ttf",
   },
 };
 ```

@@ -2,6 +2,8 @@
 .env.local
 .env.*
 !.env.example
+*.config.local.json
+config.local.json
 
 # Dependencies
 node_modules/
@@ -22,6 +24,7 @@ output/
 
 # Local IDE config
 .cursor/
+.claude/
 
 # visual regression scratch
 tests/visual-snapshots/.work/

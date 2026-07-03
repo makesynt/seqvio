@@ -2,8 +2,8 @@
  * Default whiteboard theme — refined stroke-first look
  */
 
-export type TextRenderMode = 'fill' | 'stroke' | 'stroke-wash';
-export type ShapeFillDefault = 'none' | 'wash';
+export type TextRenderMode = "fill" | "stroke" | "stroke-wash";
+export type ShapeFillDefault = "none" | "wash";
 
 /**
  * Font-size hierarchy for a WhiteboardScene canvas.
@@ -74,13 +74,19 @@ export interface WhiteboardTheme {
     virgil?: string;
     /** Hand-drawn CJK (Long Cang 龙苍, truetype, SVG text). */
     longcang?: string;
-    /** @deprecated Use longcang */
+    /** Hand-drawn CJK (Yozai 悠哉, truetype, SVG text). */
     yozai?: string;
-    /** @deprecated Use longcang */
+    /** Hand-drawn CJK (Xiaolai 小赖, truetype, SVG text). */
     xiaolai?: string;
-    /** @deprecated Use longcang */
+    /** Hand-drawn CJK (LXGW WenKai Lite 霞鹜文楷, truetype, SVG text). */
     wenkai?: string;
+    /** Hand-drawn CJK (Liu Jian Mao Cao 刘建毛草, truetype, SVG text). */
+    liuJianMaoCao?: string;
+    /** Hand-drawn CJK (Zhi Mang Xing 志莽行, truetype, SVG text). */
+    zhiMangXing?: string;
   };
+  /** Preferred CJK family for handDrawn SVG text when DrawText.font is not set. */
+  cjkHandwritingFamily?: string;
   defaultBorderRadius: number;
   /** Use roughjs hand-drawn strokes for DrawShape (seed-stable for video). */
   handDrawn?: boolean;
@@ -133,26 +139,26 @@ export const defaultSpacing: Spacing = {
 
 export const defaultWhiteboardTheme: WhiteboardTheme = {
   colors: {
-    ink: '#2c3e50',
-    accent: '#3498db',
-    accent2: '#27ae60',
-    muted: '#7f8c8d',
-    surface: '#ffffff',
-    cta: '#e74c3c',
-    background: '#f8f9fb',
+    ink: "#2c3e50",
+    accent: "#3498db",
+    accent2: "#27ae60",
+    muted: "#7f8c8d",
+    surface: "#ffffff",
+    cta: "#e74c3c",
+    background: "#f8f9fb",
   },
   strokeWidth: 2,
   strokeWidthBold: 3,
-  textRender: 'fill',
+  textRender: "fill",
   textWashOpacity: 0.3,
-  shapeFillDefault: 'wash',
-  shapeWashFill: 'rgba(255,255,255,0.65)',
+  shapeFillDefault: "wash",
+  shapeWashFill: "rgba(255,255,255,0.65)",
   shapeWashOpacity: 0.85,
   fontFamily:
     '"Microsoft YaHei UI","PingFang SC","Noto Sans SC",system-ui,sans-serif',
   pathFontUrls: {
-    noto: './NotoSansSC-Regular.woff',
-    dejavu: './DejaVuSans.ttf',
+    noto: "./NotoSansSC-Regular.woff",
+    dejavu: "./DejaVuSans.ttf",
     virgil: undefined,
   },
   defaultBorderRadius: 10,
@@ -163,14 +169,16 @@ export const defaultWhiteboardTheme: WhiteboardTheme = {
 
 export function getTextStrokeWidth(
   fontSize: number,
-  theme: WhiteboardTheme = defaultWhiteboardTheme
+  theme: WhiteboardTheme = defaultWhiteboardTheme,
 ): number {
   if (fontSize >= 40) return theme.strokeWidthBold;
   if (fontSize >= 24) return theme.strokeWidth + 0.5;
   return theme.strokeWidth;
 }
 
-export function mergeTheme(partial?: Partial<WhiteboardTheme>): WhiteboardTheme {
+export function mergeTheme(
+  partial?: Partial<WhiteboardTheme>,
+): WhiteboardTheme {
   if (!partial) return defaultWhiteboardTheme;
   return {
     ...defaultWhiteboardTheme,

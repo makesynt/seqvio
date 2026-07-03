@@ -65,6 +65,70 @@ Avoid explaining an entire video with only rounded rectangles plus text. Prefer 
 
 Use labels as support, not as the primary visual payload.
 
+## Takeaway containers
+
+Avoid using the same long bottom rounded rectangle on every scene. A repeated bottom bar makes the video feel like a slide template and trains viewers to ignore the final line.
+
+Choose a takeaway form that belongs to the scene's visual logic:
+
+- underlined chalk statement: for a direct conclusion
+- circled keyword or phrase: for concept clarification
+- sticky note, taped note, or margin note: for a human aside
+- stamp, seal, or badge: for principles, rules, and approval
+- speech bubble or question bubble: for dialogue, Socratic prompts, and doubts
+- gauge marker, warning sign, or red line: for risk and trust boundaries
+- bracket, brace, or callout arrow attached to a diagram node: for synthesis
+
+Do not treat takeaways as subtitles. Integrate them into the drawing: attach them to a node, place them where the diagram resolves, or let them transform from a crossed-out misconception into the final phrase.
+
+## Scene-level visual metaphors
+
+For multi-scene explainers, avoid reusing the same "header + center boxes + bottom takeaway" composition across the whole video. Assign each scene one visual metaphor, then pick shapes and motion from that metaphor.
+
+Useful patterns:
+
+- hiring or team setup: recruiting board, name tags, org chart, desk layout
+- debugging concepts: diagnostic report, magnifier, bug trail, crossed-out terms
+- principles or constitutions: scroll, clause list, stamp, seal, courthouse steps
+- Socratic reasoning: chain of question bubbles, forked path, ladder of questions
+- personality or manipulation: mask, trust meter, distance line, steering wheel
+- consciousness or future risk: timeline, horizon mark, telescope, question cloud
+- infrastructure: city map, network graph, pipes, roads, institutional layers
+- closing synthesis: system loop, constellation, equation with circled terms
+
+Vary scene composition deliberately: use left/right contrast, radial loops, timelines, maps, stacked layers, ladders, and flow diagrams. Rectangles are fine as one element, but they should not be the entire visual language.
+
+## Expressive blackboard motion
+
+Prefer motion that explains the idea, not only "box appears, text appears, arrow appears".
+
+Use:
+
+- draw the wrong wording first, cross it out, then write the clearer phrase
+- start with a vague cloud and sharpen it into named concepts
+- circle or underline the word currently being explained
+- move arrows from one problem to the next as narration advances
+- erase a false assumption before revealing the better model
+- let one scene's final mark become the first mark in the next scene when possible
+
+For dark blackboard work, keep the final frame readable: no dense overlapping chalk marks, no long centered sentence over a diagram, and no bottom text clipped by its container.
+
+## Dark blackboard readability
+
+For serious, risk, warning, or institutional themes, prefer a near-charcoal blackboard over a saturated green/teal board. Good starting backgrounds are `#111210` or `#141a17`; adjust by snapshot, not by taste alone. Avoid strong repeating horizontal line textures on dark boards because they make the frame look dirty and reduce chalk-text contrast. A very subtle dust or vignette layer is fine, but it must not create visible stripes.
+
+When using circles or containers as concept groupings:
+
+- prefer hollow outline circles when the circle is just a category or habitat metaphor
+- do not set a filled circle to the same or similar color as the text inside it
+- do not add a label plaque/border inside a circle unless the scene deliberately needs a UI-card look
+- keep the label high contrast against the background; on a dark board, white or very light chalk text is usually safest
+- verify the actual rendered frame, because rough fills, hachure marks, and texture overlays can make text unreadable even when the colors look fine in code
+
+Keep arrows out of text. Arrows should start near the source node edge and end near the target node edge; they should not run through labels, icon centers, faces, or final takeaway text. Closing scenes need extra inspection because they often combine the most important words, arrows, and summary marks in one frame.
+
+For Chinese blackboard videos that specify Long Cang, use the actual family name `"Long Cang"` (not `"LongCang"`) in CSS/TSX text stacks and set the theme's `cjkHandwritingFamily` explicitly. Check both `DrawText` text and any HTML/CSS overlay text, since they can use different font paths.
+
 ## Palette and hierarchy
 
 Use semantic color, not random decoration:

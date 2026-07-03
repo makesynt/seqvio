@@ -82,6 +82,7 @@ The skill alone does not install npm packages or render MP4 output.
 - For build and render commands, read [references/render-workflow.md](references/render-workflow.md).
 - For narration extraction, synthesis, and muxing, read [references/audio-workflow.md](references/audio-workflow.md).
 - For production craft rules from real narrated explainer work, read [references/production-techniques.md](references/production-techniques.md).
+- When making blackboard or whiteboard explainers, use the visual metaphor and takeaway-container guidance in [references/production-techniques.md](references/production-techniques.md) to avoid repetitive rectangle-only layouts.
 - For host-agent storyboard IR planning, read [references/planning-workflow.md](references/planning-workflow.md).
 
 ### Visual styles
@@ -176,24 +177,24 @@ Each scene usually wraps its own `WhiteboardScene`. Scene-local draw timings sta
    - `seqvio-audio extract`
    - `seqvio-audio synthesize`
    - `seqvio-render --audioManifest ...`
-   If a provider-specific credential is missing, switch to an available provider such as `edge-tts` instead of assuming synthesis is blocked.
+     If a provider-specific credential is missing, switch to an available provider such as `edge-tts` instead of assuming synthesis is blocked.
 
 ## Reference Map
 
-| Need | Read |
-| --- | --- |
-| What is real today vs aspirational | [references/current-capabilities.md](references/current-capabilities.md) |
-| How to structure TSX files and timing | [references/authoring-patterns.md](references/authoring-patterns.md) |
-| How to build and render | [references/render-workflow.md](references/render-workflow.md) |
-| How to extract, synthesize, and mux narration | [references/audio-workflow.md](references/audio-workflow.md) |
-| Production craft rules for narrated explainers | [references/production-techniques.md](references/production-techniques.md) |
-| How to produce storyboard IR with a host agent | [references/planning-workflow.md](references/planning-workflow.md) |
-| Whiteboard Pin & Paper theme authoring | [references/pin-and-paper-theme.md](references/pin-and-paper-theme.md) |
-| Scatterbrain sticky-note style authoring | [references/scatterbrain-style.md](references/scatterbrain-style.md) |
-| Drive GSAP / Lottie / Three.js from the render clock | [references/seekable-animations.md](references/seekable-animations.md) |
-| Parallel render (--workers) and preset flags | [references/parallel-render.md](references/parallel-render.md) |
-| Design token spec for AI layout authoring | [references/frame-spec.md](references/frame-spec.md) |
-| Copy reusable blocks with seqvio-add | [references/catalog.md](references/catalog.md) |
+| Need                                                 | Read                                                                       |
+| ---------------------------------------------------- | -------------------------------------------------------------------------- |
+| What is real today vs aspirational                   | [references/current-capabilities.md](references/current-capabilities.md)   |
+| How to structure TSX files and timing                | [references/authoring-patterns.md](references/authoring-patterns.md)       |
+| How to build and render                              | [references/render-workflow.md](references/render-workflow.md)             |
+| How to extract, synthesize, and mux narration        | [references/audio-workflow.md](references/audio-workflow.md)               |
+| Production craft rules for narrated explainers       | [references/production-techniques.md](references/production-techniques.md) |
+| How to produce storyboard IR with a host agent       | [references/planning-workflow.md](references/planning-workflow.md)         |
+| Whiteboard Pin & Paper theme authoring               | [references/pin-and-paper-theme.md](references/pin-and-paper-theme.md)     |
+| Scatterbrain sticky-note style authoring             | [references/scatterbrain-style.md](references/scatterbrain-style.md)       |
+| Drive GSAP / Lottie / Three.js from the render clock | [references/seekable-animations.md](references/seekable-animations.md)     |
+| Parallel render (--workers) and preset flags         | [references/parallel-render.md](references/parallel-render.md)             |
+| Design token spec for AI layout authoring            | [references/frame-spec.md](references/frame-spec.md)                       |
+| Copy reusable blocks with seqvio-add                 | [references/catalog.md](references/catalog.md)                             |
 
 ## Handoff Checklist
 
@@ -205,4 +206,5 @@ Each scene usually wraps its own `WhiteboardScene`. Scene-local draw timings sta
 - For narrated work, resolved audio manifest path is included; omit `--burnCaptions` unless the user explicitly requests hard-coded subtitles.
 - For narrated work, there are no unintentional long silent gaps, and any target-duration mismatch is resolved by script length, not silence padding.
 - For reference-style work, the output uses the reference's shape language, not only its colors or background.
+- For Chinese dark-blackboard videos, explicitly verify the CJK handwriting family (for Long Cang use `"Long Cang"`), text contrast inside circles/containers, arrow overlap, and dark-background readability in representative snapshots.
 - Validation status is reported honestly if build or render was not run.

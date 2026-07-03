@@ -2,16 +2,16 @@
  * esbuild bundler for user scene TSX → browser bundle
  */
 
-import * as esbuild from 'esbuild';
-import * as fs from 'fs';
-import * as path from 'path';
-import type { CaptionCue, CompositionAudioManifest } from './media-contract';
+import * as esbuild from "esbuild";
+import * as fs from "fs";
+import * as path from "path";
+import type { CaptionCue, CompositionAudioManifest } from "./media-contract";
 import {
   collectNodeModulesRoots,
   getRendererPackageRoot,
   resolvePackageFile,
   resolvePackageModuleEntry,
-} from './resolve-package';
+} from "./resolve-package";
 
 export interface BundleSceneOptions {
   componentPath: string;
@@ -33,7 +33,7 @@ export interface BundleSceneResult {
 }
 
 function toImportPath(filePath: string): string {
-  return filePath.split(path.sep).join('/');
+  return filePath.split(path.sep).join("/");
 }
 
 export function resolveComponentPath(componentPath: string): string {
@@ -41,27 +41,33 @@ export function resolveComponentPath(componentPath: string): string {
     componentPath,
     path.resolve(process.cwd(), componentPath),
     path.resolve(getRendererPackageRoot(), componentPath),
-    path.resolve(getRendererPackageRoot(), '..', '..', componentPath),
+    path.resolve(getRendererPackageRoot(), "..", "..", componentPath),
   ];
 
   for (const candidate of candidates) {
     const normalized = path.normalize(candidate);
     if (fs.existsSync(normalized)) return path.resolve(normalized);
-    if (fs.existsSync(`${normalized}.tsx`)) return path.resolve(`${normalized}.tsx`);
-    if (fs.existsSync(`${normalized}.ts`)) return path.resolve(`${normalized}.ts`);
-    if (fs.existsSync(path.join(normalized, 'index.tsx'))) {
-      return path.resolve(path.join(normalized, 'index.tsx'));
+    if (fs.existsSync(`${normalized}.tsx`))
+      return path.resolve(`${normalized}.tsx`);
+    if (fs.existsSync(`${normalized}.ts`))
+      return path.resolve(`${normalized}.ts`);
+    if (fs.existsSync(path.join(normalized, "index.tsx"))) {
+      return path.resolve(path.join(normalized, "index.tsx"));
     }
-    if (fs.existsSync(path.join(normalized, 'index.ts'))) {
-      return path.resolve(path.join(normalized, 'index.ts'));
+    if (fs.existsSync(path.join(normalized, "index.ts"))) {
+      return path.resolve(path.join(normalized, "index.ts"));
     }
   }
 
   throw new Error(`Component file not found: ${componentPath}`);
 }
 
-export function writeRenderShell(outDir: string, width: number, height: number): string {
-  const shellPath = path.join(outDir, 'render-shell.html');
+export function writeRenderShell(
+  outDir: string,
+  width: number,
+  height: number,
+): string {
+  const shellPath = path.join(outDir, "render-shell.html");
   const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -87,7 +93,7 @@ export function writeRenderShell(outDir: string, width: number, height: number):
   <script src="./scene-bundle.js"></script>
 </body>
 </html>`;
-  fs.writeFileSync(shellPath, html, 'utf8');
+  fs.writeFileSync(shellPath, html, "utf8");
   return shellPath;
 }
 
@@ -95,9 +101,9 @@ function writeGeneratedEntry(
   outDir: string,
   scenePath: string,
   runtimePath: string,
-  options: BundleSceneOptions
+  options: BundleSceneOptions,
 ): string {
-  const entryPath = path.join(outDir, 'generated-entry.tsx');
+  const entryPath = path.join(outDir, "generated-entry.tsx");
   const sceneImport = toImportPath(scenePath);
   const runtimeImport = toImportPath(runtimePath);
 
@@ -109,14 +115,14 @@ mountBrowserRuntime(Scene, sceneMeta, {
   height: ${options.height},
   defaultFps: ${options.fps ?? 30},
   defaultDuration: ${options.duration ?? 300},
-  burnCaptions: ${options.burnCaptions ? 'true' : 'false'},
+  burnCaptions: ${options.burnCaptions ? "true" : "false"},
   captions: ${JSON.stringify(options.captions ?? null)},
   resolvedAudioManifest: ${JSON.stringify(options.resolvedAudioManifest ?? null)},
-  whiteboardOptimize: ${JSON.stringify(options.whiteboardOptimize ?? 'none')},
+  whiteboardOptimize: ${JSON.stringify(options.whiteboardOptimize ?? "none")},
 });
 `;
 
-  fs.writeFileSync(entryPath, entrySource, 'utf8');
+  fs.writeFileSync(entryPath, entrySource, "utf8");
   return entryPath;
 }
 
@@ -135,72 +141,105 @@ function copyBundledAssets(outDir: string): void {
 
   for (const root of roots) {
     dejavuCandidates.push(
-      path.join(root, 'dejavu-fonts-ttf', 'ttf', 'DejaVuSans.ttf')
+      path.join(root, "dejavu-fonts-ttf", "ttf", "DejaVuSans.ttf"),
     );
     notoCandidates.push(
       path.join(
         root,
-        '@fontsource',
-        'noto-sans-sc',
-        'files',
-        'noto-sans-sc-chinese-simplified-400-normal.woff'
-      )
+        "@fontsource",
+        "noto-sans-sc",
+        "files",
+        "noto-sans-sc-chinese-simplified-400-normal.woff",
+      ),
     );
   }
 
   const dejavu = findFirstExisting(dejavuCandidates);
   if (dejavu) {
-    fs.copyFileSync(dejavu, path.join(outDir, 'DejaVuSans.ttf'));
+    fs.copyFileSync(dejavu, path.join(outDir, "DejaVuSans.ttf"));
   }
 
   const noto = findFirstExisting(notoCandidates);
   if (noto) {
-    fs.copyFileSync(noto, path.join(outDir, 'NotoSansSC-Regular.woff'));
+    fs.copyFileSync(noto, path.join(outDir, "NotoSansSC-Regular.woff"));
   }
 
   const virgilBundled = resolvePackageFile(
-    '@seqvio/whiteboard',
-    'assets',
-    'fonts',
-    'Virgil.woff2'
+    "@seqvio/whiteboard",
+    "assets",
+    "fonts",
+    "Virgil.woff2",
   );
   if (fs.existsSync(virgilBundled)) {
-    fs.copyFileSync(virgilBundled, path.join(outDir, 'Virgil.woff2'));
+    fs.copyFileSync(virgilBundled, path.join(outDir, "Virgil.woff2"));
   }
 
   const longCangBundled = resolvePackageFile(
-    '@seqvio/whiteboard',
-    'assets',
-    'fonts',
-    'LongCang-Regular.ttf'
+    "@seqvio/whiteboard",
+    "assets",
+    "fonts",
+    "LongCang-Regular.ttf",
   );
   if (fs.existsSync(longCangBundled)) {
-    fs.copyFileSync(longCangBundled, path.join(outDir, 'LongCang-Regular.ttf'));
+    fs.copyFileSync(longCangBundled, path.join(outDir, "LongCang-Regular.ttf"));
+  }
+
+  for (const fontFile of [
+    "Xiaolai-Regular.ttf",
+    "LXGWWenKaiLite-Regular.ttf",
+    "Yozai-Regular.ttf",
+    "LiuJianMaoCao-Regular.ttf",
+    "ZhiMangXing-Regular.ttf",
+  ]) {
+    const bundled = resolvePackageFile(
+      "@seqvio/whiteboard",
+      "assets",
+      "fonts",
+      fontFile,
+    );
+    if (fs.existsSync(bundled)) {
+      fs.copyFileSync(bundled, path.join(outDir, fontFile));
+    }
   }
 }
 
-export async function bundleScene(options: BundleSceneOptions): Promise<BundleSceneResult> {
+export async function bundleScene(
+  options: BundleSceneOptions,
+): Promise<BundleSceneResult> {
   const resolvedScene = resolveComponentPath(options.componentPath);
   const outDir = path.resolve(options.outDir);
   fs.mkdirSync(outDir, { recursive: true });
   copyBundledAssets(outDir);
 
-  const runtimePath = path.resolve(getRendererPackageRoot(), 'src', 'browser', 'runtime.tsx');
-  const entryPath = writeGeneratedEntry(outDir, resolvedScene, runtimePath, options);
-  const bundlePath = path.join(outDir, 'scene-bundle.js');
+  const runtimePath = path.resolve(
+    getRendererPackageRoot(),
+    "src",
+    "browser",
+    "runtime.tsx",
+  );
+  const entryPath = writeGeneratedEntry(
+    outDir,
+    resolvedScene,
+    runtimePath,
+    options,
+  );
+  const bundlePath = path.join(outDir, "scene-bundle.js");
   const shellPath = writeRenderShell(outDir, options.width, options.height);
 
-  const whiteboardEntry = resolvePackageModuleEntry('@seqvio/whiteboard');
-  const coreEntry = resolvePackageModuleEntry('@seqvio/core');
+  const whiteboardEntry = resolvePackageModuleEntry("@seqvio/whiteboard");
+  const coreEntry = resolvePackageModuleEntry("@seqvio/core");
 
   const alias: Record<string, string> = {
-    '@seqvio/whiteboard': whiteboardEntry,
-    '@seqvio/core': coreEntry,
+    "@seqvio/whiteboard": whiteboardEntry,
+    "@seqvio/core": coreEntry,
   };
 
   // Optional style packages — alias only if installed/resolvable, so the
   // renderer stays decoupled from any specific style package.
-  for (const optionalStylePkg of ['@seqvio/scatterbrain', '@seqvio/product-demo']) {
+  for (const optionalStylePkg of [
+    "@seqvio/scatterbrain",
+    "@seqvio/product-demo",
+  ]) {
     try {
       alias[optionalStylePkg] = resolvePackageModuleEntry(optionalStylePkg);
     } catch {
@@ -212,23 +251,23 @@ export async function bundleScene(options: BundleSceneOptions): Promise<BundleSc
       entryPoints: [entryPath],
       bundle: true,
       outfile: bundlePath,
-      format: 'iife',
-      platform: 'browser',
-      target: 'es2020',
-      jsx: 'automatic',
+      format: "iife",
+      platform: "browser",
+      target: "es2020",
+      jsx: "automatic",
       loader: {
-        '.tsx': 'tsx',
-        '.ts': 'ts',
-        '.woff': 'file',
-        '.woff2': 'file',
-        '.ttf': 'file',
-        '.otf': 'file',
+        ".tsx": "tsx",
+        ".ts": "ts",
+        ".woff": "file",
+        ".woff2": "file",
+        ".ttf": "file",
+        ".otf": "file",
       },
       alias,
       define: {
-        'process.env.NODE_ENV': '"production"',
+        "process.env.NODE_ENV": '"production"',
       },
-      logLevel: 'warning',
+      logLevel: "warning",
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
