@@ -1,0 +1,50 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Seqvio icon">
+  <defs>
+    <!-- front play swoosh: bright neighbouring-blue gradient -->
+    <linearGradient id="seqvio-front" x1="80" y1="72" x2="184" y2="188" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5EE7FF"/>
+      <stop offset="0.55" stop-color="#38B6FF"/>
+      <stop offset="1" stop-color="#4C7DFF"/>
+    </linearGradient>
+    <linearGradient id="seqvio-sheen" x1="90" y1="70" x2="140" y2="190" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff" stop-opacity="0.45"/>
+      <stop offset="0.45" stop-color="#ffffff" stop-opacity="0.07"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="seqvio-drop" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+    <!-- vertical mask: back frames hidden at the top, only their lower half fades in -->
+    <linearGradient id="seqvio-maskgrad" x1="0" y1="118" x2="0" y2="165" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#000000"/>
+      <stop offset="1" stop-color="#ffffff"/>
+    </linearGradient>
+    <mask id="seqvio-fade">
+      <rect width="256" height="256" fill="url(#seqvio-maskgrad)"/>
+    </mask>
+  </defs>
+
+  <!-- rounded app tile -->
+  <rect width="256" height="256" rx="60" fill="#1B2440"/>
+
+  <!-- sequence depth: past frames trail up-and-to-the-LEFT along the timeline.
+       Each layer is sheared (displacement grows toward the bottom, zero at y=85 which is
+       hidden by the mask) so the trail unfurls smoothly from behind the front swoosh,
+       plus a small upward shift for depth. Upper halves masked; only a lower trail shows. -->
+  <g mask="url(#seqvio-fade)">
+    <!-- far frame: bottom offset -20px left, shifted up 8px -->
+    <g transform="translate(16.83,-8) matrix(1,0,-0.1980,1,0,0)">
+      <path d="M92 74 C120 66 176 96 188 122 C196 140 176 158 150 168 L104 186 C90 191 78 181 80 167 C88 150 118 150 118 132 C118 116 92 116 92 100 Z" fill="#6E7BFF" opacity="0.5"/>
+    </g>
+    <!-- near frame: bottom offset -10px left, shifted up 4px -->
+    <g transform="translate(8.42,-4) matrix(1,0,-0.0990,1,0,0)">
+      <path d="M92 74 C120 66 176 96 188 122 C196 140 176 158 150 168 L104 186 C90 191 78 181 80 167 C88 150 118 150 118 132 C118 116 92 116 92 100 Z" fill="#4FC3FF" opacity="0.75"/>
+    </g>
+  </g>
+
+  <!-- front swoosh: full volume + drop shadow + sheen -->
+  <g filter="url(#seqvio-drop)">
+    <path d="M92 74 C120 66 176 96 188 122 C196 140 176 158 150 168 L104 186 C90 191 78 181 80 167 C88 150 118 150 118 132 C118 116 92 116 92 100 Z" fill="url(#seqvio-front)"/>
+  </g>
+  <path d="M92 74 C120 66 176 96 188 122 C196 140 176 158 150 168 L104 186 C90 191 78 181 80 167 C88 150 118 150 118 132 C118 116 92 116 92 100 Z" fill="url(#seqvio-sheen)"/>
+</svg>

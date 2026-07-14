@@ -1,0 +1,27 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Seqvio icon">
+  <defs>
+    <linearGradient id="seqvio-front-sm" x1="80" y1="72" x2="184" y2="188" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5EE7FF"/>
+      <stop offset="0.55" stop-color="#38B6FF"/>
+      <stop offset="1" stop-color="#4C7DFF"/>
+    </linearGradient>
+    <!-- same lower-half trail as the primary icon; one back layer only for legibility -->
+    <linearGradient id="seqvio-sm-maskgrad" x1="0" y1="118" x2="0" y2="165" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#000000"/>
+      <stop offset="1" stop-color="#ffffff"/>
+    </linearGradient>
+    <mask id="seqvio-sm-fade">
+      <rect width="256" height="256" fill="url(#seqvio-sm-maskgrad)"/>
+    </mask>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="#1B2440"/>
+  <!-- same swoosh geometry as the primary icon (256 space), scaled to 64 -->
+  <g transform="scale(0.25)">
+    <g mask="url(#seqvio-sm-fade)">
+      <g transform="translate(8.42,-4) matrix(1,0,-0.0990,1,0,0)">
+        <path d="M92 74 C120 66 176 96 188 122 C196 140 176 158 150 168 L104 186 C90 191 78 181 80 167 C88 150 118 150 118 132 C118 116 92 116 92 100 Z" fill="#4FC3FF" opacity="0.9"/>
+      </g>
+    </g>
+    <path d="M92 74 C120 66 176 96 188 122 C196 140 176 158 150 168 L104 186 C90 191 78 181 80 167 C88 150 118 150 118 132 C118 116 92 116 92 100 Z" fill="url(#seqvio-front-sm)"/>
+  </g>
+</svg>

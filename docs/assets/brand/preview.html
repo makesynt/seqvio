@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Seqvio Brand Preview</title>
+<style>
+  body { margin:0; font:15px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color:#111827; background:#f1f5f9; }
+  header { padding:32px 40px 8px; }
+  header h1 { margin:0 0 4px; font-size:26px; letter-spacing:-0.02em; }
+  header p { margin:0; color:#64748b; max-width:640px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(240px,1fr)); gap:20px; padding:24px 40px 60px; }
+  .card { border-radius:18px; overflow:hidden; border:1px solid #e2e8f0; background:#fff; }
+  .stage { height:220px; display:grid; place-items:center; }
+  .stage.dark { background:#0b1220; }
+  .stage.light { background:#f8fafc; }
+  .stage.busy { background:linear-gradient(135deg,#7c3aed,#db2777); }
+  .label { padding:12px 16px; color:#475569; font-size:13px; border-top:1px solid #f1f5f9; }
+  .row { display:flex; align-items:center; gap:14px; }
+  .mono-teal { color:#28E0C2; }
+  .mono-white { color:#fff; }
+  img.mark-256 { width:120px; height:120px; }
+  img.mark-64 { width:56px; height:56px; }
+  img.mark-32 { width:32px; height:32px; }
+  img.mark-16 { width:16px; height:16px; }
+  img.wm { height:52px; }
+  /* monochrome cards render the real file recolored via CSS mask, so the preview
+     always matches seqvio-icon-mono.svg (currentColor can't cross an <img> boundary) */
+  .mono {
+    width:120px; height:120px;
+    -webkit-mask:url(seqvio-icon-mono.svg) center/contain no-repeat;
+            mask:url(seqvio-icon-mono.svg) center/contain no-repeat;
+  }
+  .mono.teal { background:#28E0C2; }
+  .mono.white { background:#fff; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Seqvio Brand Preview</h1>
+  <p>A clean play triangle with two scenes stepped behind it — a play symbol and a sequence of scenes resolving into one playback. Sequence + video.</p>
+</header>
+
+<div class="grid">
+  <div class="card">
+    <div class="stage dark"><img class="mark-256" src="seqvio-icon.svg" alt="primary icon"/></div>
+    <div class="label">Primary icon — seqvio-icon.svg (256, on dark)</div>
+  </div>
+
+  <div class="card">
+    <div class="stage light"><img class="mark-256" src="seqvio-icon.svg" alt="primary icon on light"/></div>
+    <div class="label">Primary icon — seqvio-icon.svg (on light)</div>
+  </div>
+
+  <div class="card">
+    <div class="stage dark">
+      <div class="row">
+        <img class="mark-64" src="seqvio-icon-small.svg" alt="small 64"/>
+        <img class="mark-32" src="seqvio-icon-small.svg" alt="small 32"/>
+        <img class="mark-16" src="seqvio-icon-small.svg" alt="small 16"/>
+      </div>
+    </div>
+    <div class="label">Favicon variant — seqvio-icon-small.svg at 64 / 32 / 16px</div>
+  </div>
+
+  <div class="card">
+    <div class="stage light"><img class="wm" src="seqvio-wordmark.svg" alt="wordmark"/></div>
+    <div class="label">Wordmark — seqvio-wordmark.svg (on light)</div>
+  </div>
+
+  <div class="card">
+    <div class="stage dark"><img class="wm" src="seqvio-wordmark.svg" alt="wordmark on dark"/></div>
+    <div class="label">Wordmark — seqvio-wordmark.svg (on dark; text follows color-scheme)</div>
+  </div>
+
+  <div class="card">
+    <div class="stage light"><div class="mono teal"></div></div>
+    <div class="label">Monochrome — seqvio-icon-mono.svg (currentColor: teal)</div>
+  </div>
+
+  <div class="card">
+    <div class="stage busy"><div class="mono white"></div></div>
+    <div class="label">Monochrome white on a busy background</div>
+  </div>
+</div>
+</body>
+</html>

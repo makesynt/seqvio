@@ -1,0 +1,25 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Seqvio icon (monochrome)">
+  <!-- single-color stacked play swoosh; inherits `color` via currentColor, transparent background -->
+  <defs>
+    <linearGradient id="seqvio-mono-maskgrad" x1="0" y1="118" x2="0" y2="165" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#000000"/>
+      <stop offset="1" stop-color="#ffffff"/>
+    </linearGradient>
+    <mask id="seqvio-mono-fade">
+      <rect width="256" height="256" fill="url(#seqvio-mono-maskgrad)"/>
+    </mask>
+  </defs>
+  <g fill="currentColor">
+    <!-- up-and-left sheared trail, upper half hidden (matches seqvio-icon.svg geometry) -->
+    <g mask="url(#seqvio-mono-fade)">
+      <g transform="translate(16.83,-8) matrix(1,0,-0.1980,1,0,0)">
+        <path d="M92 74 C120 66 176 96 188 122 C196 140 176 158 150 168 L104 186 C90 191 78 181 80 167 C88 150 118 150 118 132 C118 116 92 116 92 100 Z" opacity="0.4"/>
+      </g>
+      <g transform="translate(8.42,-4) matrix(1,0,-0.0990,1,0,0)">
+        <path d="M92 74 C120 66 176 96 188 122 C196 140 176 158 150 168 L104 186 C90 191 78 181 80 167 C88 150 118 150 118 132 C118 116 92 116 92 100 Z" opacity="0.7"/>
+      </g>
+    </g>
+    <!-- solid front swoosh -->
+    <path d="M92 74 C120 66 176 96 188 122 C196 140 176 158 150 168 L104 186 C90 191 78 181 80 167 C88 150 118 150 118 132 C118 116 92 116 92 100 Z"/>
+  </g>
+</svg>
