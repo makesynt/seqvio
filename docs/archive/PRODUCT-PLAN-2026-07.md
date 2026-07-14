@@ -1,4 +1,15 @@
-# Seqvio Product Plan
+# Seqvio Product Plan (Archived Snapshot — July 2026)
+
+> **This is an archived planning snapshot, not a current source of truth.**
+>
+> It captures Seqvio's positioning, competitive analysis, and phased roadmap as of
+> mid-2026. Parts of it are now out of date and, in places, contradict the shipped
+> code (for example, it treats whiteboard as the only supported style, while
+> `@seqvio/scatterbrain` and `@seqvio/product-demo` are published packages).
+>
+> For current product positioning and scope, read [`../VISION.md`](../VISION.md).
+> For active work items, use GitHub issues and milestones. This file is retained for
+> its competitive analysis (Section 7) and historical direction only.
 
 ## 1. Product Positioning
 

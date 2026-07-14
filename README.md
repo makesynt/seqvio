@@ -171,7 +171,7 @@ The skill teaches workflow and commands. Install `@seqvio/renderer` separately w
 
 ## Why Seqvio
 
-Seqvio is not trying to be a general-purpose video editor or a generic HTML-to-video engine. It focuses on structured explainer videos.
+Seqvio is an explainer-video toolchain for the agent era. It is not trying to be a general-purpose video editor or a generic code-to-video engine — it competes on explainer-domain contracts (narration-first timing, scene vocabulary, visual QA), not on the render loop. See [`docs/VISION.md`](./docs/VISION.md) for the full positioning.
 
 - **Explainer-first workflow** — scenes, narration, captions, and visual steps in one composition
 - **Whiteboard-native primitives** — handwritten-style text, shapes, images, icons, style presets, and pen/hand timing
@@ -281,10 +281,13 @@ Planned or in-progress work includes:
 - Storyboard JSON and template auto-layout expansion beyond the current validation/layout registry
 - Expanded transition catalog (today: `fade`, `slide`, and `wipe`)
 
-Design proposals and historical notes:
+Product positioning and scope:
 
-- [`docs/proposals/`](./docs/proposals/)
-- [`docs/PRODUCT-PLAN.md`](./docs/PRODUCT-PLAN.md)
+- [`docs/VISION.md`](./docs/VISION.md)
+
+Historical notes:
+
+- [`docs/archive/PRODUCT-PLAN-2026-07.md`](./docs/archive/PRODUCT-PLAN-2026-07.md) (archived snapshot)
 
 ## Contributing
 

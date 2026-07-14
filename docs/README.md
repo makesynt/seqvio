@@ -1,6 +1,6 @@
 # Seqvio Docs
 
-This folder now separates **current usage**, **proposals**, and **historical archive**. Use this index to find the right source of truth quickly.
+This folder separates **current usage** from **historical archive**. Use this index to find the right source of truth quickly.
 
 ## Start Here
 
@@ -29,24 +29,11 @@ These docs describe the repository as it exists today:
 
 ## Product and Planning Docs
 
-These are valuable for direction and terminology, but they include roadmap ideas that are not fully implemented:
-
 | File | Notes |
 | --- | --- |
-| [`PRODUCT-PLAN.md`](./PRODUCT-PLAN.md) | Best statement of product positioning and current-vs-future scope |
-| [`proposals/README.md`](./proposals/README.md) | Index of proposal and design-direction docs |
+| [`VISION.md`](./VISION.md) | Product positioning, target users, scope, and design principles (slow-changing source of truth) |
 
-## Proposal Reference Docs
-
-These files were moved under `docs/proposals/` so they are clearly separated from current usage docs:
-
-| File | Read it for |
-| --- | --- |
-| [`proposals/ARCHITECTURE.md`](./proposals/ARCHITECTURE.md) | Long-range architecture ideas |
-| [`proposals/PROJECT-STRUCTURE.md`](./proposals/PROJECT-STRUCTURE.md) | Intended monorepo shape |
-| [`proposals/RENDER-PERFORMANCE.md`](./proposals/RENDER-PERFORMANCE.md) | Render performance roadmap and benchmark plan |
-| [`proposals/TSX-ONLY.md`](./proposals/TSX-ONLY.md) | TSX-first product direction discussion |
-| [`proposals/WHITEBOARD-MVP.md`](./proposals/WHITEBOARD-MVP.md) | Whiteboard package intent and MVP framing |
+Active, time-boxed work items live in GitHub issues and milestones, not in a docs file.
 
 ## Archive Docs
 
@@ -55,9 +42,7 @@ Historical logs and milestone summaries now live under `docs/archive/`:
 | File | Notes |
 | --- | --- |
 | [`archive/README.md`](./archive/README.md) | Archive index |
-| [`archive/RENDERING.md`](./archive/RENDERING.md) | Historical rendering notes and progress log |
-| [`archive/FINAL-SUMMARY.md`](./archive/FINAL-SUMMARY.md) | Earlier summary of product direction |
-| [`archive/AI-INTEGRATION-COMPLETE.md`](./archive/AI-INTEGRATION-COMPLETE.md) | Historical AI integration milestone note |
+| [`archive/PRODUCT-PLAN-2026-07.md`](./archive/PRODUCT-PLAN-2026-07.md) | Archived July 2026 product plan snapshot; retained for competitive analysis and roadmap history (superseded by [`VISION.md`](./VISION.md)) |
 
 ## Guidance for Contributors
 

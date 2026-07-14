@@ -137,4 +137,3 @@ node dist/cli.js \
 - [`AI-USAGE.md`](./AI-USAGE.md)
 - [`../../docs/COMPOSITION-AUTHORING.md`](../../docs/COMPOSITION-AUTHORING.md)
 - [`../../examples/compositions/README.md`](../../examples/compositions/README.md)
-- [`../../docs/proposals/WHITEBOARD-MVP.md`](../../docs/proposals/WHITEBOARD-MVP.md)

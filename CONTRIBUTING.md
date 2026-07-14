@@ -44,7 +44,8 @@ Include:
 ## Documentation Rules
 
 - Treat code, examples, and `docs/COMPOSITION-AUTHORING.md` as implementation truth.
-- Mark speculative material clearly and keep it under `docs/proposals/` or other non-current locations.
+- Keep positioning and scope in `docs/VISION.md`; keep active work items in GitHub issues and milestones, not in docs.
+- Mark speculative or historical material clearly and keep it under `docs/archive/` or other non-current locations.
 - Prefer fixing or removing stale docs over leaving conflicting guidance in place.
 
 ## Publishing to npm
