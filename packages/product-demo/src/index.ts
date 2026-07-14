@@ -18,5 +18,5 @@ export { productFonts, productPalette } from './theme';
 export { ease, useReveal } from './anim';
 export type { ProductEasing } from './anim';
 
-export const VERSION = '0.3.0';
+export const VERSION = '0.5.0';
 

@@ -61,4 +61,4 @@ export {
 } from './theme';
 export type { StickyColor } from './theme';
 
-export const VERSION = '0.1.0';
+export const VERSION = '0.5.0';
