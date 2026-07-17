@@ -7,15 +7,15 @@
 
 English | [简体中文](./README.zh-CN.md)
 
-**Structured content to narrated explainer videos.**
+**A visual language for coding agents to explain ideas.**
 
-Seqvio is a focused workflow for turning lessons, product walkthroughs, and technical concepts into short explainer videos. It combines scene composition, whiteboard-style visuals, product-demo primitives, narration metadata, captions, visual QA, and local MP4 rendering into one source-controlled pipeline.
+Seqvio gives coding agents concrete primitives for turning technical ideas into clear narrated videos. Agents can choose whiteboard scenes, sticky-note workshops, or product walkthroughs, then combine narration, captions, visual QA, and local MP4 rendering in a React/TSX composition.
 
-> **Current status:** Seqvio `0.4.0` publishes `@seqvio/core`, `@seqvio/whiteboard`, `@seqvio/scatterbrain`, `@seqvio/product-demo`, and `@seqvio/renderer`. The repository supports explicit React/TSX compositions, storyboard IR validation/compilation, style presets, product walkthrough scenes, audio/caption metadata, visual QA snapshots, and local MP4 rendering. Higher-level AI authoring and studio workflows are tracked in the [Roadmap](#roadmap).
+> **Current status:** Seqvio `0.5.0` publishes `@seqvio/core`, `@seqvio/whiteboard`, `@seqvio/scatterbrain`, `@seqvio/product-demo`, and `@seqvio/renderer`. The repository supports explicit React/TSX compositions, storyboard IR validation/compilation, style presets, product walkthrough scenes, audio/caption metadata, visual QA snapshots, and local MP4 rendering. Higher-level AI authoring and studio workflows are tracked in the [Roadmap](#roadmap).
 
 ## Demo
 
-Pre-rendered overview videos with ElevenLabs narration and burned-in captions. Source compositions live in [`examples/compositions/`](./examples/compositions/).
+Pre-rendered overview videos with CosyVoice narration, covering all three visual style packages (`@seqvio/whiteboard`, `@seqvio/scatterbrain`, `@seqvio/product-demo`). Source compositions live in [`examples/compositions/`](./examples/compositions/).
 
 **English overview** — [`seqvio-overview-en.tsx`](./examples/compositions/seqvio-overview-en.tsx)
 
@@ -171,15 +171,16 @@ The skill teaches workflow and commands. Install `@seqvio/renderer` separately w
 
 ## Why Seqvio
 
-Seqvio is an explainer-video toolchain for the agent era. It is not trying to be a general-purpose video editor or a generic code-to-video engine — it competes on explainer-domain contracts (narration-first timing, scene vocabulary, visual QA), not on the render loop. See [`docs/VISION.md`](./docs/VISION.md) for the full positioning.
+Seqvio is the visual language for coding agents that need to explain, not merely animate. It is not trying to be a general-purpose video editor or generic code-to-video engine; its value is the explainer vocabulary and workflow above the render loop. See [`docs/VISION.md`](./docs/VISION.md) for the full positioning.
 
+- **Agent-facing visual vocabulary** — concrete primitives for deciding what viewers should see, hear, and understand next
 - **Explainer-first workflow** — scenes, narration, captions, and visual steps in one composition
 - **Whiteboard-native primitives** — handwritten-style text, shapes, images, icons, style presets, and pen/hand timing
 - **Specialized visual packages** — sticky-note workshop scenes with `@seqvio/scatterbrain` and product walkthrough scenes with `@seqvio/product-demo`
 - **Structured narration contract** — visual timing and audio metadata stay close together
 - **Visual QA loop** — snapshot key frames and catch blank renders before final MP4 work
 - **Agent-friendly authoring surface** — small contracts, explicit frame timing, curated examples
-- **Local, deterministic rendering** — Puppeteer + FFmpeg from source-controlled compositions
+- **Local MP4 output** — render the finished explanation with Puppeteer + FFmpeg
 
 ## Current Capabilities
 

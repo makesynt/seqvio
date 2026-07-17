@@ -1,9 +1,11 @@
 {
   "name": "@seqvio/renderer",
   "version": "0.5.0",
-  "description": "Video renderer and audio CLI for Seqvio",
+  "description": "Renderer and audio CLI for Seqvio, a visual language for coding agents",
   "keywords": [
     "seqvio",
+    "coding-agent",
+    "explainer-video",
     "video",
     "renderer",
     "puppeteer",

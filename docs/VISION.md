@@ -1,6 +1,6 @@
 # Seqvio Vision
 
-**Seqvio is an explainer-video toolchain for the agent era.**
+**Seqvio is a visual language for coding agents to explain ideas.**
 
 This document states what Seqvio is, who it is for, and what it deliberately does
 not do. It changes slowly. For time-boxed roadmap items and engineering tasks, use
@@ -9,22 +9,20 @@ planning history, see [`archive/PRODUCT-PLAN-2026-07.md`](./archive/PRODUCT-PLAN
 
 ## What Seqvio Is
 
-Seqvio turns structured content into short, narrated explainer videos. Compositions
-are authored as React/TSX files and rendered locally and deterministically to MP4
-through a Puppeteer + FFmpeg pipeline. The authoring surface is designed so that a
-host coding agent (Cursor, Claude Code, Codex, Gemini CLI, and similar) can do the
-authoring: small explicit contracts, a validatable Storyboard IR, and a QA loop that
-catches broken output before a full render.
+Seqvio gives a host coding agent (Cursor, Claude Code, Codex, Gemini CLI, and similar)
+an explainer-native visual vocabulary: scenes, narration, whiteboards, sticky-note
+workshops, product walkthroughs, and a QA loop. The agent uses those primitives to
+decide what the viewer should see, hear, and understand next instead of filling a
+generic motion template.
 
-Seqvio is deterministic infrastructure, not a creative brain. It does not call
-planning or generation APIs from its own core. Creative decisions — scene breakdown,
-script, visual intent — belong to the host agent or a human author. Seqvio's job is
-to make the result reproducible: the same composition renders the same video, every
-time, under version control.
+Compositions are authored as React/TSX files and rendered locally to MP4 through a
+Puppeteer + FFmpeg pipeline. Seqvio does not make planning or generation API calls
+from its core; creative decisions belong to the host agent or human author, while
+Seqvio supplies the visual contracts and production workflow.
 
 ### Core Promise
 
-Structured content to narrated explainer video.
+A visual language for coding agents to explain ideas.
 
 - Education: lessons, concept explainers, step-by-step tutorials.
 - Product: feature intros, onboarding flows, release notes, workflow explainers.
@@ -51,13 +49,9 @@ It is everything a general renderer refuses to have an opinion about:
   product-walkthrough primitives with built-in draw timing — not a blank canvas
   assembled from scratch per video.
 - **A structured plan contract.** Storyboard IR that a host agent can generate,
-  validate, repair, and recompile deterministically — so agent output is checkable
-  before it becomes code.
+  validate, repair, and inspect, so agent output is checkable before it becomes code.
 - **A visual QA loop.** Key-frame snapshots that catch blank frames, overflowing
   text, and layout breakage before committing to a full MP4 pass.
-- **One source, many variants.** Multilingual narration and captions from a single
-  version-controlled composition.
-
 The renderer is a means, not the identity. If commodity render engines keep
 improving, the explainer layer above them is the part of Seqvio that must remain
 worth existing — and that is where development effort concentrates.
@@ -67,7 +61,7 @@ worth existing — and that is where development effort concentrates.
 - Developer advocates and technical writers turning docs into tutorials.
 - Educators and course creators who need fast, repeatable concept videos.
 - Product teams that need onboarding and feature-announcement videos.
-- AI agents that need a deterministic explainer-video backend.
+- Coding agents that need a vocabulary for clear visual explanations.
 
 The common thread: users who already work in code (or delegate to an agent that
 does) and want their video pipeline to live in the same repo, reviewed and versioned
@@ -75,7 +69,7 @@ like any other source.
 
 ## Visual Styles
 
-Styles are the vocabulary of the explainer layer, not the selling point. The
+Styles are the visible vocabulary of the explainer layer and a core part of the product. The
 renderer and the core timing, narration, and caption contracts are style-agnostic;
 each visual style is a package.
 
@@ -116,8 +110,8 @@ Scope decisions can change, but they change here and deliberately — not by acc
 - **Opinionated about explainers, not about rendering.** Domain contracts (voice is
   the clock, IR validation, QA gates) are the product; the render loop is
   replaceable infrastructure.
-- **Determinism over magic.** Same input, same output. AI lives at the edges, in the
-  host agent, never hidden inside the render.
+- **Clarity over generic motion.** Every primitive should help the agent communicate
+  an idea, not merely add movement.
 - **Code is the source of truth.** TSX is the production surface; docs describe it,
   they do not promise beyond it.
 - **Depth before breadth.** One credible style and a reliable pipeline beat many

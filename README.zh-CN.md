@@ -6,15 +6,15 @@
 
 [English](./README.md) | 简体中文
 
-**将结构化内容变成带旁白的讲解视频。**
+**让 coding agent 拥有解释想法的视觉语言。**
 
-Seqvio 是一个面向讲解视频的结构化工作流，适合把课程、产品 walkthrough 和技术概念说明变成短视频。它把场景编排、白板风格视觉元素、产品演示组件、旁白元数据、字幕、视觉 QA 和本地 MP4 渲染放在同一套可版本管理的流程中。
+Seqvio 为 coding agent 提供把技术想法变成清晰旁白视频的具体视觉组件。Agent 可以选择白板、便签 workshop 或产品 walkthrough，再用 React/TSX composition 组合旁白、字幕、视觉 QA 和本地 MP4 渲染。
 
-> **当前状态：** Seqvio `0.4.0` 已发布 `@seqvio/core`、`@seqvio/whiteboard`、`@seqvio/scatterbrain`、`@seqvio/product-demo` 和 `@seqvio/renderer`。仓库支持显式 React/TSX composition、storyboard IR 校验/编译、style presets、产品 walkthrough 场景、音频/字幕元数据、视觉 QA 快照和本地 MP4 渲染。更高层的 AI 创作和 Studio 工作流记录在 [Roadmap](#roadmap) 中。
+> **当前状态：** Seqvio `0.5.0` 已发布 `@seqvio/core`、`@seqvio/whiteboard`、`@seqvio/scatterbrain`、`@seqvio/product-demo` 和 `@seqvio/renderer`。仓库支持显式 React/TSX composition、storyboard IR 校验/编译、style presets、产品 walkthrough 场景、音频/字幕元数据、视觉 QA 快照和本地 MP4 渲染。更高层的 AI 创作和 Studio 工作流记录在 [Roadmap](#roadmap) 中。
 
 ## Demo
 
-预渲染产品介绍视频，使用 ElevenLabs 旁白并烧录字幕。源 composition 位于 [`examples/compositions/`](./examples/compositions/)。
+预渲染产品介绍视频，使用 CosyVoice 旁白，覆盖三个视觉风格包（`@seqvio/whiteboard`、`@seqvio/scatterbrain`、`@seqvio/product-demo`）。源 composition 位于 [`examples/compositions/`](./examples/compositions/)。
 
 **英文介绍** — [`seqvio-overview-en.tsx`](./examples/compositions/seqvio-overview-en.tsx)
 
@@ -170,15 +170,16 @@ Skill 负责教流程和命令；要输出 MP4 还需单独安装 `@seqvio/rende
 
 ## 为什么是 Seqvio
 
-Seqvio 是 agent 时代的讲解视频工具链。它不是通用视频编辑器，也不是通用 code-to-video 引擎——它的竞争力在讲解领域的契约（旁白优先的节奏、场景词汇、视觉 QA），而不在渲染循环本身。完整定位见 [`docs/VISION.md`](./docs/VISION.md)。
+Seqvio 是 coding agent 用来解释想法的视觉语言，而不只是一个动画工具。它不是通用视频编辑器，也不是通用 code-to-video 引擎；它的价值在渲染循环之上的讲解词汇和工作流。完整定位见 [`docs/VISION.md`](./docs/VISION.md)。
 
+- **面向 Agent 的视觉词汇**：用具体组件决定观众接下来应该看到、听到并理解什么
 - **讲解视频优先**：场景、旁白、字幕、视觉步骤放在同一 composition 中
 - **白板风格内建**：手写文字、草图形状、图片、图标、style presets、画笔/手势节奏
 - **专用视觉包**：`@seqvio/scatterbrain` 提供便签/workshop 场景，`@seqvio/product-demo` 提供产品 walkthrough 场景
 - **结构化旁白契约**：视觉 timing 与音频元数据靠近维护
 - **视觉 QA 闭环**：先输出关键帧快照，提前发现空画面或布局问题
 - **适合 AI 协作**：小 contract、显式帧时间、示例齐全
-- **本地可复现渲染**：Puppeteer + FFmpeg，从源码 composition 输出 MP4
+- **本地 MP4 输出**：用 Puppeteer + FFmpeg 渲染完成的讲解视频
 
 ## 当前能力
 

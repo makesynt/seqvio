@@ -2,7 +2,7 @@
   "name": "seqvio",
   "version": "0.5.0",
   "private": true,
-  "description": "Seqvio - explainer-video toolchain for the agent era: structured content to narrated MP4",
+  "description": "A visual language for coding agents to explain ideas with narrated video",
   "keywords": [
     "explainer-video",
     "video",
