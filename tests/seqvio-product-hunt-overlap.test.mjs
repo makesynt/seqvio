@@ -29,3 +29,20 @@ assert.ok(
   source.includes('position={{ x: x + 103, y: 452 }}'),
   "all RAG labels should share a baseline below their nodes",
 );
+
+assert.ok(
+  source.includes("const enhanced = id.includes('product-hunt')"),
+  "high-density launch visuals should stay scoped to Product Hunt compositions",
+);
+assert.ok(
+  source.includes('name="lightbulb"') && source.includes('name="document"'),
+  "mini whiteboard previews should use supported icon names",
+);
+assert.ok(
+  !source.includes('name="idea"') && !source.includes('name="database"'),
+  "unsupported icon names should not silently render blank",
+);
+assert.ok(
+  source.includes('label="VISUAL EXPLANATION"') && source.includes('label="WORKFLOW PROOF"'),
+  "launch scenes should include produced foreground metadata",
+);
