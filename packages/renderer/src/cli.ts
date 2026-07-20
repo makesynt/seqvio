@@ -2,6 +2,7 @@
 
 import * as path from 'path';
 import { render, RenderOptions, RenderResult } from './renderer';
+import { renderChapters } from './chapter-render';
 import { SEQVIO_BRAND } from './brand';
 import { normalizeWhiteboardOptimize } from './whiteboard-optimization';
 
@@ -46,6 +47,11 @@ Options:
   --burnCaptions         Optional: bake caption cues into frames (hard subtitles).
                          Default: off. Do not use for full narration text or
                          whiteboard content in the lower third.
+  --renderPlan <path>   Chapter render plan JSON (from seqvio-generate render-plan)
+  --chapterDir <path>   Directory for chapter MP4 outputs and render-report.json
+  --ir <path>           CompositionDocument v2 JSON; refreshes hashes/frame ranges
+  --onlyChapters <ids>  Comma-separated chapter ids to render (stitch still uses full plan)
+  --resume              Skip chapters whose content/settings hash already rendered
   --keepFrames          Keep intermediate frame files after render
   --help                Show this help
 `);
@@ -73,14 +79,22 @@ function applyPreset(opts: RenderOptions, preset: string): void {
   if (opts.jpegQuality === undefined) opts.jpegQuality = defaults.jpegQuality;
 }
 
-function parseArgs(argv: string[]): { options: RenderOptions; preset?: string } {
+function parseArgs(argv: string[]): {
+  options: RenderOptions;
+  preset?: string;
+  renderPlan?: string;
+  chapterDir?: string;
+  documentPath?: string;
+  onlyChapters?: string[];
+  resume?: boolean;
+} {
   const args = new Map<string, string | boolean>();
 
   for (let i = 0; i < argv.length; i++) {
     const token = argv[i];
     if (!token.startsWith('--')) continue;
     const key = token.slice(2);
-    if (key === 'keepFrames' || key === 'help' || key === 'burnCaptions' || key === 'staticFrameDedup') {
+    if (key === 'keepFrames' || key === 'help' || key === 'burnCaptions' || key === 'staticFrameDedup' || key === 'resume') {
       args.set(key, true);
       continue;
     }
@@ -123,6 +137,10 @@ function parseArgs(argv: string[]): { options: RenderOptions; preset?: string } 
   const mixMusic    = args.get('mixMusic');
   const preset      = args.get('preset');
   const whiteboardOptimize = args.get('whiteboardOptimize');
+  const renderPlan = args.get('renderPlan');
+  const chapterDir = args.get('chapterDir');
+  const documentPath = args.get('ir');
+  const onlyChaptersRaw = args.get('onlyChapters');
 
   const options: RenderOptions = {
     component:    path.resolve(component),
@@ -152,7 +170,18 @@ function parseArgs(argv: string[]): { options: RenderOptions; preset?: string } 
         : undefined,
   };
 
-  return { options, preset: typeof preset === 'string' ? preset : undefined };
+  return {
+    options,
+    preset: typeof preset === 'string' ? preset : undefined,
+    renderPlan: typeof renderPlan === 'string' ? path.resolve(renderPlan) : undefined,
+    chapterDir: typeof chapterDir === 'string' ? path.resolve(chapterDir) : undefined,
+    documentPath: typeof documentPath === 'string' ? path.resolve(documentPath) : undefined,
+    onlyChapters:
+      typeof onlyChaptersRaw === 'string'
+        ? onlyChaptersRaw.split(',').map((id) => id.trim()).filter(Boolean)
+        : undefined,
+    resume: Boolean(args.get('resume')),
+  };
 }
 
 function printTimingSummary(result: RenderResult): void {
@@ -181,10 +210,44 @@ function printTimingSummary(result: RenderResult): void {
 
 async function main(): Promise<void> {
   try {
-    const { options, preset } = parseArgs(process.argv.slice(2));
+    const { options, preset, renderPlan, chapterDir, documentPath, onlyChapters, resume } = parseArgs(process.argv.slice(2));
 
     if (preset) {
       applyPreset(options, preset);
+    }
+
+    if (renderPlan) {
+      if (!chapterDir) {
+        throw new Error('Chapter rendering requires --chapterDir <path>');
+      }
+      const { result, report } = await renderChapters(
+        {
+          ...options,
+          renderPlanPath: renderPlan,
+          chapterDir,
+          resume,
+          presetName: preset,
+          documentPath,
+          onlyChapters,
+        },
+        (progress) => {
+          if (progress.percent !== undefined) {
+            console.log(`[${progress.phase}] ${progress.percent}% ${progress.message}`);
+          } else {
+            console.log(`[${progress.phase}] ${progress.message}`);
+          }
+        }
+      );
+      printTimingSummary(result);
+      console.log(`  Chapters: ${report.chapters.length} (${report.resumed ? 'resume enabled' : 'fresh run'})`);
+      if (report.changedChapterIds.length > 0) {
+        console.log(`  Updated:  ${report.changedChapterIds.join(', ')}`);
+      }
+      if (report.audioMuxed) {
+        console.log('  Audio:    muxed into final output');
+      }
+      console.log(`  Report:   ${path.join(chapterDir, 'render-report.json')}`);
+      return;
     }
 
     const result = await render(options, (progress) => {

@@ -239,6 +239,7 @@ export async function bundleScene(
   for (const optionalStylePkg of [
     "@seqvio/scatterbrain",
     "@seqvio/product-demo",
+    "@seqvio/technical",
   ]) {
     try {
       alias[optionalStylePkg] = resolvePackageModuleEntry(optionalStylePkg);
@@ -258,6 +259,7 @@ export async function bundleScene(
       loader: {
         ".tsx": "tsx",
         ".ts": "ts",
+        ".svg": "file",
         ".woff": "file",
         ".woff2": "file",
         ".ttf": "file",

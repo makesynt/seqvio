@@ -7,16 +7,15 @@
 
 import {
   STORYBOARD_DEFAULTS,
-  type IconElement,
-  type ImageElement,
-  type ShapeElement,
-  type Size,
   type Storyboard,
-  type StoryboardElement,
   type StoryboardScene,
-  type TextElement,
-  type Vec2,
 } from './schema';
+import {
+  compileWhiteboardSceneBody,
+  pascalId,
+  sceneComponentName,
+  sceneDurationFramesFromElements,
+} from './compile-helpers';
 
 function resolved(board: Storyboard) {
   return {
@@ -34,114 +33,12 @@ function resolved(board: Storyboard) {
   };
 }
 
-/** PascalCase component name derived from a scene id. */
-function sceneComponentName(sceneId: string, index: number): string {
-  const cleaned = sceneId.replace(/[^a-zA-Z0-9]+/g, ' ').trim();
-  const pascal = cleaned
-    .split(/\s+/)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join('');
-  const safe = /^[A-Za-z]/.test(pascal) ? pascal : `Scene${pascal}`;
-  return `${safe || 'Scene'}Scene${index}`;
-}
-
-function jsxAttr(name: string, value: string | number | boolean | undefined): string {
-  if (value === undefined) return '';
-  if (typeof value === 'string') return ` ${name}={${JSON.stringify(value)}}`;
-  if (typeof value === 'boolean') return value ? ` ${name}` : '';
-  return ` ${name}={${value}}`;
-}
-
-function vecAttr(name: string, value: Vec2 | undefined): string {
-  if (!value) return '';
-  return ` ${name}={{ x: ${value.x}, y: ${value.y} }}`;
-}
-
-function sizeAttr(value: number | Size | undefined): string {
-  if (value === undefined) return '';
-  if (typeof value === 'number') return ` size={${value}}`;
-  return ` size={{ width: ${value.width}, height: ${value.height} }}`;
-}
-
-function commonDrawAttrs(el: StoryboardElement): string {
-  return (
-    jsxAttr('start', el.start ?? 0) +
-    jsxAttr('duration', el.duration ?? 30) +
-    jsxAttr('easing', el.easing) +
-    jsxAttr('strokeColor', el.strokeColor) +
-    jsxAttr('strokeWidth', el.strokeWidth) +
-    jsxAttr('fillColor', el.fillColor)
-  );
-}
-
-function compileText(el: TextElement): string {
-  return (
-    `      <DrawText` +
-    jsxAttr('text', el.text) +
-    vecAttr('position', el.position) +
-    jsxAttr('fontSize', el.fontSize) +
-    jsxAttr('fontWeight', el.fontWeight) +
-    jsxAttr('align', el.align) +
-    commonDrawAttrs(el) +
-    ` />`
-  );
-}
-
-function compileShape(el: ShapeElement): string {
-  return (
-    `      <DrawShape` +
-    jsxAttr('type', el.shape) +
-    vecAttr('position', el.position) +
-    sizeAttr(el.size) +
-    vecAttr('from', el.from) +
-    vecAttr('to', el.to) +
-    jsxAttr('borderRadius', el.borderRadius) +
-    commonDrawAttrs(el) +
-    ` />`
-  );
-}
-
-function compileImage(el: ImageElement): string {
-  return (
-    `      <DrawImage` +
-    jsxAttr('src', el.src) +
-    vecAttr('position', el.position) +
-    (el.size ? ` size={{ width: ${el.size.width}, height: ${el.size.height} }}` : '') +
-    commonDrawAttrs(el) +
-    ` />`
-  );
-}
-
-function compileIcon(el: IconElement): string {
-  return (
-    `      <DrawIcon` +
-    jsxAttr('name', el.name) +
-    vecAttr('position', el.position) +
-    jsxAttr('size', el.size) +
-    commonDrawAttrs(el) +
-    ` />`
-  );
-}
-
-function compileElement(el: StoryboardElement): string {
-  switch (el.type) {
-    case 'text':
-      return compileText(el);
-    case 'shape':
-      return compileShape(el);
-    case 'image':
-      return compileImage(el);
-    case 'icon':
-      return compileIcon(el);
-  }
-}
-
 function compileWhiteboardScene(
   scene: StoryboardScene,
   componentName: string,
   board: ReturnType<typeof resolved>
 ): string {
-  const elements = scene.elements.map(compileElement).join('\n');
+  const elements = compileWhiteboardSceneBody(scene, board);
   return `function ${componentName}() {
   return (
     <WhiteboardScene
@@ -158,18 +55,8 @@ ${elements}
 }`;
 }
 
-const SCENE_TAIL_PAD = 18;
-
 function sceneDurationFrames(scene: StoryboardScene): number {
-  if (typeof scene.duration === 'number' && scene.duration > 0) {
-    return scene.duration;
-  }
-  let maxEnd = 0;
-  for (const el of scene.elements) {
-    const end = (el.start ?? 0) + (el.duration ?? 30);
-    if (end > maxEnd) maxEnd = end;
-  }
-  return Math.max(1, maxEnd + SCENE_TAIL_PAD);
+  return sceneDurationFramesFromElements(scene.elements, scene.duration);
 }
 
 export interface CompileStoryboardOptions {}
@@ -291,13 +178,4 @@ ${narrationCues}
 `;
 
   return { code };
-}
-
-function pascalId(id: string): string {
-  const cleaned = id.replace(/[^a-zA-Z0-9]+/g, ' ').trim();
-  const pascal = cleaned
-    .split(/\s+/)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join('');
-  return /^[A-Za-z]/.test(pascal) ? pascal : `Composition${pascal}`;
 }

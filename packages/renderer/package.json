@@ -51,6 +51,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
+    "test": "node --test tests/*.test.mjs",
     "prepublishOnly": "npm run build",
     "audio:extract-demo": "node dist/audio-cli.js extract --component ../../examples/compositions/seqvio-audio-demo.tsx --out ../../output/seqvio-audio-demo.manifest.json",
     "render:demo": "node dist/cli.js --component ../whiteboard/examples/01-hello-world.tsx --output ../../output/cli-demo.mp4 --width 1280 --height 720 --fps 30 --quality medium",
@@ -62,6 +63,7 @@
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@seqvio/core": "0.5.0",
+    "@seqvio/technical": "0.5.0",
     "@seqvio/whiteboard": "0.5.0",
     "esbuild": "^0.25.0",
     "fluent-ffmpeg": "^2.1.3",

@@ -96,6 +96,14 @@ Audio and captions:
 - `--captions <path>` — caption JSON file
 - `--burnCaptions` — optional hard-coded subtitle overlay (off by default; see [audio-workflow.md](audio-workflow.md#caption-burn-in-optional))
 
+Chapter render / resume (CompositionDocument v2):
+
+- `--renderPlan <path>` — chapter render plan JSON from `seqvio-generate render-plan`
+- `--chapterDir <path>` — directory for per-chapter MP4s and hash cache
+- `--ir <path>` — source CompositionDocument; re-syncs plan hashes before render
+- `--onlyChapters <id,id>` — render/stitch only listed chapter ids
+- `--resume` — skip chapters whose content/settings hash still matches cache
+
 Fastest possible preview:
 
 ```bash
@@ -130,6 +138,42 @@ Do **not** add `--burnCaptions` unless you intentionally want hard-coded subtitl
 
 See [audio-workflow.md](audio-workflow.md) for provider selection and manifest details.
 
+## Chapter render (long technical videos)
+
+Build a plan from CompositionDocument v2, then render with resume:
+
+```bash
+node packages/renderer/dist/generate-cli.js render-plan \
+  --ir examples/ir/technical-explainer-v2.json \
+  --out examples/ir/technical-explainer-v2.render-plan.json \
+  --force
+
+node packages/renderer/dist/cli.js \
+  --component examples/compositions/technical-explainer-v2.tsx \
+  --output output/technical-explainer.mp4 \
+  --renderPlan examples/ir/technical-explainer-v2.render-plan.json \
+  --chapterDir output/chapters/technical-explainer \
+  --ir examples/ir/technical-explainer-v2.json \
+  --preset preview \
+  --resume
+```
+
+Iterate on one chapter:
+
+```bash
+node packages/renderer/dist/cli.js \
+  --component examples/compositions/technical-explainer-v2.tsx \
+  --output output/recap-only.mp4 \
+  --renderPlan examples/ir/technical-explainer-v2.render-plan.json \
+  --chapterDir output/chapters/technical-explainer \
+  --ir examples/ir/technical-explainer-v2.json \
+  --onlyChapters recap \
+  --preset preview \
+  --resume
+```
+
+See [planning-workflow.md](planning-workflow.md) for IR → validate → compile → render-plan.
+
 ## Smoke scripts
 
 Useful built-in checks, run from inside the renderer package:
@@ -149,7 +193,10 @@ npm run render:caption-smoke -w @seqvio/renderer
 4. For validation clips, use `--startFrame` / `--endFrame` and confirm the
    `Rendering N frames` log matches the intended sample size
 5. For narrated work, `audio-manifest.resolved.json` exists before render
-6. Output MP4 path is under `output/` unless intentionally refreshing tracked demo assets in `docs/assets/videos/`
+6. For chapter renders, `--renderPlan` + `--chapterDir` are set; with `--resume`,
+   unchanged chapters are skipped after IR edits
+7. Output MP4 path is under `output/` unless intentionally refreshing tracked demo assets in `docs/assets/videos/`
+8. Visual smoke: `npm run test:visual` (update baselines with `npm run test:visual:update`)
 
 ## Troubleshooting
 

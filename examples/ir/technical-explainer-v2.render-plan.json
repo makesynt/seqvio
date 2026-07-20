@@ -1,0 +1,40 @@
+{
+  "compositionId": "api-request-explainer",
+  "chapters": [
+    {
+      "id": "hook",
+      "startFrame": 0,
+      "endFrame": 1223,
+      "contentHash": "8de831f3",
+      "status": "pending"
+    },
+    {
+      "id": "model",
+      "startFrame": 1224,
+      "endFrame": 2315,
+      "contentHash": "968d369b",
+      "status": "pending"
+    },
+    {
+      "id": "example",
+      "startFrame": 2316,
+      "endFrame": 6191,
+      "contentHash": "ad727ca6",
+      "status": "pending"
+    },
+    {
+      "id": "pitfalls",
+      "startFrame": 6192,
+      "endFrame": 7595,
+      "contentHash": "43a8932d",
+      "status": "pending"
+    },
+    {
+      "id": "recap",
+      "startFrame": 7596,
+      "endFrame": 8135,
+      "contentHash": "cde58e0d",
+      "status": "pending"
+    }
+  ]
+}

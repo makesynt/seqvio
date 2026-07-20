@@ -55,6 +55,7 @@ function resolveLocalWorkspacePackage(packageName: string): string | null {
     '@seqvio/whiteboard': 'whiteboard',
     '@seqvio/scatterbrain': 'scatterbrain',
     '@seqvio/product-demo': 'product-demo',
+    '@seqvio/technical': 'technical',
     '@seqvio/renderer': 'renderer',
   };
   const dirName = localNames[packageName];

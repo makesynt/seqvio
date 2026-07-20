@@ -1,6 +1,6 @@
 ---
 name: seqvio
-description: Create or edit Seqvio whiteboard explainer video compositions in TSX and render them to MP4 with optional narration and captions. Use when working in this repository on whiteboard animations, explainer videos, multi-scene compositions, storyboard IR planning, seqvio-generate plan-agent, scene timing, transitions, seqvio-render, or seqvio-audio workflows. Covers @seqvio/whiteboard, @seqvio/core, examples/compositions, and the current deterministic authoring/rendering contract.
+description: Create or edit Seqvio explainer video compositions in TSX and render them to MP4 with optional narration and captions. Use when working in this repository on whiteboard animations, technical explainers (code walkthrough / architecture diagram), CompositionDocument v2 IR, storyboard IR planning, seqvio-generate plan-agent, chapter render/resume, scene timing, transitions, seqvio-render, or seqvio-audio workflows. Covers @seqvio/whiteboard, @seqvio/technical, @seqvio/core, examples/compositions, examples/ir, and the current deterministic authoring/rendering contract.
 ---
 
 # Seqvio
@@ -8,17 +8,18 @@ description: Create or edit Seqvio whiteboard explainer video compositions in TS
 Seqvio turns structured content into narrated explainer videos. Preferred production loop for **new topics**:
 
 1. write a host-agent task with `seqvio-generate plan-agent`
-2. let the host agent produce one storyboard IR JSON
+2. let the host agent produce one IR JSON (Storyboard v1 or CompositionDocument v2)
 3. validate + compile IR to TSX with `seqvio-generate`
-4. render with `seqvio-render`
-5. optionally extract/synthesize narration with `seqvio-audio`
+4. for long technical videos, optionally `seqvio-generate render-plan` then chapter-render with `--resume`
+5. render with `seqvio-render`
+6. optionally extract/synthesize narration with `seqvio-audio`
 
 Seqvio itself does not call AI or planner APIs. Creative planning happens in the host agent; Seqvio validates, compiles, and renders deterministically.
 
 Manual TSX authoring is still valid for polish:
 
 1. author or edit a composition in TSX
-2. use `@seqvio/whiteboard`
+2. use `@seqvio/whiteboard` and/or `@seqvio/technical`
 3. optionally wrap multiple scenes with `@seqvio/core`
 4. extract and synthesize narration with `seqvio-audio` when needed
 5. render with `seqvio-render`
@@ -49,7 +50,7 @@ Seqvio has two separate pieces:
 Install the skill:
 
 ```bash
-npx skills add makesynt/seqvio --skill seqvio -a cursor -y
+npx skills add makesynt/seqvio --skill seqvio -y
 ```
 
 Install the renderer separately. Either:
@@ -70,8 +71,9 @@ The skill alone does not install npm packages or render MP4 output.
 ## Example Prompts
 
 - "Using `/seqvio`, write a plan-agent task for a Chinese history explainer, then validate and compile the returned IR."
-- \"Using `/seqvio`, create a 4-scene Chinese product overview with whiteboard visuals and ElevenLabs narration.\"
-- "Edit `examples/compositions/seqvio-overview-en.tsx` to add a new scene explaining the audio workflow, then render the final MP4."
+- "Using `/seqvio`, plan a CompositionDocument v2 programming explainer about HTTP caching with code and architecture scenes."
+- "Using `/seqvio`, create a 4-scene Chinese product overview with whiteboard visuals and ElevenLabs narration."
+- "Edit `examples/compositions/technical-demo-v2.tsx` then render with chapter resume for only the code scene."
 - "Fix timing in this composition so each scene aligns with its narration cue after synthesis."
 - "Render a silent whiteboard title card from a new single-scene TSX file."
 
@@ -83,14 +85,15 @@ The skill alone does not install npm packages or render MP4 output.
 - For narration extraction, synthesis, and muxing, read [references/audio-workflow.md](references/audio-workflow.md).
 - For production craft rules from real narrated explainer work, read [references/production-techniques.md](references/production-techniques.md).
 - When making blackboard or whiteboard explainers, use the visual metaphor and takeaway-container guidance in [references/production-techniques.md](references/production-techniques.md) to avoid repetitive rectangle-only layouts.
-- For host-agent storyboard IR planning, read [references/planning-workflow.md](references/planning-workflow.md).
+- For host-agent IR planning (Storyboard v1 and CompositionDocument v2), read [references/planning-workflow.md](references/planning-workflow.md).
 
 ### Visual styles
 
-Two parallel, style-agnostic ways to render a composition. Pick one per `<Scene>` — do not mix their components.
+Pick style packages per scene — do not mix unrelated component families carelessly.
 
 - **Whiteboard** (`@seqvio/whiteboard`) — SVG hand-drawn animation; `WhiteboardScene` / `DrawText` / `DrawShape` / `DrawImage` / `DrawIcon` / `Hand`. Themes select the look (default, pin-and-paper, studio, field-note, …). For the Pin & Paper theme, read [references/pin-and-paper-theme.md](references/pin-and-paper-theme.md).
-- **Scatterbrain** (`@seqvio/scatterbrain`) — div/CSS sticky-note / cork-board look (rotation, gradients, soft shadows, pins, tape, doodles); `ScatterScene` / `StickyNote` / `Scrawl` / `PinnedList` / `Doodle` / `Polaroid`. A separate style package, parallel to whiteboard, depending only on `@seqvio/core`. Read [references/scatterbrain-style.md](references/scatterbrain-style.md).
+- **Scatterbrain** (`@seqvio/scatterbrain`) — div/CSS sticky-note / cork-board look; `ScatterScene` / `StickyNote` / `Scrawl` / `PinnedList` / `Doodle` / `Polaroid`. Read [references/scatterbrain-style.md](references/scatterbrain-style.md).
+- **Technical** (`@seqvio/technical`) — code walkthrough, architecture diagrams, semantic annotations; usually compiled from CompositionDocument v2.
 
 ## Working Model
 

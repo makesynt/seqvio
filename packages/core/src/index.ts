@@ -12,4 +12,5 @@ export * from './composition';
 export * from './scene-registry';
 export * from './transitions';
 export * from './storyboard';
+export * from './composition-document';
 export * from './seekable';

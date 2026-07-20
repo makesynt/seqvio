@@ -10,29 +10,32 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import {
-  compileStoryboardToTsx,
-  validateStoryboard,
-  type Storyboard,
+  buildRenderPlanFromDocument,
+  compileIr,
+  isCompositionDocumentV2,
+  validateIr,
 } from '@seqvio/core';
 import { formatAgentPlanningPrompt, type AgentPlanningOptions } from './agent-contract';
 
-type CommandName = 'compile' | 'validate' | 'plan-agent' | 'frame-spec';
+type CommandName = 'compile' | 'validate' | 'plan-agent' | 'frame-spec' | 'render-plan';
 
 function printUsage(): void {
   console.log(`Usage:
   seqvio-generate plan-agent --input <path> --write-prompt <path.md>
   seqvio-generate validate --ir <path>
   seqvio-generate compile --ir <path> --out <path.tsx>
+  seqvio-generate render-plan --ir <path> --out <path.json>
   seqvio-generate --ir <path> --out <path.tsx>
   seqvio-generate frame-spec init [--style <name>] [--width n] [--height n] [--out <path>]
 
 Options:
   --input <path>                  Source content for plan-agent
   --write-prompt <path>           Write host-agent task markdown
-  --ir <path>                     Path to storyboard IR JSON
+  --ir <path>                     Path to storyboard IR or CompositionDocument v2 JSON
   --out <path>                    Output TSX or FRAME.md path
   --language <code>               zh | en | auto (default: auto)
-  --domain <name>                 history | science | auto (default: auto)
+  --domain <name>                 history | science | programming | ai | devops | auto
+  --ir-format <name>              storyboard-v1 | composition-v2 | auto (default: auto)
   --max-scenes <n>                Target scene count for the host agent (default: 5)
   --json                          Print validation issues as JSON
   --force                         Overwrite an existing output file
@@ -56,7 +59,8 @@ function parseArgs(argv: string[]): {
   if (
     maybeCommand === 'validate' ||
     maybeCommand === 'compile' ||
-    maybeCommand === 'plan-agent'
+    maybeCommand === 'plan-agent' ||
+    maybeCommand === 'render-plan'
   ) {
     command = maybeCommand;
     tokens = rest;
@@ -125,11 +129,12 @@ function planningOptions(args: Map<string, string | boolean>): AgentPlanningOpti
     language: String(args.get('language') ?? 'auto') as AgentPlanningOptions['language'],
     maxScenes: args.get('max-scenes') ? Number(args.get('max-scenes')) : 5,
     domain: String(args.get('domain') ?? 'auto') as AgentPlanningOptions['domain'],
+    irFormat: String(args.get('ir-format') ?? 'auto') as AgentPlanningOptions['irFormat'],
   };
 }
 
 function reportIssues(
-  issues: ReturnType<typeof validateStoryboard>,
+  issues: ReturnType<typeof validateIr>,
   json: boolean
 ): boolean {
   const ok = !issues.some((issue) => issue.severity === 'error');
@@ -138,7 +143,7 @@ function reportIssues(
     return ok;
   }
   if (issues.length === 0) {
-    console.log('Storyboard is valid.');
+    console.log('IR document is valid.');
     return true;
   }
   for (const issue of issues) {
@@ -425,8 +430,20 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (command === 'render-plan') {
+    const ir = loadStoryboard(requireString(args, 'ir'));
+    if (!isCompositionDocumentV2(ir)) {
+      throw new Error('render-plan requires a CompositionDocument v2 IR (version "2.0").');
+    }
+    const plan = buildRenderPlanFromDocument(ir);
+    const outPath = path.resolve(requireString(args, 'out'));
+    writeOutput(outPath, `${JSON.stringify(plan, null, 2)}\n`, Boolean(args.get('force')));
+    console.log(`Wrote render plan (${plan.chapters.length} chapters) to ${outPath}`);
+    return;
+  }
+
   const storyboard = loadStoryboard(requireString(args, 'ir'));
-  const issues = validateStoryboard(storyboard);
+  const issues = validateIr(storyboard);
 
   if (command === 'validate') {
     const ok = reportIssues(issues, Boolean(args.get('json')));
@@ -435,12 +452,11 @@ async function main(): Promise<void> {
 
   const ok = reportIssues(issues, Boolean(args.get('json')));
   if (!ok) {
-    throw new Error('Refusing to compile an invalid storyboard.');
+    throw new Error('Refusing to compile an invalid IR document.');
   }
 
   const outPath = path.resolve(requireString(args, 'out'));
-  const board = storyboard as Storyboard;
-  const { code } = compileStoryboardToTsx(board);
+  const { code } = compileIr(storyboard);
   writeOutput(outPath, code, Boolean(args.get('force')));
   console.log(`Wrote composition to ${outPath}`);
 }

@@ -58,6 +58,14 @@ const CASES = [
     height: 720,
     frames: [0, 24, 60],
   },
+  {
+    name: 'technical-demo-v2',
+    component: 'examples/compositions/technical-demo-v2.tsx',
+    width: 1280,
+    height: 720,
+    // hook whiteboard, code walkthrough, architecture diagram
+    frames: [20, 100, 250],
+  },
 ];
 
 // PSNR below this (dB) for any frame is treated as a regression. Pixel-identical

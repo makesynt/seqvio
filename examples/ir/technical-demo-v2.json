@@ -1,0 +1,72 @@
+{
+  "version": "2.0",
+  "id": "technical-demo",
+  "width": 1280,
+  "height": 720,
+  "fps": 30,
+  "lockToAudio": true,
+  "transitionDuration": 12,
+  "chapters": [
+    { "id": "intro", "title": "Introduction", "sceneIds": ["hook"] },
+    { "id": "deep-dive", "title": "Mechanism", "sceneIds": ["code-step", "architecture"] }
+  ],
+  "scenes": [
+    {
+      "type": "whiteboard",
+      "id": "hook",
+      "sceneRole": "hook",
+      "narration": "Today we trace one request through the system.",
+      "elements": [
+        {
+          "type": "text",
+          "text": "Request trace",
+          "position": { "x": 420, "y": 280 },
+          "fontSize": 56,
+          "start": 0,
+          "duration": 30
+        }
+      ],
+      "annotations": [
+        {
+          "id": "hook-frame",
+          "targetId": "hook",
+          "kind": "spotlight",
+          "start": 0,
+          "duration": 45,
+          "label": "Opening"
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "id": "code-step",
+      "language": "typescript",
+      "source": "async function fetchUser(id: string) {\n  return api.get(`/users/${id}`);\n}\n",
+      "steps": [
+        { "at": 0, "action": "focus", "range": { "startLine": 1, "endLine": 3 } },
+        { "at": 24, "action": "type", "range": { "startLine": 2, "endLine": 2 } }
+      ],
+      "narration": "The client calls a typed helper that wraps the HTTP request."
+    },
+    {
+      "type": "diagram",
+      "id": "architecture",
+      "nodes": [
+        { "id": "client", "label": "Client" },
+        { "id": "api", "label": "API Gateway" },
+        { "id": "service", "label": "User Service", "groupId": "backend" }
+      ],
+      "edges": [
+        { "id": "req", "from": "client", "to": "api", "label": "HTTPS" },
+        { "id": "fwd", "from": "api", "to": "service", "label": "RPC" }
+      ],
+      "steps": [
+        { "at": 0, "action": "reveal", "targetId": "client" },
+        { "at": 18, "action": "reveal", "targetId": "api" },
+        { "at": 36, "action": "connect", "edgeId": "req" },
+        { "at": 54, "action": "trace", "edgeId": "fwd" }
+      ],
+      "narration": "The request crosses the gateway before it reaches the user service."
+    }
+  ]
+}

@@ -923,13 +923,21 @@ export class VideoRenderer {
     return new Promise((resolve, reject) => {
       const targetDurationSeconds = this.sceneDuration / this.effectiveFps;
       const filters: string[] = [];
-      const labels: string[] = [];
+      const narrationLabels: string[] = [];
+      const musicLabels: string[] = [];
+      const otherLabels: string[] = [];
       const args: string[] = ["-y", "-i", videoPath];
 
       this.resolvedAudioTracks.forEach((track, index) => {
         const inputIndex = index + 1;
         args.push("-i", track.path);
-        const filterParts: string[] = [];
+        // Deliver stereo 48 kHz regardless of the source layout: narration
+        // WAVs are often mono 22.05/24 kHz and would otherwise drag the
+        // whole mix down to mono.
+        const filterParts: string[] = [
+          "aresample=48000",
+          "aformat=channel_layouts=stereo",
+        ];
 
         if (track.offsetMs > 0) {
           filterParts.push(`adelay=${track.offsetMs}|${track.offsetMs}`);
@@ -937,20 +945,66 @@ export class VideoRenderer {
         if (track.volume !== 1) {
           filterParts.push(`volume=${track.volume}`);
         }
-        if (filterParts.length === 0) {
-          filterParts.push("anull");
-        }
 
         const label = `a${index}`;
         filters.push(`[${inputIndex}:a]${filterParts.join(",")}[${label}]`);
-        labels.push(`[${label}]`);
+        if (track.kind === "music") {
+          musicLabels.push(`[${label}]`);
+        } else if (track.kind === "narration") {
+          narrationLabels.push(`[${label}]`);
+        } else {
+          otherLabels.push(`[${label}]`);
+        }
       });
 
+      const mixInputs: string[] = [];
+
+      if (narrationLabels.length > 0) {
+        if (narrationLabels.length === 1) {
+          filters.push(`${narrationLabels[0]}anull[anarr0]`);
+        } else {
+          filters.push(
+            `${narrationLabels.join("")}amix=inputs=${narrationLabels.length}:duration=longest:dropout_transition=0[anarr0]`,
+          );
+        }
+        if (musicLabels.length > 0) {
+          // Only split narration when a music track needs it as a sidechain
+          // key — the second output is left dangling otherwise.
+          filters.push("[anarr0]asplit=2[anarr][anarrkey]");
+        } else {
+          filters.push("[anarr0]anull[anarr]");
+        }
+        mixInputs.push("[anarr]");
+      }
+
+      if (musicLabels.length > 0) {
+        if (musicLabels.length === 1) {
+          filters.push(`${musicLabels[0]}anull[amus0]`);
+        } else {
+          filters.push(
+            `${musicLabels.join("")}amix=inputs=${musicLabels.length}:duration=longest:dropout_transition=0[amus0]`,
+          );
+        }
+        if (narrationLabels.length > 0) {
+          // Sidechain-duck the music bed under narration so the voice stays
+          // intelligible instead of fighting a flat music mix.
+          filters.push(
+            "[amus0][anarrkey]sidechaincompress=threshold=0.02:ratio=8:attack=25:release=500:makeup=1[amus]",
+          );
+        } else {
+          filters.push("[amus0]anull[amus]");
+        }
+        mixInputs.push("[amus]");
+      }
+
+      mixInputs.push(...otherLabels);
+
       filters.push(
-        `anullsrc=r=24000:cl=mono,atrim=0:${targetDurationSeconds.toFixed(3)}[asilence]`,
+        `anullsrc=r=48000:cl=stereo,atrim=0:${targetDurationSeconds.toFixed(3)}[asilence]`,
       );
+      mixInputs.push("[asilence]");
       filters.push(
-        `${labels.join("")}[asilence]amix=inputs=${labels.length + 1}:duration=longest:dropout_transition=0,loudnorm=I=-16:TP=-1.5:LRA=11[aout]`,
+        `${mixInputs.join("")}amix=inputs=${mixInputs.length}:duration=longest:dropout_transition=0,loudnorm=I=-14:TP=-1:LRA=11[aout]`,
       );
 
       args.push(
@@ -964,6 +1018,12 @@ export class VideoRenderer {
         "copy",
         "-c:a",
         "aac",
+        "-ar",
+        "48000",
+        "-ac",
+        "2",
+        "-b:a",
+        "192k",
         "-movflags",
         "+faststart",
         this.options.output,
