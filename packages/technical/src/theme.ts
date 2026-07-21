@@ -1,3 +1,5 @@
+import { programmingMonoFontStack } from './fonts';
+
 export const technicalPalette = {
   canvas: '#0f172a',
   surface: '#111827',
@@ -15,7 +17,8 @@ export const technicalPalette = {
 };
 
 export const technicalFonts = {
-  mono: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+  /** Prefer installed coding fonts, then generic monospace. */
+  mono: programmingMonoFontStack(),
   sans: 'Inter, "Segoe UI", system-ui, sans-serif',
 };
 

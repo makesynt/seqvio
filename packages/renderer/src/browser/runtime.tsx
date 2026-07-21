@@ -13,7 +13,11 @@ import {
   type RenderableMeta,
 } from "../media-contract";
 import { setGlobalFrame } from "@seqvio/core";
-import { preloadHandwritingFonts, preloadPathFonts } from "@seqvio/whiteboard";
+import {
+  preloadFontFace,
+  preloadHandwritingFonts,
+  preloadPathFonts,
+} from "@seqvio/whiteboard";
 import { runtimeGlobalName, SeqvioRuntimeKey } from "../brand";
 import { flushSeekables } from "@seqvio/core";
 import { svgDataUrl, waitForImageReady } from "../whiteboard-layer-cache";
@@ -166,6 +170,55 @@ async function waitForPendingImages(): Promise<void> {
   );
 }
 
+async function waitForVideoMetadata(video: HTMLVideoElement): Promise<void> {
+  if (video.readyState >= HTMLMediaElement.HAVE_METADATA) return;
+  await new Promise<void>((resolve) => {
+    let settled = false;
+    let timeout = 0;
+    const done = () => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeout);
+      video.removeEventListener('loadedmetadata', done);
+      video.removeEventListener('error', done);
+      resolve();
+    };
+    timeout = window.setTimeout(done, 10000);
+    video.addEventListener('loadedmetadata', done, { once: true });
+    video.addEventListener('error', done, { once: true });
+  });
+}
+
+async function syncSeekableVideos(frame: number): Promise<void> {
+  const videos = Array.from(
+    document.querySelectorAll<HTMLVideoElement>('video[data-seqvio-seekable-media="true"]'),
+  );
+  await Promise.all(videos.map(async (video) => {
+    video.pause();
+    await waitForVideoMetadata(video);
+    const requested = frame / Math.max(1, sceneMeta.fps);
+    const duration = Number.isFinite(video.duration) ? video.duration : requested;
+    const target = Math.max(0, Math.min(requested, Math.max(0, duration - 0.001)));
+    if (Math.abs(video.currentTime - target) < 0.001) return;
+    await new Promise<void>((resolve) => {
+      let settled = false;
+      let timeout = 0;
+      const done = () => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timeout);
+        video.removeEventListener('seeked', done);
+        video.removeEventListener('error', done);
+        resolve();
+      };
+      timeout = window.setTimeout(done, 10000);
+      video.addEventListener('seeked', done, { once: true });
+      video.addEventListener('error', done, { once: true });
+      video.currentTime = target;
+    });
+  }));
+}
+
 /**
  * One-time resource gate, run once after the initial render. Fonts only need to
  * load once for the whole composition; awaiting document.fonts.ready every frame
@@ -176,6 +229,10 @@ async function waitForInitialResources(): Promise<void> {
     await document.fonts.ready;
   }
   await waitForPendingImages();
+  await Promise.all(
+    Array.from(document.querySelectorAll<HTMLVideoElement>('video[data-seqvio-seekable-media="true"]'))
+      .map((video) => waitForVideoMetadata(video)),
+  );
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 }
 
@@ -186,6 +243,7 @@ async function waitForInitialResources(): Promise<void> {
  */
 async function waitForFrame(): Promise<void> {
   await waitForPendingImages();
+  await syncSeekableVideos(readRuntimeGlobal<number>('frame') ?? 0);
   await applyWhiteboardLayerCache(readRuntimeGlobal<number>("frame") ?? 0);
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 }
@@ -337,15 +395,23 @@ export function mountBrowserRuntime(
 
   void (async () => {
     await preloadPathFonts("./NotoSansSC-Regular.woff", "./DejaVuSans.ttf");
-    await preloadHandwritingFonts({
-      virgilUrl: "./Virgil.woff2",
-      longcangUrl: "./LongCang-Regular.ttf",
-      xiaolaiUrl: "./Xiaolai-Regular.ttf",
-      wenkaiUrl: "./LXGWWenKaiLite-Regular.ttf",
-      yozaiUrl: "./Yozai-Regular.ttf",
-      liuJianMaoCaoUrl: "./LiuJianMaoCao-Regular.ttf",
-      zhiMangXingUrl: "./ZhiMangXing-Regular.ttf",
-    });
+    await Promise.all([
+      preloadHandwritingFonts({
+        virgilUrl: "./Virgil.woff2",
+        longcangUrl: "./LongCang-Regular.ttf",
+        xiaolaiUrl: "./Xiaolai-Regular.ttf",
+        wenkaiUrl: "./LXGWWenKaiLite-Regular.ttf",
+        yozaiUrl: "./Yozai-Regular.ttf",
+        liuJianMaoCaoUrl: "./LiuJianMaoCao-Regular.ttf",
+        zhiMangXingUrl: "./ZhiMangXing-Regular.ttf",
+      }),
+      // CodeWalkthrough / technical scenes — must be ready before first paint.
+      preloadFontFace(
+        "JetBrains Mono",
+        "./JetBrainsMono-Regular.woff2",
+        "woff2",
+      ),
+    ]);
     root!.render(
       React.createElement(FrameRoot, {
         SceneComponent,

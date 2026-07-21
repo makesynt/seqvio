@@ -133,16 +133,21 @@ export function applyCodeSteps(source: string, steps: CodeStep[], frame: number)
       }
       case 'type': {
         const range = step.range ?? { startLine: 1, endLine: records.length };
-        for (const line of records) {
-          if (line.lineNumber < range.startLine || line.lineNumber > range.endLine) {
+        const linesInRange = records.filter(
+          (line) =>
+            line.lineNumber >= range.startLine && line.lineNumber <= range.endLine
+        );
+        // Reveal one line at a time: finish the current line before starting the next.
+        const framesPerChar = 2;
+        let budget = Math.max(0, Math.floor((frame - step.at) / framesPerChar));
+        for (const line of linesInRange) {
+          if (budget <= 0) {
+            typedChars.set(line.id, 0);
             continue;
           }
-          const elapsed = frame - step.at;
-          const chars = Math.min(
-            line.text.length,
-            Math.max(0, Math.floor(elapsed / 2))
-          );
-          typedChars.set(line.id, chars);
+          const visible = Math.min(line.text.length, budget);
+          typedChars.set(line.id, visible);
+          budget -= visible;
         }
         break;
       }

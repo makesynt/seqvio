@@ -35,6 +35,23 @@ describe('applyCodeSteps', () => {
     assert.ok((later.typedChars.get(lineId) ?? 0) > 0);
   });
 
+  it('types multiple lines sequentially, not in parallel', () => {
+    resetLineIdCounter();
+    const source = 'aaa\nbbbb\ncc\n';
+    const steps = [{ at: 0, action: 'type', range: { startLine: 1, endLine: 3 } }];
+    // 3 chars on line1 need 6 frames; at frame 4 only line1 should be partial.
+    const midFirst = applyCodeSteps(source, steps, 4);
+    assert.strictEqual(midFirst.typedChars.get(midFirst.records[0].id), 2);
+    assert.strictEqual(midFirst.typedChars.get(midFirst.records[1].id), 0);
+    assert.strictEqual(midFirst.typedChars.get(midFirst.records[2].id), 0);
+
+    // After line1 completes (3 chars => 6 frames), line2 starts.
+    const midSecond = applyCodeSteps(source, steps, 8);
+    assert.strictEqual(midSecond.typedChars.get(midSecond.records[0].id), 3);
+    assert.strictEqual(midSecond.typedChars.get(midSecond.records[1].id), 1);
+    assert.strictEqual(midSecond.typedChars.get(midSecond.records[2].id), 0);
+  });
+
   it('preserves line identity across insert and delete', () => {
     resetLineIdCounter();
     const source = 'alpha\nbeta\ngamma\n';

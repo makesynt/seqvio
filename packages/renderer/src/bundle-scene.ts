@@ -73,6 +73,13 @@ export function writeRenderShell(
 <head>
   <meta charset="UTF-8">
   <style>
+    @font-face {
+      font-family: 'JetBrains Mono';
+      src: url('./JetBrainsMono-Regular.woff2') format('woff2');
+      font-weight: 400;
+      font-style: normal;
+      font-display: block;
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
       width: ${width}px;
@@ -200,6 +207,26 @@ function copyBundledAssets(outDir: string): void {
     if (fs.existsSync(bundled)) {
       fs.copyFileSync(bundled, path.join(outDir, fontFile));
     }
+  }
+
+  const jetbrainsCandidates: string[] = [];
+  for (const root of roots) {
+    jetbrainsCandidates.push(
+      path.join(
+        root,
+        "@fontsource",
+        "jetbrains-mono",
+        "files",
+        "jetbrains-mono-latin-400-normal.woff2",
+      ),
+    );
+  }
+  const jetbrains = findFirstExisting(jetbrainsCandidates);
+  if (jetbrains) {
+    fs.copyFileSync(
+      jetbrains,
+      path.join(outDir, "JetBrainsMono-Regular.woff2"),
+    );
   }
 }
 

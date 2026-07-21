@@ -52,4 +52,15 @@ export type {
 } from './diagram-layout';
 
 export { technicalPalette, technicalFonts, technicalCodeTheme } from './theme';
+export {
+  BUNDLED_CODE_FONT_FAMILY,
+  BUNDLED_CODE_FONT_FILE,
+  PROGRAMMING_MONO_FONTS,
+  detectInstalledProgrammingMonoFonts,
+  isMonoFontInstalled,
+  preloadBundledCodeFont,
+  programmingMonoFontStack,
+  resolveProgrammingMonoFont,
+} from './fonts';
+export { CodeFontFaces } from './CodeFontFaces';
 export { ease, useReveal, clamp01 } from './anim';

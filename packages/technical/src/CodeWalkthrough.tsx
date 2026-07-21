@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { AnnotationTarget, useCurrentFrame } from '@seqvio/core';
 import { applyCodeSteps, highlightSource } from './code-utils';
 import type { CodeStep } from './code-utils';
+import { CodeFontFaces } from './CodeFontFaces';
+import { resolveProgrammingMonoFont } from './fonts';
 import { technicalFonts, technicalPalette } from './theme';
 
 export interface CodeWalkthroughProps {
@@ -33,16 +35,18 @@ export const CodeWalkthrough: React.FC<CodeWalkthroughProps> = ({
   const gutterWidth = 52;
   const pad = 32;
   const focused = new Set(focusLineIds);
+  const monoFont = useMemo(() => resolveProgrammingMonoFont(), []);
 
   return (
     <AnnotationTarget id={id} style={{ width, height }}>
+      <CodeFontFaces />
       <div
         style={{
           width,
           height,
           background: technicalPalette.codeBg,
           color: technicalPalette.ink,
-          fontFamily: technicalFonts.mono,
+          fontFamily: monoFont || technicalFonts.mono,
           display: 'flex',
           flexDirection: 'column',
           boxSizing: 'border-box',
@@ -72,7 +76,7 @@ export const CodeWalkthrough: React.FC<CodeWalkthroughProps> = ({
               margin: 0,
               fontSize: 18,
               lineHeight: `${lineHeight}px`,
-              fontFamily: technicalFonts.mono,
+              fontFamily: monoFont || technicalFonts.mono,
             }}
           >
             {records.map((record) => {
