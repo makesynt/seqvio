@@ -40,6 +40,8 @@ export interface DrawOptions {
   strokeWidth?: number;
   fillColor?: string;
   fillDelay?: number;
+  /** Stable id consumed by AnnotationProvider via data-annotation-target. */
+  annotationId?: string;
 }
 
 export interface Point {

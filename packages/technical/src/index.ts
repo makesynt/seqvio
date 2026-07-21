@@ -25,6 +25,8 @@ export {
   applyCodeSteps,
   createLineRecords,
   highlightLine,
+  highlightLineFallback,
+  highlightSource,
   resetLineIdCounter,
   splitSourceLines,
 } from './code-utils';
@@ -36,7 +38,9 @@ export type {
 } from './code-utils';
 
 export {
+  collapsedGroupsAt,
   diagramVisibility,
+  groupProxyId,
   layoutDiagram,
 } from './diagram-layout';
 export type {

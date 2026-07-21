@@ -1,14 +1,13 @@
-/** @deprecated Import annotation primitives from `@seqvio/core` instead. */
 export {
   AnnotationLayer,
   AnnotationProvider,
   AnnotationTarget,
   useAnnotationTargetRegistry,
-} from '@seqvio/core';
+} from './AnnotationLayer';
 export type {
   AnnotationItem,
   AnnotationKind,
   AnnotationLayerProps,
   AnnotationTargetProps,
   TargetRect,
-} from '@seqvio/core';
+} from './AnnotationLayer';

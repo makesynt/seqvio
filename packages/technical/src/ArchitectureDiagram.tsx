@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react';
 import { useCurrentFrame } from '@seqvio/core';
-import { AnnotationTarget } from './AnnotationLayer';
+import { AnnotationTarget } from '@seqvio/core';
 import {
   diagramVisibility,
+  groupProxyId,
   layoutDiagram,
   type DiagramEdgeInput,
   type DiagramNodeInput,
@@ -35,18 +36,30 @@ export const ArchitectureDiagram: React.FC<ArchitectureDiagramProps> = ({
   title = 'Architecture',
 }) => {
   const frame = useCurrentFrame();
-  const layout = useMemo(
-    () => layoutDiagram(nodes, edges, width, height),
-    [nodes, edges, width, height]
-  );
-  const visibility = diagramVisibility(steps, frame);
+  const visibility = diagramVisibility(steps, frame, nodes);
   const revealAt = useMemo(() => {
     const map = new Map<string, number>();
     for (const step of steps) {
       if (step.action === 'reveal') map.set(step.targetId, step.at);
+      if (step.action === 'collapse') map.set(groupProxyId(step.groupId), step.at);
     }
     return map;
   }, [steps]);
+
+  // Stabilize Set identity for useMemo dependency via sorted key.
+  const collapsedKey = [...visibility.collapsed].sort().join(',');
+
+  const layoutStable = useMemo(
+    () =>
+      layoutDiagram(
+        nodes,
+        edges,
+        width,
+        height,
+        new Set(collapsedKey ? collapsedKey.split(',') : [])
+      ),
+    [nodes, edges, width, height, collapsedKey]
+  );
 
   return (
     <AnnotationTarget id={id} style={{ width, height, position: 'relative' }}>
@@ -73,7 +86,7 @@ export const ArchitectureDiagram: React.FC<ArchitectureDiagramProps> = ({
           {title}
         </div>
         <svg width={width} height={height} style={{ position: 'absolute', inset: 0 }}>
-          {layout.edges.map((edge) => {
+          {layoutStable.edges.map((edge) => {
             if (!visibility.activeEdges.has(edge.id) || edge.points.length < 2) return null;
             const traceStep = steps.find(
               (step) =>
@@ -82,7 +95,7 @@ export const ArchitectureDiagram: React.FC<ArchitectureDiagramProps> = ({
             );
             const traceStart = traceStep?.at ?? 0;
             const traceProgress = Math.max(0, Math.min(1, (frame - traceStart) / 36));
-            const visibleCount = Math.max(2, Math.floor(edge.points.length * traceProgress));
+            const visibleCount = Math.max(2, Math.floor(edge.points.length * Math.max(traceProgress, 0.35)));
             const points = edge.points.slice(0, visibleCount);
             return (
               <g key={edge.id}>
@@ -95,8 +108,8 @@ export const ArchitectureDiagram: React.FC<ArchitectureDiagramProps> = ({
                 />
                 {edge.label ? (
                   <text
-                    x={(edge.points[1]?.x ?? 0) + 8}
-                    y={(edge.points[1]?.y ?? 0) - 8}
+                    x={(edge.points[1]?.x ?? edge.points[0]?.x ?? 0) + 8}
+                    y={(edge.points[1]?.y ?? edge.points[0]?.y ?? 0) - 8}
                     fill={technicalPalette.muted}
                     fontSize={14}
                     fontFamily={technicalFonts.sans}
@@ -108,16 +121,18 @@ export const ArchitectureDiagram: React.FC<ArchitectureDiagramProps> = ({
             );
           })}
         </svg>
-        {layout.nodes.map((node) => {
+        {layoutStable.nodes.map((node) => {
           const revealed = visibility.revealedNodes.has(node.id);
           const start = revealAt.get(node.id) ?? 0;
           const progress = revealed ? ease((frame - start) / 20) : 0;
-          const emphasized = visibility.emphasized.has(node.id);
+          const emphasized =
+            visibility.emphasized.has(node.id) ||
+            (node.groupId ? visibility.emphasized.has(node.groupId) : false);
           if (!revealed) return null;
           return (
             <AnnotationTarget
               key={node.id}
-              id={node.id}
+              id={node.collapsedGroup && node.groupId ? node.groupId : node.id}
               style={{
                 position: 'absolute',
                 left: node.x,
@@ -132,13 +147,17 @@ export const ArchitectureDiagram: React.FC<ArchitectureDiagramProps> = ({
                 style={{
                   width: '100%',
                   height: '100%',
-                  borderRadius: 14,
+                  borderRadius: node.collapsedGroup ? 18 : 14,
                   border: emphasized
                     ? `2px solid ${technicalPalette.warning}`
-                    : `1px solid ${technicalPalette.line}`,
+                    : node.collapsedGroup
+                      ? `2px dashed ${technicalPalette.accent}`
+                      : `1px solid ${technicalPalette.line}`,
                   background: emphasized
                     ? 'rgba(251, 191, 36, 0.12)'
-                    : technicalPalette.panel,
+                    : node.collapsedGroup
+                      ? 'rgba(56, 189, 248, 0.12)'
+                      : technicalPalette.panel,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -153,7 +172,7 @@ export const ArchitectureDiagram: React.FC<ArchitectureDiagramProps> = ({
                   boxSizing: 'border-box',
                 }}
               >
-                {node.label}
+                {node.collapsedGroup ? `${node.label} ▸` : node.label}
               </div>
             </AnnotationTarget>
           );

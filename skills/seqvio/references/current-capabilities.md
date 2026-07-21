@@ -51,9 +51,11 @@ Frame hooks (from `@seqvio/whiteboard`, re-exported from `@seqvio/core`):
 From `@seqvio/technical`:
 
 - `TechnicalScene`
-- `AnnotationProvider` / `AnnotationTarget` / `AnnotationLayer`
-- `CodeWalkthrough` — focus / type / insert / replace / delete / annotate with stable line ids
-- `ArchitectureDiagram` — deterministic layered layout with reveal / connect / trace / emphasize
+- `AnnotationProvider` / `AnnotationTarget` / `AnnotationLayer` (also exported from `@seqvio/core` for cross-style use)
+- `CodeWalkthrough` — Shiki sync highlighter, stable line ids, focus / type / insert / replace / delete / annotate
+- `ArchitectureDiagram` — dagre layout with reveal / connect / trace / emphasize / collapse / expand
+
+Whiteboard drawables and product-demo chrome accept `annotationId` / element `id` so annotations can target them under a shared `AnnotationProvider`.
 
 ## Core composition components
 
@@ -115,9 +117,16 @@ Preferred starting points:
 | `examples/compositions/seqvio-audio-demo.tsx` | Audio and caption metadata |
 | `examples/compositions/seqvio-intro.tsx` | Multi-scene framework intro |
 | `examples/compositions/technical-demo-v2.tsx` | Short technical smoke (whiteboard + code + diagram) |
-| `examples/compositions/technical-explainer-v2.tsx` | ~4.5 min technical reference composition |
+| `examples/compositions/technical-explainer-v2.tsx` | ~4.5 min technical reference composition (`lockToAudio`) |
 | `examples/ir/technical-demo-v2.json` | Short CompositionDocument v2 IR |
 | `examples/ir/technical-explainer-v2.json` | Full CompositionDocument v2 IR + chapters |
+
+Narrated technical reference loop:
+
+```bash
+npm run audio:technical-explainer -- --smoke          # extract + TTS + short muxed clip
+npm run audio:technical-explainer                     # full extract + TTS + preview render
+```
 | `packages/whiteboard/examples/` | Single-scene whiteboard samples |
 
 Tracked README demo videos:
@@ -152,7 +161,6 @@ Do not assume these exist just because they appear in roadmap or proposal docs:
 - OpenMontage adapter inside Seqvio core
 - `@seqvio/education` / full LessonPlan package
 - TerminalDemo / ChatTranscript / DiffReview scene families
-- Shiki-based syntax highlighting (current highlighter is deterministic keyword/token based)
 - formal VISION.md promise for 10-minute videos
 - transitions beyond `fade`, `slide`, and `wipe`
 

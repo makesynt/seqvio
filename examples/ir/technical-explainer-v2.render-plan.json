@@ -1,40 +1,58 @@
 {
   "compositionId": "api-request-explainer",
+  "settingsHash": "5731467e12750652",
   "chapters": [
     {
       "id": "hook",
       "startFrame": 0,
       "endFrame": 1223,
-      "contentHash": "8de831f3",
-      "status": "pending"
+      "contentHash": "449cf3ba",
+      "status": "complete",
+      "outputPath": "D:\\video-agent\\seqvio\\output\\chapters\\technical-explainer-v2\\hook.mp4",
+      "settingsHash": "5731467e12750652",
+      "previewComplete": true,
+      "finalComplete": false
     },
     {
       "id": "model",
       "startFrame": 1224,
       "endFrame": 2315,
-      "contentHash": "968d369b",
-      "status": "pending"
+      "contentHash": "4b3d3db5",
+      "status": "complete",
+      "outputPath": "D:\\video-agent\\seqvio\\output\\chapters\\technical-explainer-v2\\model.mp4",
+      "settingsHash": "5731467e12750652",
+      "previewComplete": true,
+      "finalComplete": false
     },
     {
       "id": "example",
       "startFrame": 2316,
       "endFrame": 6191,
       "contentHash": "ad727ca6",
-      "status": "pending"
+      "status": "complete",
+      "outputPath": "D:\\video-agent\\seqvio\\output\\chapters\\technical-explainer-v2\\example.mp4",
+      "settingsHash": "5731467e12750652",
+      "previewComplete": true
     },
     {
       "id": "pitfalls",
       "startFrame": 6192,
       "endFrame": 7595,
       "contentHash": "43a8932d",
-      "status": "pending"
+      "status": "complete",
+      "outputPath": "D:\\video-agent\\seqvio\\output\\chapters\\technical-explainer-v2\\pitfalls.mp4",
+      "settingsHash": "5731467e12750652",
+      "previewComplete": true
     },
     {
       "id": "recap",
       "startFrame": 7596,
       "endFrame": 8135,
       "contentHash": "cde58e0d",
-      "status": "pending"
+      "status": "complete",
+      "outputPath": "D:\\video-agent\\seqvio\\output\\chapters\\technical-explainer-v2\\recap.mp4",
+      "settingsHash": "5731467e12750652",
+      "previewComplete": true
     }
   ]
 }

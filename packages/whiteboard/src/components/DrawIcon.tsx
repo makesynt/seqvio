@@ -32,6 +32,7 @@ const DrawIconComponent: React.FC<DrawIconProps> = ({
   easing = 'ease-out',
   strokeColor: strokeColorProp,
   strokeWidth: strokeWidthProp,
+  annotationId,
 }) => {
   const theme = useWhiteboardTheme();
   const groupRef = useRef<SVGGElement>(null);
@@ -101,7 +102,8 @@ const DrawIconComponent: React.FC<DrawIconProps> = ({
   return (
     <svg
       className="seqvio-drawable"
-      data-seqvio-draw-start={start}
+      data-annotation-target={annotationId}
+        data-seqvio-draw-start={start}
       data-seqvio-draw-end={start + duration}
       style={{ position: 'absolute', left: 0, top: 0, overflow: 'visible' }}
       width="100%"

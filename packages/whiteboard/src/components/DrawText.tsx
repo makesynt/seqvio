@@ -45,6 +45,7 @@ const DrawTextComponent: React.FC<DrawTextProps> = ({
   fillColor: fillColorProp,
   fillDelay = 0.25,
   textRender: textRenderProp,
+  annotationId,
 }) => {
   const theme = useWhiteboardTheme();
   const pathRef = useRef<SVGPathElement>(null);
@@ -256,6 +257,7 @@ const DrawTextComponent: React.FC<DrawTextProps> = ({
     return (
       <svg
         className="seqvio-drawable"
+        data-annotation-target={annotationId}
         data-seqvio-draw-start={start}
         data-seqvio-draw-end={start + duration}
         style={{
@@ -308,6 +310,7 @@ const DrawTextComponent: React.FC<DrawTextProps> = ({
     return (
       <svg
         className="seqvio-drawable"
+        data-annotation-target={annotationId}
         data-seqvio-draw-start={start}
         data-seqvio-draw-end={start + duration}
         style={{
@@ -365,7 +368,8 @@ const DrawTextComponent: React.FC<DrawTextProps> = ({
   return (
     <svg
       className="seqvio-drawable"
-      data-seqvio-draw-start={start}
+      data-annotation-target={annotationId}
+        data-seqvio-draw-start={start}
       data-seqvio-draw-end={start + duration}
       style={{
         position: "absolute",

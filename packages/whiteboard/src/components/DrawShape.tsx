@@ -68,6 +68,7 @@ const DrawShapeComponent: React.FC<DrawShapeProps> = ({
   fillDelay = 0.3,
   roughness: roughnessProp,
   borderRadius: borderRadiusProp,
+  annotationId,
 }) => {
   const theme = useWhiteboardTheme();
   const pathRef = useRef<SVGPathElement>(null);
@@ -278,6 +279,7 @@ const DrawShapeComponent: React.FC<DrawShapeProps> = ({
   return (
       <svg
         className="seqvio-drawable"
+        data-annotation-target={annotationId}
         data-seqvio-draw-start={start}
         data-seqvio-draw-end={start + duration}
         style={{

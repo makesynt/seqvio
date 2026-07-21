@@ -94,7 +94,9 @@ export type DiagramStep =
   | { at: number; action: 'reveal'; targetId: string }
   | { at: number; action: 'connect'; edgeId: string }
   | { at: number; action: 'trace'; edgeId: string }
-  | { at: number; action: 'emphasize'; targetId: string };
+  | { at: number; action: 'emphasize'; targetId: string }
+  | { at: number; action: 'collapse'; groupId: string }
+  | { at: number; action: 'expand'; groupId: string };
 
 export interface DiagramSceneSpec {
   type: 'diagram';

@@ -1,7 +1,7 @@
 import React from 'react';
-import { useCurrentFrame } from '@seqvio/core';
-import { AnnotationTarget } from './AnnotationLayer';
-import { applyCodeSteps, highlightLine, type CodeStep } from './code-utils';
+import { AnnotationTarget, useCurrentFrame } from '@seqvio/core';
+import { applyCodeSteps, highlightSource } from './code-utils';
+import type { CodeStep } from './code-utils';
 import { technicalFonts, technicalPalette } from './theme';
 
 export interface CodeWalkthroughProps {
@@ -81,7 +81,7 @@ export const CodeWalkthrough: React.FC<CodeWalkthroughProps> = ({
                 typedCount === undefined
                   ? record.text
                   : record.text.slice(0, typedCount);
-              const tokens = highlightLine(visibleLine, language);
+              const tokens = highlightSource(visibleLine, language)[0] ?? [];
               return (
                 <AnnotationTarget
                   key={record.id}

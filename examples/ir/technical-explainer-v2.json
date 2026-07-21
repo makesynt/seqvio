@@ -43,6 +43,7 @@
       "elements": [
         {
           "type": "text",
+          "id": "opening-title",
           "text": "Why requests fail",
           "position": { "x": 640, "y": 220 },
           "fontSize": 52,
@@ -53,6 +54,7 @@
         },
         {
           "type": "text",
+          "id": "opening-subtitle",
           "text": "Not in the editor — in production",
           "position": { "x": 640, "y": 310 },
           "fontSize": 28,
@@ -62,6 +64,7 @@
         },
         {
           "type": "shape",
+          "id": "opening-underline",
           "shape": "underline",
           "from": { "x": 380, "y": 350 },
           "to": { "x": 900, "y": 350 },
@@ -72,7 +75,7 @@
       "annotations": [
         {
           "id": "opening-spot",
-          "targetId": "opening",
+          "targetId": "opening-title",
           "kind": "spotlight",
           "start": 0,
           "duration": 120,
@@ -165,7 +168,10 @@
         { "at": 336, "action": "connect", "edgeId": "sys-e4" },
         { "at": 390, "action": "reveal", "targetId": "sys-db" },
         { "at": 426, "action": "connect", "edgeId": "sys-e5" },
-        { "at": 480, "action": "emphasize", "targetId": "sys-gateway" }
+        { "at": 480, "action": "emphasize", "targetId": "sys-gateway" },
+        { "at": 600, "action": "collapse", "groupId": "backend" },
+        { "at": 780, "action": "expand", "groupId": "backend" },
+        { "at": 900, "action": "emphasize", "targetId": "sys-users" }
       ],
       "annotations": [
         {

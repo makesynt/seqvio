@@ -29,6 +29,7 @@
     "test": "npm run test --workspaces --if-present --include-workspace-root=false",
     "test:visual": "node scripts/visual-regression.mjs",
     "test:visual:update": "node scripts/visual-regression.mjs --update",
+    "audio:technical-explainer": "node scripts/technical-explainer-audio-loop.mjs",
     "lint": "npm run lint --workspaces --if-present --include-workspace-root=false",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "clean": "npm run clean --workspaces --if-present --include-workspace-root=false",

@@ -407,6 +407,12 @@ function collectAddressableIds(scene: SceneSpec): string[] {
     for (const edge of scene.edges) ids.push(edge.id);
   } else if (scene.type === 'infographic') {
     for (const panel of scene.panels) ids.push(panel.id);
+  } else if (scene.type === 'whiteboard') {
+    for (const element of scene.elements) {
+      if (typeof element.id === 'string' && element.id.length > 0) {
+        ids.push(element.id);
+      }
+    }
   }
   return ids;
 }

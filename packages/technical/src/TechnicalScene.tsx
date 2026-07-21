@@ -1,6 +1,10 @@
-import React, { CSSProperties } from 'react';
+import React from 'react';
+import {
+  AnnotationLayer,
+  AnnotationProvider,
+  type AnnotationItem,
+} from '@seqvio/core';
 import { technicalFonts, technicalPalette } from './theme';
-import { AnnotationLayer, AnnotationProvider, type AnnotationItem } from './AnnotationLayer';
 
 export interface TechnicalSceneProps {
   children: React.ReactNode;
@@ -8,7 +12,7 @@ export interface TechnicalSceneProps {
   height?: number;
   background?: string;
   annotations?: AnnotationItem[];
-  style?: CSSProperties;
+  style?: React.CSSProperties;
 }
 
 export const TechnicalScene: React.FC<TechnicalSceneProps> = ({

@@ -11,6 +11,19 @@ export * from './time';
 export * from './composition';
 export * from './scene-registry';
 export * from './transitions';
+export {
+  AnnotationLayer,
+  AnnotationProvider,
+  AnnotationTarget,
+  useAnnotationTargetRegistry,
+} from './annotation';
+export type {
+  AnnotationItem,
+  AnnotationLayerProps,
+  AnnotationTargetProps,
+  TargetRect,
+} from './annotation';
 export * from './storyboard';
 export * from './composition-document';
 export * from './seekable';
+

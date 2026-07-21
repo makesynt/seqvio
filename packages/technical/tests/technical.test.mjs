@@ -4,16 +4,22 @@ import {
   applyCodeSteps,
   createLineRecords,
   highlightLine,
+  highlightSource,
   resetLineIdCounter,
 } from '../dist/code-utils.js';
-import { layoutDiagram } from '../dist/diagram-layout.js';
+import {
+  collapsedGroupsAt,
+  layoutDiagram,
+} from '../dist/diagram-layout.js';
 
-describe('highlightLine', () => {
-  it('colors keywords, types, and strings', () => {
+describe('highlightLine / highlightSource (Shiki)', () => {
+  it('colors keywords, types, and strings via Shiki', () => {
     const tokens = highlightLine('const name: string = "seqvio";', 'typescript');
     assert.ok(tokens.some((token) => token.text === 'const'));
-    assert.ok(tokens.some((token) => token.text === 'string'));
-    assert.ok(tokens.some((token) => token.text === '"seqvio"'));
+    assert.ok(tokens.some((token) => token.text.includes('seqvio') || token.text === '"seqvio"'));
+    const lines = highlightSource('function hi() {\n  return 1;\n}\n', 'typescript');
+    assert.ok(lines.length >= 3);
+    assert.ok(lines[0].some((token) => token.text === 'function'));
   });
 });
 
@@ -59,7 +65,7 @@ describe('applyCodeSteps', () => {
 });
 
 describe('layoutDiagram', () => {
-  it('lays out nodes deterministically', () => {
+  it('lays out nodes deterministically with dagre', () => {
     const a = layoutDiagram(
       [
         { id: 'client', label: 'Client' },
@@ -81,5 +87,29 @@ describe('layoutDiagram', () => {
     assert.deepStrictEqual(a.nodes, b.nodes);
     assert.strictEqual(a.nodes.length, 2);
     assert.strictEqual(a.edges.length, 1);
+  });
+
+  it('collapses and expands a subsystem group', () => {
+    const nodes = [
+      { id: 'gw', label: 'Gateway' },
+      { id: 'svc', label: 'Service', groupId: 'backend' },
+      { id: 'db', label: 'DB', groupId: 'backend' },
+    ];
+    const edges = [
+      { id: 'e1', from: 'gw', to: 'svc' },
+      { id: 'e2', from: 'svc', to: 'db' },
+    ];
+    const steps = [
+      { at: 10, action: 'collapse', groupId: 'backend' },
+      { at: 40, action: 'expand', groupId: 'backend' },
+    ];
+    assert.deepStrictEqual([...collapsedGroupsAt(steps, 5)], []);
+    assert.deepStrictEqual([...collapsedGroupsAt(steps, 20)], ['backend']);
+    assert.deepStrictEqual([...collapsedGroupsAt(steps, 50)], []);
+
+    const collapsed = layoutDiagram(nodes, edges, 1280, 720, new Set(['backend']));
+    assert.ok(collapsed.nodes.some((node) => node.id === '__group:backend'));
+    assert.ok(!collapsed.nodes.some((node) => node.id === 'svc'));
+    assert.strictEqual(collapsed.nodes.length, 2);
   });
 });

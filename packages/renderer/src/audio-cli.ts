@@ -258,14 +258,23 @@ async function synthesizeEdgeTts(
   outPath: string,
   options: { voice: string }
 ): Promise<void> {
-  await execFileAsync(resolveEdgeTtsExecutable(), [
+  const args = [
     '--text',
     text,
     '--voice',
     options.voice,
     '--write-media',
     outPath,
-  ]);
+  ];
+  const bin = resolveEdgeTtsExecutable();
+  if (bin === 'python-module') {
+    await execFileAsync(process.env.PYTHON ?? 'python', ['-m', 'edge_tts', ...args]);
+    return;
+  }
+  await execFileAsync(bin, args, {
+    // Windows .cmd/.bat wrappers require a shell; bare exes do not.
+    shell: process.platform === 'win32' && /\.(cmd|bat)$/i.test(bin),
+  });
 }
 
 async function probeMediaDurationMs(filePath: string): Promise<number> {
@@ -300,7 +309,8 @@ function resolveEdgeTtsExecutable(): string {
     return candidate;
   }
 
-  return 'edge-tts';
+  // Prefer `python -m edge_tts` when the console script is not on PATH.
+  return 'python-module';
 }
 
 function resolveProvider(providerValue: string): TtsProvider {
@@ -380,13 +390,21 @@ async function ensureProviderReady(provider: TtsProvider): Promise<void> {
         );
       });
       return;
-    case 'edge-tts':
-      await execFileAsync(resolveEdgeTtsExecutable(), ['--help']).catch(() => {
+    case 'edge-tts': {
+      const bin = resolveEdgeTtsExecutable();
+      const help =
+        bin === 'python-module'
+          ? execFileAsync(process.env.PYTHON ?? 'python', ['-m', 'edge_tts', '--help'])
+          : execFileAsync(bin, ['--help'], {
+              shell: process.platform === 'win32' && /\.(cmd|bat)$/i.test(bin),
+            });
+      await help.catch(() => {
         throw new Error(
           'edge-tts provider requires the `edge-tts` CLI. Install it with `python -m pip install --user edge-tts`, add the user Scripts directory to PATH, or set EDGE_TTS_BIN explicitly.'
         );
       });
       return;
+    }
     case 'openai':
       if (!process.env.OPENAI_API_KEY) {
         throw new Error('OPENAI_API_KEY is required for provider "openai".');

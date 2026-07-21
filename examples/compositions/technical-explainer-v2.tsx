@@ -34,7 +34,7 @@ function OpeningScene0() {
     <TechnicalScene width={W} height={H} annotations={[
   {
     "id": "opening-spot",
-    "targetId": "opening",
+    "targetId": "opening-title",
     "kind": "spotlight",
     "start": 0,
     "duration": 120,
@@ -49,9 +49,9 @@ function OpeningScene0() {
           background={STYLE.background}
           theme={STYLE.theme ?? excalidrawTheme}
         >
-      <DrawText text={"Why requests fail"} position={{ x: 640, y: 220 }} fontSize={52} fontWeight={"bold"} align={"center"} start={0} duration={36} />
-      <DrawText text={"Not in the editor — in production"} position={{ x: 640, y: 310 }} fontSize={28} align={"center"} start={24} duration={32} />
-      <DrawShape type={"underline"} from={{ x: 380, y: 350 }} to={{ x: 900, y: 350 }} start={40} duration={20} />
+      <DrawText text={"Why requests fail"} position={{ x: 640, y: 220 }} fontSize={52} fontWeight={"bold"} align={"center"} start={0} duration={36} annotationId={"opening-title"} />
+      <DrawText text={"Not in the editor — in production"} position={{ x: 640, y: 310 }} fontSize={28} align={"center"} start={24} duration={32} annotationId={"opening-subtitle"} />
+      <DrawShape type={"underline"} from={{ x: 380, y: 350 }} to={{ x: 900, y: 350 }} start={40} duration={20} annotationId={"opening-underline"} />
           <Hand action="write" follow={true} visible={true} />
         </WhiteboardScene>
       </AnnotationTarget>
@@ -226,6 +226,21 @@ function SystemMapScene2() {
     "at": 480,
     "action": "emphasize",
     "targetId": "sys-gateway"
+  },
+  {
+    "at": 600,
+    "action": "collapse",
+    "groupId": "backend"
+  },
+  {
+    "at": 780,
+    "action": "expand",
+    "groupId": "backend"
+  },
+  {
+    "at": 900,
+    "action": "emphasize",
+    "targetId": "sys-users"
   }
 ]}
         width={W}

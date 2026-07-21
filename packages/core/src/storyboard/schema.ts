@@ -44,6 +44,8 @@ export interface Size {
 }
 
 interface BaseElement {
+  /** Optional stable id for annotation targeting across style packages. */
+  id?: string;
   /** Frame (relative to its scene) at which the element starts drawing. */
   start?: number;
   /** Number of frames the draw animation takes. */

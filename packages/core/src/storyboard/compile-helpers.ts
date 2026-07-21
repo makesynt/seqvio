@@ -63,6 +63,7 @@ export function commonDrawAttrs(el: StoryboardElement): string {
 }
 
 export function compileElement(el: StoryboardElement): string {
+  const targetAttr = el.id ? jsxAttr('annotationId', el.id) : '';
   switch (el.type) {
     case 'text':
       return (
@@ -73,6 +74,7 @@ export function compileElement(el: StoryboardElement): string {
         jsxAttr('fontWeight', el.fontWeight) +
         jsxAttr('align', el.align) +
         commonDrawAttrs(el) +
+        targetAttr +
         ` />`
       );
     case 'shape':
@@ -85,6 +87,7 @@ export function compileElement(el: StoryboardElement): string {
         vecAttr('to', el.to) +
         jsxAttr('borderRadius', el.borderRadius) +
         commonDrawAttrs(el) +
+        targetAttr +
         ` />`
       );
     case 'image':
@@ -94,6 +97,7 @@ export function compileElement(el: StoryboardElement): string {
         vecAttr('position', el.position) +
         (el.size ? ` size={{ width: ${el.size.width}, height: ${el.size.height} }}` : '') +
         commonDrawAttrs(el) +
+        targetAttr +
         ` />`
       );
     case 'icon':
@@ -103,6 +107,7 @@ export function compileElement(el: StoryboardElement): string {
         vecAttr('position', el.position) +
         jsxAttr('size', el.size) +
         commonDrawAttrs(el) +
+        targetAttr +
         ` />`
       );
   }

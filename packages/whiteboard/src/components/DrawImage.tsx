@@ -55,7 +55,8 @@ const DrawImageComponent: React.FC<DrawImageProps> = ({
   start = 0,
   duration,
   easing = 'ease-out',
-  traceMode = 'outline'
+  traceMode = 'outline',
+  annotationId,
 }) => {
   const drawId = useId();
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -89,7 +90,8 @@ const DrawImageComponent: React.FC<DrawImageProps> = ({
   return (
     <div
       className="seqvio-drawable"
-      data-seqvio-draw-start={start}
+      data-annotation-target={annotationId}
+        data-seqvio-draw-start={start}
       data-seqvio-draw-end={start + duration}
       style={containerStyle}
     >

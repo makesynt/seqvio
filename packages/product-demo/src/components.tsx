@@ -1,4 +1,9 @@
 import React, { CSSProperties } from 'react';
+import {
+  AnnotationLayer,
+  AnnotationProvider,
+  type AnnotationItem,
+} from '@seqvio/core';
 import { useReveal } from './anim';
 import { productFonts, productPalette } from './theme';
 
@@ -8,6 +13,7 @@ export interface ProductDemoSceneProps {
   height?: number;
   background?: string;
   style?: CSSProperties;
+  annotations?: AnnotationItem[];
 }
 
 export const ProductDemoScene: React.FC<ProductDemoSceneProps> = ({
@@ -16,6 +22,7 @@ export const ProductDemoScene: React.FC<ProductDemoSceneProps> = ({
   height = 720,
   background = productPalette.canvas,
   style,
+  annotations = [],
 }) => (
   <div
     style={{
@@ -29,7 +36,10 @@ export const ProductDemoScene: React.FC<ProductDemoSceneProps> = ({
       ...style,
     }}
   >
-    {children}
+    <AnnotationProvider>
+      {children}
+      {annotations.length > 0 ? <AnnotationLayer annotations={annotations} /> : null}
+    </AnnotationProvider>
   </div>
 );
 
@@ -40,9 +50,11 @@ export interface BrowserFrameProps {
   height: number;
   url?: string;
   title?: string;
+  chromeFontFamily?: string;
   start?: number;
   duration?: number;
   style?: CSSProperties;
+  annotationId?: string;
 }
 
 export const BrowserFrame: React.FC<BrowserFrameProps> = ({
@@ -52,13 +64,16 @@ export const BrowserFrame: React.FC<BrowserFrameProps> = ({
   height,
   url = 'app.seqvio.local',
   title = 'Seqvio Studio',
+  chromeFontFamily = productFonts.mono,
   start = 0,
   duration = 22,
   style,
+  annotationId,
 }) => {
   const progress = useReveal(start, duration, 'back-out');
   return (
     <div
+      data-annotation-target={annotationId}
       style={{
         position: 'absolute',
         left: position.x,
@@ -98,7 +113,7 @@ export const BrowserFrame: React.FC<BrowserFrameProps> = ({
             display: 'flex',
             alignItems: 'center',
             padding: '0 12px',
-            fontFamily: productFonts.mono,
+            fontFamily: chromeFontFamily,
             fontSize: 12,
             color: productPalette.muted,
           }}
@@ -117,6 +132,7 @@ export interface ScreenshotPlaceholderProps {
   start?: number;
   duration?: number;
   style?: CSSProperties;
+  annotationId?: string;
 }
 
 export const ScreenshotPlaceholder: React.FC<ScreenshotPlaceholderProps> = ({
@@ -124,10 +140,12 @@ export const ScreenshotPlaceholder: React.FC<ScreenshotPlaceholderProps> = ({
   start = 18,
   duration = 20,
   style,
+  annotationId,
 }) => {
   const progress = useReveal(start, duration);
   return (
     <div
+      data-annotation-target={annotationId}
       style={{
         position: 'absolute',
         inset: 0,
@@ -186,6 +204,7 @@ export interface CalloutProps {
   start?: number;
   duration?: number;
   accent?: string;
+  annotationId?: string;
 }
 
 export const Callout: React.FC<CalloutProps> = ({
@@ -195,10 +214,12 @@ export const Callout: React.FC<CalloutProps> = ({
   start = 60,
   duration = 18,
   accent = productPalette.accent,
+  annotationId,
 }) => {
   const progress = useReveal(start, duration, 'back-out');
   return (
     <div
+      data-annotation-target={annotationId}
       style={{
         position: 'absolute',
         left: position.x,
@@ -269,6 +290,7 @@ export interface ProductTitleProps {
   subtitle?: string;
   position: { x: number; y: number };
   start?: number;
+  annotationId?: string;
 }
 
 export const ProductTitle: React.FC<ProductTitleProps> = ({
@@ -276,11 +298,15 @@ export const ProductTitle: React.FC<ProductTitleProps> = ({
   subtitle,
   position,
   start = 0,
+  annotationId,
 }) => {
   const titleProgress = useReveal(start, 22);
   const subtitleProgress = useReveal(start + 18, 22);
   return (
-    <div style={{ position: 'absolute', left: position.x, top: position.y }}>
+    <div
+      data-annotation-target={annotationId}
+      style={{ position: 'absolute', left: position.x, top: position.y }}
+    >
       <div
         style={{
           opacity: titleProgress,
