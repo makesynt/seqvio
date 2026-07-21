@@ -5,6 +5,7 @@ import {
   type AnnotationItem,
 } from '@seqvio/core';
 import { useReveal } from './anim';
+import { useCurrentFrame } from '@seqvio/core';
 import { productFonts, productPalette } from './theme';
 
 export interface ProductDemoSceneProps {
@@ -338,3 +339,269 @@ export const ProductTitle: React.FC<ProductTitleProps> = ({
   );
 };
 
+export interface TimedPoint {
+  timeMs: number;
+  x: number;
+  y: number;
+}
+
+export interface FocusTarget extends TimedPoint {
+  width: number;
+  height: number;
+  zoom?: number;
+  reset?: boolean;
+}
+
+export interface ClickMarker extends TimedPoint {}
+
+export interface RecordedBrowserDemoProps {
+  src: string;
+  recordingWidth: number;
+  recordingHeight: number;
+  width?: number;
+  height?: number;
+  fps?: number;
+  focusTargets?: FocusTarget[];
+  cursorPoints?: TimedPoint[];
+  clicks?: ClickMarker[];
+  maxZoom?: number;
+  focusPadding?: number;
+  transitionMs?: number;
+  showCursor?: boolean;
+  showFocusRing?: boolean;
+  background?: string;
+  style?: CSSProperties;
+}
+
+interface CameraState {
+  scale: number;
+  centerX: number;
+  centerY: number;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+function smoothstep(value: number): number {
+  const t = clamp(value, 0, 1);
+  return t * t * (3 - 2 * t);
+}
+
+function cameraForTarget(
+  target: FocusTarget | undefined,
+  recordingWidth: number,
+  recordingHeight: number,
+  outputWidth: number,
+  outputHeight: number,
+  maxZoom: number,
+  padding: number,
+): CameraState {
+  const baseScale = Math.max(outputWidth / recordingWidth, outputHeight / recordingHeight);
+  if (!target || target.reset) {
+    return {
+      scale: baseScale,
+      centerX: recordingWidth / 2,
+      centerY: recordingHeight / 2,
+    };
+  }
+
+  const paddedWidth = Math.max(1, target.width + padding * 2);
+  const paddedHeight = Math.max(1, target.height + padding * 2);
+  const autoScale = Math.min(outputWidth / paddedWidth, outputHeight / paddedHeight);
+  return {
+    scale: clamp(target.zoom ?? autoScale, baseScale, maxZoom),
+    centerX: target.x + target.width / 2,
+    centerY: target.y + target.height / 2,
+  };
+}
+
+function resolveCamera(
+  timeMs: number,
+  targets: FocusTarget[],
+  recordingWidth: number,
+  recordingHeight: number,
+  outputWidth: number,
+  outputHeight: number,
+  maxZoom: number,
+  padding: number,
+  transitionMs: number,
+): CameraState {
+  const sorted = [...targets].sort((a, b) => a.timeMs - b.timeMs);
+  const base = cameraForTarget(
+    undefined,
+    recordingWidth,
+    recordingHeight,
+    outputWidth,
+    outputHeight,
+    maxZoom,
+    padding,
+  );
+  const nextIndex = sorted.findIndex((target) => target.timeMs > timeMs);
+  const currentIndex = nextIndex === -1 ? sorted.length - 1 : nextIndex - 1;
+  if (currentIndex < 0) return base;
+
+  const current = sorted[currentIndex];
+  const previous = currentIndex > 0 ? sorted[currentIndex - 1] : undefined;
+  const from = cameraForTarget(
+    previous,
+    recordingWidth,
+    recordingHeight,
+    outputWidth,
+    outputHeight,
+    maxZoom,
+    padding,
+  );
+  const to = cameraForTarget(
+    current,
+    recordingWidth,
+    recordingHeight,
+    outputWidth,
+    outputHeight,
+    maxZoom,
+    padding,
+  );
+  const progress = smoothstep((timeMs - current.timeMs) / Math.max(1, transitionMs));
+  return {
+    scale: from.scale + (to.scale - from.scale) * progress,
+    centerX: from.centerX + (to.centerX - from.centerX) * progress,
+    centerY: from.centerY + (to.centerY - from.centerY) * progress,
+  };
+}
+
+function interpolatePoint(timeMs: number, points: TimedPoint[]): TimedPoint | undefined {
+  if (points.length === 0) return undefined;
+  const sorted = [...points].sort((a, b) => a.timeMs - b.timeMs);
+  const nextIndex = sorted.findIndex((point) => point.timeMs >= timeMs);
+  if (nextIndex <= 0) return sorted[0];
+  if (nextIndex === -1) return sorted[sorted.length - 1];
+  const from = sorted[nextIndex - 1];
+  const to = sorted[nextIndex];
+  const progress = smoothstep((timeMs - from.timeMs) / Math.max(1, to.timeMs - from.timeMs));
+  return {
+    timeMs,
+    x: from.x + (to.x - from.x) * progress,
+    y: from.y + (to.y - from.y) * progress,
+  };
+}
+
+export const RecordedBrowserDemo: React.FC<RecordedBrowserDemoProps> = ({
+  src,
+  recordingWidth,
+  recordingHeight,
+  width = 1280,
+  height = 720,
+  fps = 30,
+  focusTargets = [],
+  cursorPoints = [],
+  clicks = [],
+  maxZoom = 2.2,
+  focusPadding = 110,
+  transitionMs = 520,
+  showCursor = true,
+  showFocusRing = true,
+  background = '#0B0F17',
+  style,
+}) => {
+  const frame = useCurrentFrame();
+  const timeMs = (frame / Math.max(1, fps)) * 1000;
+  const camera = resolveCamera(
+    timeMs,
+    focusTargets,
+    recordingWidth,
+    recordingHeight,
+    width,
+    height,
+    maxZoom,
+    focusPadding,
+    transitionMs,
+  );
+  const cursor = interpolatePoint(timeMs, cursorPoints);
+  const scaledWidth = recordingWidth * camera.scale;
+  const scaledHeight = recordingHeight * camera.scale;
+  const translateX = clamp(
+    width / 2 - camera.centerX * camera.scale,
+    Math.min(0, width - scaledWidth),
+    Math.max(0, width - scaledWidth),
+  );
+  const translateY = clamp(
+    height / 2 - camera.centerY * camera.scale,
+    Math.min(0, height - scaledHeight),
+    Math.max(0, height - scaledHeight),
+  );
+  const activeClick = [...clicks]
+    .reverse()
+    .find((click) => timeMs >= click.timeMs && timeMs - click.timeMs <= 420);
+  const clickProgress = activeClick ? (timeMs - activeClick.timeMs) / 420 : 0;
+
+  const transformPoint = (point: { x: number; y: number }) => ({
+    x: point.x * camera.scale + translateX,
+    y: point.y * camera.scale + translateY,
+  });
+  const renderedCursor = cursor ? transformPoint(cursor) : undefined;
+  const renderedClick = activeClick ? transformPoint(activeClick) : undefined;
+
+  return (
+    <div
+      style={{
+        position: 'relative',
+        width,
+        height,
+        overflow: 'hidden',
+        background,
+        ...style,
+      }}
+    >
+      <video
+        data-seqvio-seekable-media="true"
+        src={src}
+        muted
+        preload="auto"
+        playsInline
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          width: recordingWidth,
+          height: recordingHeight,
+          objectFit: 'fill',
+          transformOrigin: '0 0',
+          transform: `translate(${translateX}px, ${translateY}px) scale(${camera.scale})`,
+          willChange: 'transform',
+        }}
+      />
+      {showFocusRing && renderedClick ? (
+        <div
+          style={{
+            position: 'absolute',
+            left: renderedClick.x,
+            top: renderedClick.y,
+            width: 26 + clickProgress * 44,
+            height: 26 + clickProgress * 44,
+            borderRadius: '50%',
+            border: `3px solid rgba(59, 130, 246, ${1 - clickProgress})`,
+            transform: 'translate(-50%, -50%)',
+            opacity: 1 - clickProgress,
+            pointerEvents: 'none',
+          }}
+        />
+      ) : null}
+      {showCursor && renderedCursor ? (
+        <div
+          style={{
+            position: 'absolute',
+            left: renderedCursor.x,
+            top: renderedCursor.y,
+            width: 23,
+            height: 30,
+            background: '#FFFFFF',
+            clipPath: 'polygon(0 0, 0 83%, 24% 64%, 40% 100%, 58% 91%, 42% 58%, 75% 58%)',
+            filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.65))',
+            transform: 'translate(-2px, -2px)',
+            pointerEvents: 'none',
+          }}
+        />
+      ) : null}
+    </div>
+  );
+};

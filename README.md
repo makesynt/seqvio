@@ -112,6 +112,16 @@ seqvio-render \
 
 When using a local repo checkout, run the built CLI with `node packages/renderer/dist/cli.js`. More detail: [Manual setup](#manual-setup).
 
+### Browser recorder MVP
+
+The local [`@seqvio/browser-recorder`](./packages/browser-recorder) workspace can execute a validated Chromium action plan, capture cursor and element-focus metadata, and render smooth focus movement through `@seqvio/product-demo`:
+
+```bash
+node packages/browser-recorder/dist/cli.js serve --port 4175
+```
+
+Open `http://127.0.0.1:4175`. The built-in sample runs without an AI provider; configure a planner webhook when AI-generated action plans are required. See the [browser recorder README](./packages/browser-recorder/README.md) for the plan contract and current MVP boundaries.
+
 **Requirements:** Node.js `>=18`, Chromium (via Puppeteer), FFmpeg (bundled in `@seqvio/renderer`). Local repo development uses npm workspaces and `package-lock.json`.
 
 ## What You Can Build

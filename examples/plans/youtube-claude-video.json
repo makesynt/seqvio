@@ -1,0 +1,56 @@
+{
+  "version": "1.0",
+  "name": "YouTube Claude Video Search",
+  "startUrl": "https://www.youtube.com",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "captureFps": 12,
+  "renderFps": 30,
+  "maxZoom": 1.75,
+  "actions": [
+    {
+      "id": "settle-home",
+      "type": "wait",
+      "label": "等待 YouTube 首页",
+      "durationMs": 900
+    },
+    {
+      "id": "search-query",
+      "type": "fill",
+      "label": "输入 Claude video",
+      "selector": "input[name=\"search_query\"]",
+      "value": "Claude video",
+      "afterMs": 350
+    },
+    {
+      "id": "submit-search",
+      "type": "press",
+      "label": "提交搜索",
+      "key": "Enter",
+      "afterMs": 2600
+    },
+    {
+      "id": "scroll-results",
+      "type": "scroll",
+      "label": "滑动视频列表",
+      "y": 1200,
+      "durationMs": 900,
+      "afterMs": 900
+    },
+    {
+      "id": "open-video",
+      "type": "click",
+      "label": "打开 Claude 视频",
+      "selector": "ytd-video-renderer:nth-of-type(5) a#video-title",
+      "afterMs": 3200
+    },
+    {
+      "id": "hold-video",
+      "type": "wait",
+      "label": "停留在视频播放页",
+      "durationMs": 1800
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Seqvio Browser Recorder</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+          <div>
+            <h1>Browser Recorder</h1>
+            <p>Seqvio workspace</p>
+          </div>
+        </div>
+        <div class="top-actions">
+          <span id="planner-status" class="connection"><i></i>Planner 未连接</span>
+          <button id="load-demo" class="button secondary" type="button">载入示例</button>
+          <button id="run" class="button primary" type="button">开始录制</button>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="control-pane">
+          <div class="pane-head">
+            <div><span class="eyebrow">TASK</span><h2>录制任务</h2></div>
+            <span id="plan-validity" class="badge neutral">待编辑</span>
+          </div>
+
+          <div class="field-grid">
+            <label class="field span-2">
+              <span>起始网址</span>
+              <input id="start-url" type="url" spellcheck="false" placeholder="https://example.com" />
+            </label>
+            <label class="field span-2">
+              <span>任务目标</span>
+              <textarea id="task" rows="3" placeholder="创建项目并展示生成结果"></textarea>
+            </label>
+          </div>
+
+          <div class="command-row">
+            <button id="ai-plan" class="button secondary" type="button" disabled>AI 规划</button>
+            <span id="plan-message" class="inline-status">动作计划可直接编辑</span>
+          </div>
+
+          <div class="editor-head">
+            <div><span class="eyebrow">PLAN.JSON</span><span id="action-count">0 个动作</span></div>
+            <button id="format-plan" class="icon-button" type="button" title="格式化 JSON" aria-label="格式化 JSON">{ }</button>
+          </div>
+          <textarea id="plan-editor" class="code-editor" spellcheck="false"></textarea>
+        </section>
+
+        <section class="monitor-pane">
+          <div class="preview-band">
+            <div class="preview-head">
+              <div><span class="eyebrow">OUTPUT</span><h2>录制预览</h2></div>
+              <div class="segmented" role="group" aria-label="预览来源">
+                <button class="active" data-preview="final" type="button">成片</button>
+                <button data-preview="raw" type="button">原始</button>
+              </div>
+            </div>
+            <div class="video-stage">
+              <video id="preview" controls playsinline></video>
+              <div id="empty-preview" class="empty-preview">
+                <div class="frame-glyph" aria-hidden="true"><span></span></div>
+                <strong>等待录制</strong>
+                <small>1280 × 720</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="run-band">
+            <div class="run-summary">
+              <div>
+                <span class="eyebrow">RUN</span>
+                <h2 id="run-title">尚未运行</h2>
+              </div>
+              <div class="progress-value" id="progress-value">0%</div>
+            </div>
+            <div class="progress-track"><div id="progress-bar"></div></div>
+            <div class="pipeline">
+              <div data-phase="recording"><i></i><span>浏览器录制</span></div>
+              <div data-phase="encoding"><i></i><span>原片编码</span></div>
+              <div data-phase="composing"><i></i><span>生成构图</span></div>
+              <div data-phase="rendering"><i></i><span>Seqvio 渲染</span></div>
+            </div>
+            <pre id="event-log" class="event-log">Ready.</pre>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script src="/app.js"></script>
+  </body>
+</html>
