@@ -71,6 +71,18 @@ export interface OverviewCopy {
   closeTitle: string;
   closeRail: string;
   cta: string;
+  /** Small teaser label on the hook player card, e.g. 'MADE BY AN AGENT'. */
+  hookTeaser?: string;
+  /** Badge shown on the scene-4 player reveal, e.g. 'RENDERED BY SEQVIO · UNEDITED'. */
+  outputBadge?: string;
+  /** File name shown in the scene-4 player chrome, e.g. 'rag-explainer.mp4'. */
+  playerFile?: string;
+  /** Install command shown on the closing scene, e.g. 'npm install -g @seqvio/renderer'. */
+  ctaInstall?: string;
+  /** Star prompt shown next to the install command, e.g. 'Star on GitHub'. */
+  ctaStar?: string;
+  /** Stdout lines under each proof command. */
+  proofOutputs?: [string, string, string, string];
 }
 
 export interface OverviewProps {
@@ -83,6 +95,9 @@ export interface OverviewProps {
     lockToAudio: true;
     narration: Array<{ id: string; sceneId: string; text: string }>;
   };
+  /** Output stage size. Layout is authored at 1280x720 and scaled up uniformly. */
+  stageWidth?: number;
+  stageHeight?: number;
 }
 
 function clamp(value: number): number {
@@ -232,9 +247,38 @@ function HookScene({ copy, duration, enhanced }: { copy: OverviewCopy; duration:
           <div style={{ position: 'absolute', left: 76, top: 178, width: 154, height: 2, background: 'rgba(216,229,255,0.28)' }}>
             <span style={{ position: 'absolute', left: `${Math.min(142, frame * 1.4)}px`, top: -6, width: 12, height: 12, background: C.rose, transform: 'rotate(45deg)' }} />
           </div>
-          <div style={{ position: 'absolute', right: 94, bottom: 118, display: 'flex', gap: 10, color: '#8FA5C7', fontFamily: MONO_STACK, fontSize: 13 }}>
-            <span>00:00</span><span style={{ color: C.cyan }}>/</span><span>00:41</span>
-          </div>
+          {copy.hookTeaser ? (
+            <div style={{ position: 'absolute', right: 64, bottom: 92, width: 236, opacity: focus, transform: `translateY(${(1 - focus) * 18}px) rotate(-1.5deg)`, zIndex: 30 }}>
+              <div style={{ position: 'absolute', right: -12, top: -16, zIndex: 2, padding: '5px 10px', background: C.amber, color: C.navy, fontFamily: MONO_STACK, fontSize: 11, fontWeight: 800, letterSpacing: 0.8, transform: 'rotate(4deg)', boxShadow: '0 8px 18px rgba(11,16,32,0.35)' }}>{copy.hookTeaser}</div>
+              <div style={{ border: '2px solid #2A3A5F', background: C.navy2, boxShadow: '0 18px 40px rgba(0,0,0,0.42)' }}>
+                <div style={{ height: 26, display: 'flex', alignItems: 'center', gap: 5, padding: '0 10px', borderBottom: '1px solid #2A3A5F' }}>
+                  {[C.rose, C.amber, C.green].map((color) => <span key={color} style={{ width: 7, height: 7, borderRadius: '50%', background: color }} />)}
+                  <span style={{ marginLeft: 8, fontFamily: MONO_STACK, fontSize: 10.5, color: '#8FA5C7' }}>{copy.playerFile ?? 'rag-explainer.mp4'}</span>
+                </div>
+                <div style={{ position: 'relative', height: 104, background: '#FBFCFE', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9 }}>
+                  {[C.blue, C.indigo, C.amber, C.green].map((color, index) => (
+                    <React.Fragment key={color}>
+                      <span style={{ width: 25, height: 25, borderRadius: index === 0 || index === 3 ? '50%' : 5, background: color, opacity: 0.92, transform: `rotate(${index % 2 ? 2 : -2}deg)` }} />
+                      {index < 3 ? <span style={{ width: 11, height: 2.5, background: '#98A2B3' }} /> : null}
+                    </React.Fragment>
+                  ))}
+                  <span style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', width: 34, height: 34, borderRadius: '50%', background: 'rgba(11,16,32,0.72)', display: 'grid', placeItems: 'center' }}>
+                    <span style={{ marginLeft: 3, width: 0, height: 0, borderTop: '7px solid transparent', borderBottom: '7px solid transparent', borderLeft: '11px solid #fff' }} />
+                  </span>
+                </div>
+                <div style={{ height: 30, display: 'flex', alignItems: 'center', gap: 8, padding: '0 10px' }}>
+                  <span style={{ flex: 1, height: 4, background: '#253451', position: 'relative' }}>
+                    <span style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '68%', background: C.cyan }} />
+                  </span>
+                  <span style={{ fontFamily: MONO_STACK, fontSize: 10.5, color: '#8FA5C7' }}>0:09</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ position: 'absolute', right: 94, bottom: 118, display: 'flex', gap: 10, color: '#8FA5C7', fontFamily: MONO_STACK, fontSize: 13 }}>
+              <span>00:00</span><span style={{ color: C.cyan }}>/</span><span>00:42</span>
+            </div>
+          )}
         </>
       ) : null}
       {fragments.map((item, index) => {
@@ -356,7 +400,19 @@ function PromptScene({ copy, duration, enhanced }: { copy: OverviewCopy; duratio
 
 function RagExplanationScene({ copy, duration, enhanced }: { copy: OverviewCopy; duration: number; enhanced: boolean }) {
   const frame = useCurrentFrame();
-  const t = (frame: number) => Math.max(1, Math.round(frame * duration / 330));
+  // Enhanced (product-hunt) scenes reserve a tail after the narration-locked
+  // drawing, used to pull back and reveal the whiteboard as a rendered file.
+  const tail = enhanced ? 45 : 0;
+  const drawDuration = duration - tail;
+  const t = (frame: number) => Math.max(1, Math.round(frame * drawDuration / 330));
+  const pull = enhanced ? easeOut((frame - (drawDuration - 18)) / 40) : 0;
+  const badgeP = enhanced ? easeOut((frame - (drawDuration + 4)) / 16) : 0;
+  const boardScale = 1 - pull * 0.26;
+  const boardW = W * boardScale;
+  const boardH = H * boardScale;
+  const boardX = (W - boardW) / 2;
+  const boardY = (H - boardH) / 2;
+  const clipNow = Math.min(9, Math.floor(Math.min(1, frame / drawDuration) * 9));
   const actionLabels = copy.lang === 'zh'
     ? ['提问', '向量', '检索', '回答']
     : ['ASK', 'VECTOR', 'RETRIEVE', 'RESPOND'];
@@ -371,6 +427,17 @@ function RagExplanationScene({ copy, duration, enhanced }: { copy: OverviewCopy;
         background: '#FBFCFE',
       }}
     >
+      <div style={{ position: 'absolute', inset: 0, background: '#E7ECF4', opacity: pull }} />
+      <div
+        style={{
+          position: 'absolute',
+          left: '50%',
+          top: '50%',
+          width: W,
+          height: H,
+          transform: `translate(-50%, -50%) scale(${boardScale})`,
+        }}
+      >
       <WhiteboardScene
         width={W}
         height={H}
@@ -504,6 +571,58 @@ function RagExplanationScene({ copy, duration, enhanced }: { copy: OverviewCopy;
         />
         {frame < t(324) ? <Hand action="write" follow visible size={42} /> : null}
       </WhiteboardScene>
+      </div>
+      {enhanced && pull > 0 ? (
+        <div
+          style={{
+            position: 'absolute',
+            left: boardX - 3,
+            top: boardY - 49,
+            width: boardW + 6,
+            opacity: pull,
+            zIndex: 20,
+            border: '3px solid #263556',
+            boxShadow: '0 24px 48px rgba(16,24,40,0.28)',
+          }}
+        >
+          <div style={{ height: 46, display: 'flex', alignItems: 'center', gap: 8, padding: '0 16px', background: '#10182B', borderBottom: '3px solid #263556' }}>
+            {[C.rose, C.amber, C.green].map((color) => <span key={color} style={{ width: 10, height: 10, borderRadius: '50%', background: color }} />)}
+            <span style={{ marginLeft: 10, fontFamily: MONO_STACK, fontSize: 14, color: '#8FA5C7' }}>{copy.playerFile ?? 'rag-explainer.mp4'}</span>
+            <span style={{ marginLeft: 'auto', padding: '3px 8px', border: `1px solid ${C.cyan}`, color: C.cyan, fontFamily: MONO_STACK, fontSize: 11, fontWeight: 700 }}>1080p</span>
+          </div>
+          <div style={{ height: boardH - 6 }} />
+          <div style={{ height: 44, display: 'flex', alignItems: 'center', gap: 12, padding: '0 16px', background: '#10182B', borderTop: '3px solid #263556' }}>
+            <span style={{ width: 0, height: 0, borderTop: '6px solid transparent', borderBottom: '6px solid transparent', borderLeft: `10px solid ${C.cyan}` }} />
+            <span style={{ flex: 1, height: 5, background: '#253451', position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${Math.min(100, (frame / drawDuration) * 100)}%`, background: C.cyan }} />
+            </span>
+            <span style={{ fontFamily: MONO_STACK, fontSize: 12, color: '#8FA5C7' }}>00:0{clipNow} / 00:09</span>
+          </div>
+        </div>
+      ) : null}
+      {enhanced && copy.outputBadge ? (
+        <div
+          style={{
+            position: 'absolute',
+            left: boardX + boardW - 330,
+            top: boardY - 74,
+            zIndex: 30,
+            padding: '10px 16px',
+            background: C.green,
+            color: C.navy,
+            fontFamily: MONO_STACK,
+            fontSize: 15,
+            fontWeight: 800,
+            letterSpacing: 0.6,
+            whiteSpace: 'nowrap',
+            transform: `rotate(-4deg) translateY(${(1 - badgeP) * 14}px)`,
+            opacity: badgeP,
+            boxShadow: '0 14px 30px rgba(16,24,40,0.3)',
+          }}
+        >
+          ● {copy.outputBadge}
+        </div>
+      ) : null}
       <BrandBug light />
       {enhanced ? <SceneMeta index="04" label="VISUAL EXPLANATION" light /> : null}
     </div>
@@ -792,7 +911,7 @@ function ProofScene({ copy, duration, enhanced }: { copy: OverviewCopy; duration
               style={{
                 position: 'relative',
                 paddingLeft: enhanced ? 30 : 0,
-                marginBottom: 25,
+                marginBottom: copy.proofOutputs ? 19 : 25,
                 fontSize: 17,
                 color: '#D8E5FF',
                 ...reveal(frame, 28 + index * 42, 20, 10),
@@ -802,6 +921,9 @@ function ProofScene({ copy, duration, enhanced }: { copy: OverviewCopy; duration
               <span style={{ color: C.green }}>$ </span>
               {command}
               <span style={{ marginLeft: 14, color: C.green }}>✓</span>
+              {copy.proofOutputs ? (
+                <div style={{ marginTop: 7, fontSize: 13.5, color: '#7E93BC' }}>{copy.proofOutputs[index]}</div>
+              ) : null}
             </div>
           ))}
         </div>
@@ -854,6 +976,9 @@ function ProofScene({ copy, duration, enhanced }: { copy: OverviewCopy; duration
         >
           {enhanced ? <span style={{ display: 'inline-block', marginRight: 12, width: 0, height: 0, borderTop: '7px solid transparent', borderBottom: '7px solid transparent', borderLeft: `12px solid ${C.green}` }} /> : null}
           output/seqvio-rag.mp4
+          {copy.proofOutputs ? (
+            <div style={{ marginTop: 8, fontSize: 12.5, color: '#7E93BC', fontWeight: 400 }}>1920×1080 · 0:09 · H.264</div>
+          ) : null}
         </div>
       </div>
       {enhanced ? (
@@ -927,6 +1052,28 @@ function ClosingScene({ copy, duration, enhanced }: { copy: OverviewCopy; durati
         >
           {copy.cta}
         </div>
+        {copy.ctaInstall ? (
+          <div
+            style={{
+              marginTop: 18,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+              ...reveal(frame, 102, 24),
+            }}
+          >
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '13px 16px', background: '#10182B', border: '2px solid #2A3A5F', color: '#D8E5FF', fontFamily: MONO_STACK, fontSize: 16 }}>
+              <span style={{ color: C.green }}>$</span>
+              {copy.ctaInstall}
+            </div>
+            {copy.ctaStar ? (
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '13px 16px', border: `2px solid ${C.amber}`, color: C.amber, fontFamily: MONO_STACK, fontSize: 16, fontWeight: 700 }}>
+                <span style={{ fontSize: 18, lineHeight: 1 }}>★</span>
+                {copy.ctaStar}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
       <div
         style={{
@@ -967,7 +1114,7 @@ function ClosingScene({ copy, duration, enhanced }: { copy: OverviewCopy; durati
         />
         <img src={seqvioIcon} alt="" style={{ width: '100%', height: '100%' }} />
       </div>
-      {enhanced ? (
+      {enhanced && !copy.ctaInstall ? (
         <div style={{ position: 'absolute', left: 76, top: 548, display: 'flex', gap: 12, ...reveal(frame, 104, 24, 10) }}>
           {copy.styleLabels.map((label, index) => (
             <span key={label} style={{ minWidth: 178, padding: '10px 14px', border: `2px solid ${[C.blue, C.amber, C.green][index]}`, color: [C.blue, C.amber, C.green][index], background: 'rgba(11,16,32,0.72)', fontFamily: MONO_STACK, fontSize: 13, fontWeight: 800, textAlign: 'center' }}>{label}</span>
@@ -994,26 +1141,41 @@ export function SeqvioOverview({
   sceneDurations,
   duration,
   audio,
+  stageWidth = W,
+  stageHeight = H,
 }: OverviewProps) {
   const [hook, promise, prompt, explanation, styles, proof, closing] = sceneDurations;
   const enhanced = id.includes('product-hunt');
+  const scale = stageWidth / W;
   return (
     <VideoComposition
       id={id}
-      width={W}
-      height={H}
+      width={stageWidth}
+      height={stageHeight}
       fps={OVERVIEW_FPS}
       duration={duration}
       backgroundColor={C.navy}
       audio={audio}
     >
-      <Scene id="hook" duration={hook}><HookScene copy={copy} duration={hook} enhanced={enhanced} /></Scene>
-      <Scene id="promise" duration={promise}><PromiseScene copy={copy} duration={promise} enhanced={enhanced} /></Scene>
-      <Scene id="prompt" duration={prompt}><PromptScene copy={copy} duration={prompt} enhanced={enhanced} /></Scene>
-      <Scene id="explanation" duration={explanation}><RagExplanationScene copy={copy} duration={explanation} enhanced={enhanced} /></Scene>
-      <Scene id="styles" duration={styles}><StylesScene copy={copy} duration={styles} enhanced={enhanced} /></Scene>
-      <Scene id="proof" duration={proof}><ProofScene copy={copy} duration={proof} enhanced={enhanced} /></Scene>
-      <Scene id="closing" duration={closing}><ClosingScene copy={copy} duration={closing} enhanced={enhanced} /></Scene>
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          width: W,
+          height: H,
+          transform: `scale(${scale})`,
+          transformOrigin: '0 0',
+        }}
+      >
+        <Scene id="hook" duration={hook}><HookScene copy={copy} duration={hook} enhanced={enhanced} /></Scene>
+        <Scene id="promise" duration={promise}><PromiseScene copy={copy} duration={promise} enhanced={enhanced} /></Scene>
+        <Scene id="prompt" duration={prompt}><PromptScene copy={copy} duration={prompt} enhanced={enhanced} /></Scene>
+        <Scene id="explanation" duration={explanation}><RagExplanationScene copy={copy} duration={explanation} enhanced={enhanced} /></Scene>
+        <Scene id="styles" duration={styles}><StylesScene copy={copy} duration={styles} enhanced={enhanced} /></Scene>
+        <Scene id="proof" duration={proof}><ProofScene copy={copy} duration={proof} enhanced={enhanced} /></Scene>
+        <Scene id="closing" duration={closing}><ClosingScene copy={copy} duration={closing} enhanced={enhanced} /></Scene>
+      </div>
     </VideoComposition>
   );
 }

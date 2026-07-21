@@ -6,7 +6,9 @@ import {
   type OverviewCopy,
 } from './seqvio-overview-shared';
 
-const SCENES = [62, 123, 178, 268, 196, 190, 223] as const;
+// Scene 4 carries a 45-frame tail after the narration-locked drawing:
+// the whiteboard pulls back into a player chrome with the "unedited" badge.
+const SCENES = [62, 123, 178, 313, 196, 190, 223] as const;
 
 const copy: OverviewCopy = {
   lang: 'en',
@@ -34,6 +36,17 @@ const copy: OverviewCopy = {
   closeTitle: 'Teach your agent to explain.',
   closeRail: 'Not just generated motion. A clear visual explanation.',
   cta: 'github.com/makesynt/seqvio',
+  hookTeaser: 'MADE BY AN AGENT',
+  outputBadge: 'RENDERED BY SEQVIO · UNEDITED',
+  playerFile: 'rag-explainer.mp4',
+  ctaInstall: 'npm install -g @seqvio/renderer',
+  ctaStar: 'Star on GitHub',
+  proofOutputs: [
+    'valid · 7 scenes · 4 timed visual steps',
+    '7 cues synthesized · 42.8s aligned',
+    '3 frames checked · 0 overlaps',
+    '1285 frames → output/seqvio-rag.mp4',
+  ],
 };
 
 const narration = [
@@ -82,6 +95,8 @@ export default function SeqvioProductHuntEn() {
       sceneDurations={SCENES}
       duration={meta.duration}
       audio={meta.audio!}
+      stageWidth={meta.width}
+      stageHeight={meta.height}
     />
   );
 }
@@ -89,8 +104,8 @@ export default function SeqvioProductHuntEn() {
 export const meta: RenderableMeta = {
   duration: SCENES.reduce((sum, value) => sum + value, 0),
   fps: OVERVIEW_FPS,
-  width: 1280,
-  height: 720,
+  width: 1920,
+  height: 1080,
   audio: {
     fps: OVERVIEW_FPS,
     lockToAudio: true,
