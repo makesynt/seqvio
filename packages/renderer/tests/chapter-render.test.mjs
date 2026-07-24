@@ -1,5 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
+import { fileURLToPath } from 'node:url';
 import {
   buildConcatListFile,
   hashRenderSettings,
@@ -26,7 +27,7 @@ describe('chapter render helpers', () => {
       outputPath: 'intro.mp4',
     };
     assert.equal(shouldSkipChapter(entry, 'abc', 'settings', true), false);
-    entry.outputPath = new URL(import.meta.url).pathname.replace(/^\//, '');
+    entry.outputPath = fileURLToPath(import.meta.url);
     assert.equal(shouldSkipChapter(entry, 'abc', 'settings', true), true);
     assert.equal(shouldSkipChapter(entry, 'changed', 'settings', true), false);
     assert.equal(shouldSkipChapter(entry, 'abc', 'settings', false), false);
