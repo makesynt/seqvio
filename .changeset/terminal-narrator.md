@@ -1,0 +1,13 @@
+---
+"@seqvio/core": minor
+"@seqvio/renderer": minor
+"@seqvio/technical": minor
+"@seqvio/terminal-narrator": minor
+---
+
+Add `@seqvio/terminal-narrator` and a terminal scene type to the composition-document IR.
+
+- `@seqvio/terminal-narrator` (new, private): captures terminal sessions with `node-pty` into a recording manifest, composes a `TerminalDemo` composition, and renders a narrated `final.mp4` with step captions. Includes asciinema cast export, secret redaction, and step/caption timing refinement.
+- `@seqvio/technical`: new `TerminalDemo` renderer, ANSI/grid utilities (`ansi.ts`), and Cascadia Mono font bundling.
+- `@seqvio/core`: `TerminalSceneSpec` now supports `events`/`steps`/`commands` with validation, TSX compilation, and timeline duration derivation from event/step timestamps.
+- `@seqvio/renderer`: bundles Cascadia Mono font assets alongside JetBrains Mono.
