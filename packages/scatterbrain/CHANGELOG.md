@@ -1,5 +1,12 @@
 # @seqvio/scatterbrain
 
+## 0.6.0
+
+### Patch Changes
+
+- Updated dependencies [ccb7fdf]
+  - @seqvio/core@0.6.0
+
 ## 0.5.0
 
 ### Minor Changes
