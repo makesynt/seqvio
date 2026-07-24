@@ -11,7 +11,7 @@ English | [简体中文](./README.zh-CN.md)
 
 Seqvio gives coding agents concrete primitives for turning technical ideas into clear narrated videos. Agents can choose whiteboard scenes, sticky-note workshops, or product walkthroughs, then combine narration, captions, visual QA, and local MP4 rendering in a React/TSX composition.
 
-> **Current status:** Seqvio `0.5.0` publishes `@seqvio/core`, `@seqvio/whiteboard`, `@seqvio/scatterbrain`, `@seqvio/product-demo`, and `@seqvio/renderer`. The repository supports explicit React/TSX compositions, storyboard IR validation/compilation, style presets, product walkthrough scenes, audio/caption metadata, visual QA snapshots, and local MP4 rendering. Higher-level AI authoring and studio workflows are tracked in the [Roadmap](#roadmap).
+> **Current status:** Seqvio `0.5.0` publishes `@seqvio/core`, `@seqvio/whiteboard`, `@seqvio/scatterbrain`, `@seqvio/product-demo`, `@seqvio/technical`, and `@seqvio/renderer`. The repository supports explicit React/TSX compositions, storyboard IR validation/compilation, style presets, product walkthrough scenes, technical explainer scenes (code walkthroughs, architecture diagrams, terminal demos), audio/caption metadata, visual QA snapshots, and local MP4 rendering. Experimental capture tools (`@seqvio/browser-recorder`, `@seqvio/terminal-narrator`) are available in the monorepo. Higher-level AI authoring and studio workflows are tracked in the [Roadmap](#roadmap).
 
 ## Demo
 
@@ -61,7 +61,7 @@ npm install -g @seqvio/renderer
 seqvio-render --help
 ```
 
-Published packages: `@seqvio/core`, `@seqvio/whiteboard`, `@seqvio/scatterbrain`, `@seqvio/product-demo`, and `@seqvio/renderer`.
+Published packages: `@seqvio/core`, `@seqvio/whiteboard`, `@seqvio/scatterbrain`, `@seqvio/product-demo`, `@seqvio/technical`, and `@seqvio/renderer`.
 
 Install optional style/component packages when a composition imports them directly:
 
@@ -147,6 +147,8 @@ Start from examples:
 | [`seqvio-product-demo-preview.tsx`](./examples/compositions/seqvio-product-demo-preview.tsx) | Product walkthrough components demo |
 | [`seqvio-scatterbrain.tsx`](./examples/compositions/seqvio-scatterbrain.tsx) | Sticky-note / workshop style demo |
 | [`loop-engineering-explainer.tsx`](./examples/compositions/loop-engineering-explainer.tsx) | Long-form narrated explainer composition |
+| [`technical-explainer-v2.tsx`](./examples/compositions/technical-explainer-v2.tsx) | Technical explainer with code walkthrough and architecture diagram |
+| [`technical-demo-v2.tsx`](./examples/compositions/technical-demo-v2.tsx) | Terminal demo and ANSI rendering showcase |
 | [`packages/whiteboard/examples/`](./packages/whiteboard/examples/) | Single-scene whiteboard samples |
 
 ## How It Works
@@ -155,7 +157,7 @@ Start from examples:
 TSX composition -> audio manifest -> TTS synthesis -> seqvio-render -> MP4
 ```
 
-1. Author a composition in TSX with `@seqvio/core` plus visual packages such as `@seqvio/whiteboard`, `@seqvio/scatterbrain`, or `@seqvio/product-demo`.
+1. Author a composition in TSX with `@seqvio/core` plus visual packages such as `@seqvio/whiteboard`, `@seqvio/scatterbrain`, `@seqvio/product-demo`, or `@seqvio/technical`.
 2. Declare narration in `meta.audio.narration` when the video needs voiceover.
 3. Extract and synthesize audio with `seqvio-audio`.
 4. Check key frames with `seqvio-qa` when layout or visual fidelity matters.
@@ -190,7 +192,7 @@ Seqvio is the visual language for coding agents that need to explain, not merely
 - **Agent-facing visual vocabulary** — concrete primitives for deciding what viewers should see, hear, and understand next
 - **Explainer-first workflow** — scenes, narration, captions, and visual steps in one composition
 - **Whiteboard-native primitives** — handwritten-style text, shapes, images, icons, style presets, and pen/hand timing
-- **Specialized visual packages** — sticky-note workshop scenes with `@seqvio/scatterbrain` and product walkthrough scenes with `@seqvio/product-demo`
+- **Specialized visual packages** — sticky-note workshop scenes with `@seqvio/scatterbrain`, product walkthrough scenes with `@seqvio/product-demo`, and technical explainer scenes with `@seqvio/technical`
 - **Structured narration contract** — visual timing and audio metadata stay close together
 - **Visual QA loop** — snapshot key frames and catch blank renders before final MP4 work
 - **Agent-friendly authoring surface** — small contracts, explicit frame timing, curated examples
@@ -221,7 +223,7 @@ Use this section when working from a local repository checkout or when you need 
 npm install -g @seqvio/renderer
 ```
 
-This installs `seqvio-render`, `seqvio-audio`, `seqvio-generate`, `seqvio-preview`, `seqvio-add`, and `seqvio-qa` globally. Dependencies `@seqvio/core` and `@seqvio/whiteboard` are pulled in automatically. Install `@seqvio/product-demo` or `@seqvio/scatterbrain` separately when your composition imports those packages outside the monorepo.
+This installs `seqvio-render`, `seqvio-audio`, `seqvio-generate`, `seqvio-preview`, `seqvio-add`, and `seqvio-qa` globally. Dependencies `@seqvio/core` and `@seqvio/whiteboard` are pulled in automatically. Install `@seqvio/product-demo`, `@seqvio/scatterbrain`, or `@seqvio/technical` separately when your composition imports those packages outside the monorepo.
 
 ### Clone and build the repository
 
@@ -274,6 +276,7 @@ Voiceover is muxed automatically from the manifest. **Do not** add `--burnCaptio
 | [`@seqvio/product-demo`](./packages/product-demo) | Browser frames, cursor paths, screenshot placeholders, callouts, and product walkthrough components |
 | [`@seqvio/technical`](./packages/technical) | Technical explainer runtime: code walkthroughs, architecture diagrams, terminal demos, annotations, and bundled fonts |
 | [`@seqvio/terminal-narrator`](./packages/terminal-narrator) | node-pty terminal capture → composition manifest → narrated MP4 |
+| [`@seqvio/browser-recorder`](./packages/browser-recorder) | AI browser recorder — executes Chromium action plans, captures cursor/element-focus metadata |
 | [`@seqvio/renderer`](./packages/renderer) | TSX bundler plus `seqvio-render` and `seqvio-audio` CLIs |
 
 ## Documentation

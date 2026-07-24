@@ -10,7 +10,7 @@
 
 Seqvio 为 coding agent 提供把技术想法变成清晰旁白视频的具体视觉组件。Agent 可以选择白板、便签 workshop 或产品 walkthrough，再用 React/TSX composition 组合旁白、字幕、视觉 QA 和本地 MP4 渲染。
 
-> **当前状态：** Seqvio `0.5.0` 已发布 `@seqvio/core`、`@seqvio/whiteboard`、`@seqvio/scatterbrain`、`@seqvio/product-demo` 和 `@seqvio/renderer`。仓库支持显式 React/TSX composition、storyboard IR 校验/编译、style presets、产品 walkthrough 场景、音频/字幕元数据、视觉 QA 快照和本地 MP4 渲染。更高层的 AI 创作和 Studio 工作流记录在 [Roadmap](#roadmap) 中。
+> **当前状态：** Seqvio `0.5.0` 已发布 `@seqvio/core`、`@seqvio/whiteboard`、`@seqvio/scatterbrain`、`@seqvio/product-demo`、`@seqvio/technical` 和 `@seqvio/renderer`。仓库支持显式 React/TSX composition、storyboard IR 校验/编译、style presets、产品 walkthrough 场景、技术讲解场景（代码走读、架构图、终端演示）、音频/字幕元数据、视觉 QA 快照和本地 MP4 渲染。实验性捕获工具（`@seqvio/browser-recorder`、`@seqvio/terminal-narrator`）可在 monorepo 中使用。更高层的 AI 创作和 Studio 工作流记录在 [Roadmap](#roadmap) 中。
 
 ## Demo
 
@@ -60,7 +60,7 @@ npm install -g @seqvio/renderer
 seqvio-render --help
 ```
 
-已发布包：`@seqvio/core`、`@seqvio/whiteboard`、`@seqvio/scatterbrain`、`@seqvio/product-demo`、`@seqvio/renderer`。
+已发布包：`@seqvio/core`、`@seqvio/whiteboard`、`@seqvio/scatterbrain`、`@seqvio/product-demo`、`@seqvio/technical`、`@seqvio/renderer`。
 
 当 composition 直接 import 可选视觉包时，可额外安装：
 
@@ -111,6 +111,20 @@ seqvio-render \
 
 若在本地仓库中开发，通过 `node packages/renderer/dist/cli.js` 调用已构建的 CLI。更多细节见 [手动安装](#手动安装)。
 
+### Browser recorder MVP
+
+本地 [`@seqvio/browser-recorder`](./packages/browser-recorder) workspace 可以执行经过校验的 Chromium action plan，捕获光标和元素聚焦元数据，并通过 `@seqvio/product-demo` 渲染平滑的聚焦移动：
+
+```bash
+node packages/browser-recorder/dist/cli.js serve --port 4175
+```
+
+打开 `http://127.0.0.1:4175`。内置示例无需 AI provider 即可运行；需要 AI 生成 action plan 时配置 planner webhook。plan 契约和当前 MVP 边界见 [browser recorder README](./packages/browser-recorder/README.md)。
+
+### Terminal narrator（实验性）
+
+[`@seqvio/terminal-narrator`](./packages/terminal-narrator) 使用 `node-pty` 捕获终端会话，将其编排为 Seqvio `TerminalDemo` composition，并渲染为带有步骤字幕的 `final.mp4`。
+
 **环境要求：** Node.js `>=18`、Chromium（Puppeteer）、FFmpeg（`@seqvio/renderer` 已内置）。本地仓库开发使用 npm workspaces 和 `package-lock.json`。
 
 ## 可以做什么
@@ -132,6 +146,8 @@ seqvio-render \
 | [`seqvio-product-demo-preview.tsx`](./examples/compositions/seqvio-product-demo-preview.tsx) | 产品 walkthrough 组件示例 |
 | [`seqvio-scatterbrain.tsx`](./examples/compositions/seqvio-scatterbrain.tsx) | 便签 / workshop 风格示例 |
 | [`loop-engineering-explainer.tsx`](./examples/compositions/loop-engineering-explainer.tsx) | 长篇旁白讲解 composition |
+| [`technical-explainer-v2.tsx`](./examples/compositions/technical-explainer-v2.tsx) | 技术讲解：代码走读与架构图 |
+| [`technical-demo-v2.tsx`](./examples/compositions/technical-demo-v2.tsx) | 终端演示与 ANSI 渲染展示 |
 | [`packages/whiteboard/examples/`](./packages/whiteboard/examples/) | 单场景白板示例 |
 
 ## 工作原理
@@ -140,7 +156,7 @@ seqvio-render \
 TSX composition -> audio manifest -> TTS synthesis -> seqvio-render -> MP4
 ```
 
-1. 用 `@seqvio/core` 以及 `@seqvio/whiteboard`、`@seqvio/scatterbrain`、`@seqvio/product-demo` 等视觉包编写 TSX composition。
+1. 用 `@seqvio/core` 以及 `@seqvio/whiteboard`、`@seqvio/scatterbrain`、`@seqvio/product-demo`、`@seqvio/technical` 等视觉包编写 TSX composition。
 2. 需要旁白时，在 `meta.audio.narration` 中声明 narration。
 3. 用 `seqvio-audio` 提取并合成音频。
 4. 需要检查画面布局时，用 `seqvio-qa` 输出关键帧快照。
@@ -175,7 +191,7 @@ Seqvio 是 coding agent 用来解释想法的视觉语言，而不只是一个�
 - **面向 Agent 的视觉词汇**：用具体组件决定观众接下来应该看到、听到并理解什么
 - **讲解视频优先**：场景、旁白、字幕、视觉步骤放在同一 composition 中
 - **白板风格内建**：手写文字、草图形状、图片、图标、style presets、画笔/手势节奏
-- **专用视觉包**：`@seqvio/scatterbrain` 提供便签/workshop 场景，`@seqvio/product-demo` 提供产品 walkthrough 场景
+- **专用视觉包**：`@seqvio/scatterbrain` 提供便签/workshop 场景，`@seqvio/product-demo` 提供产品 walkthrough 场景，`@seqvio/technical` 提供技术讲解场景
 - **结构化旁白契约**：视觉 timing 与音频元数据靠近维护
 - **视觉 QA 闭环**：先输出关键帧快照，提前发现空画面或布局问题
 - **适合 AI 协作**：小 contract、显式帧时间、示例齐全
@@ -187,6 +203,8 @@ Seqvio 是 coding agent 用来解释想法的视觉语言，而不只是一个�
 - `@seqvio/whiteboard`：`WhiteboardScene`、`DrawText`、`DrawShape`、`DrawImage`、`DrawIcon`、`Hand` 和 style presets
 - `@seqvio/scatterbrain`：便签 / cork-board 风格组件
 - `@seqvio/product-demo`：`ProductDemoScene`、`BrowserFrame`、`ScreenshotPlaceholder`、`CursorPath`、`Callout`、`ProductTitle`
+- `@seqvio/technical`：`TechnicalScene`、`AnnotationTarget`、`CodeWalkthrough`、`ArchitectureDiagram`、`TerminalDemo`，以及 ANSI/grid 工具函数和内置代码字体
+- 终端场景在 composition-document IR 中的支持（`events` / `steps` / `commands`），含校验和 TSX 编译
 - `@seqvio/core`：`VideoComposition`、`Scene`、`Transition`
 - Storyboard IR schema、layout registry、validation 和 TSX compile helpers
 - `seqvio-render`：TSX 到 MP4
@@ -204,7 +222,7 @@ Seqvio 是 coding agent 用来解释想法的视觉语言，而不只是一个�
 npm install -g @seqvio/renderer
 ```
 
-会全局安装 `seqvio-render`、`seqvio-audio`、`seqvio-generate`、`seqvio-preview`、`seqvio-add` 和 `seqvio-qa`，并自动拉取 `@seqvio/core`、`@seqvio/whiteboard`。如果 composition 在 monorepo 外直接 import `@seqvio/product-demo` 或 `@seqvio/scatterbrain`，需要额外安装对应包。
+会全局安装 `seqvio-render`、`seqvio-audio`、`seqvio-generate`、`seqvio-preview`、`seqvio-add` 和 `seqvio-qa`，并自动拉取 `@seqvio/core`、`@seqvio/whiteboard`。如果 composition 在 monorepo 外直接 import `@seqvio/product-demo`、`@seqvio/scatterbrain` 或 `@seqvio/technical`，需要额外安装对应包。
 
 ### Clone 并 build 仓库
 
@@ -257,6 +275,9 @@ node packages/renderer/dist/cli.js \
 | [`@seqvio/core`](./packages/core) | Composition 容器、场景、转场和 timeline runtime |
 | [`@seqvio/scatterbrain`](./packages/scatterbrain) | 便签 / cork-board 风格组件 |
 | [`@seqvio/product-demo`](./packages/product-demo) | 浏览器框、光标路径、截图占位、callout 和产品 walkthrough 组件 |
+| [`@seqvio/technical`](./packages/technical) | 技术讲解 runtime：代码走读、架构图、终端演示、标注和内置字体 |
+| [`@seqvio/terminal-narrator`](./packages/terminal-narrator) | node-pty 终端捕获 → composition manifest → 带旁白 MP4 |
+| [`@seqvio/browser-recorder`](./packages/browser-recorder) | AI 浏览器录制器 — 执行 Chromium action plan，捕获光标/元素聚焦元数据 |
 | [`@seqvio/renderer`](./packages/renderer) | TSX bundler，以及 `seqvio-render` / `seqvio-audio` CLI |
 
 ## 文档
