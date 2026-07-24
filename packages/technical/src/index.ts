@@ -21,6 +21,36 @@ export type { CodeWalkthroughProps } from './CodeWalkthrough';
 export { ArchitectureDiagram } from './ArchitectureDiagram';
 export type { ArchitectureDiagramProps } from './ArchitectureDiagram';
 
+export { TerminalDemo } from './TerminalDemo';
+export type {
+  TerminalDemoProps,
+  TerminalEvent,
+  TerminalEventKind,
+  TerminalGridCell,
+  TerminalGridSnapshot,
+  TerminalStep,
+} from './TerminalDemo';
+
+export type {
+  TerminalZoomKeyframe,
+  TerminalZoomOptions,
+  TerminalZoomCamera,
+} from './TerminalDemo';
+export { resolveTerminalZoomCamera } from './TerminalDemo';
+
+export {
+  ansiToSpans,
+  applySimpleTerminalRewrites,
+  normalizeTerminalNewlines,
+  sliceAnsiByVisibleChars,
+  sliceAnsiByVisibleLines,
+  stripAnsi,
+  visibleLength,
+  VHS_CATPPUCCIN_MOCHA,
+  VHS_DEFAULT,
+} from './ansi';
+export type { AnsiSpan, AnsiStyle, VhsTheme } from './ansi';
+
 export {
   applyCodeSteps,
   createLineRecords,
@@ -55,6 +85,10 @@ export { technicalPalette, technicalFonts, technicalCodeTheme } from './theme';
 export {
   BUNDLED_CODE_FONT_FAMILY,
   BUNDLED_CODE_FONT_FILE,
+  TERMINAL_FONT_FAMILY,
+  TERMINAL_FONT_LATIN_FILE,
+  TERMINAL_FONT_STACK,
+  TERMINAL_FONT_SYMBOLS_FILE,
   PROGRAMMING_MONO_FONTS,
   detectInstalledProgrammingMonoFonts,
   isMonoFontInstalled,

@@ -80,6 +80,20 @@ export function writeRenderShell(
       font-style: normal;
       font-display: block;
     }
+    @font-face {
+      font-family: 'Cascadia Mono';
+      src: url('./CascadiaMono-Latin-Regular.woff2') format('woff2');
+      font-weight: 400;
+      font-style: normal;
+      font-display: block;
+    }
+    @font-face {
+      font-family: 'Cascadia Mono';
+      src: url('./CascadiaMono-Symbols2-Regular.woff2') format('woff2');
+      font-weight: 400;
+      font-style: normal;
+      font-display: block;
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
       width: ${width}px;
@@ -227,6 +241,18 @@ function copyBundledAssets(outDir: string): void {
       jetbrains,
       path.join(outDir, "JetBrainsMono-Regular.woff2"),
     );
+  }
+
+  const cascadiaFiles = [
+    ['cascadia-mono-latin-400-normal.woff2', 'CascadiaMono-Latin-Regular.woff2'],
+    ['cascadia-mono-symbols2-400-normal.woff2', 'CascadiaMono-Symbols2-Regular.woff2'],
+  ] as const;
+  for (const [sourceName, outputName] of cascadiaFiles) {
+    const candidates = roots.map((root) =>
+      path.join(root, '@fontsource', 'cascadia-mono', 'files', sourceName)
+    );
+    const source = findFirstExisting(candidates);
+    if (source) fs.copyFileSync(source, path.join(outDir, outputName));
   }
 }
 

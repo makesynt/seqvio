@@ -8,6 +8,10 @@
 
 export const BUNDLED_CODE_FONT_FAMILY = 'JetBrains Mono';
 export const BUNDLED_CODE_FONT_FILE = 'JetBrainsMono-Regular.woff2';
+export const TERMINAL_FONT_FAMILY = 'Cascadia Mono';
+export const TERMINAL_FONT_LATIN_FILE = 'CascadiaMono-Latin-Regular.woff2';
+export const TERMINAL_FONT_SYMBOLS_FILE = 'CascadiaMono-Symbols2-Regular.woff2';
+export const TERMINAL_FONT_STACK = `"${TERMINAL_FONT_FAMILY}", "Cascadia Mono", Consolas, monospace`;
 
 /**
  * Primary stack for code scenes. Bundled JetBrains Mono is always first so

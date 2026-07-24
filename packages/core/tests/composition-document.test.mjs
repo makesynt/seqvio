@@ -118,6 +118,30 @@ describe('validateCompositionDocument', () => {
     });
     assert.ok(issues.some((i) => i.code === 'unknown_chapter_scene'));
   });
+
+  it('rejects a terminal scene with neither events nor commands', () => {
+    const issues = validateCompositionDocument({
+      version: '2.0',
+      id: 'x',
+      scenes: [{ type: 'terminal', id: 'shell' }],
+    });
+    assert.ok(issues.some((i) => i.code === 'missing_terminal_events_or_commands'));
+  });
+
+  it('rejects a terminal event with an invalid kind', () => {
+    const issues = validateCompositionDocument({
+      version: '2.0',
+      id: 'x',
+      scenes: [
+        {
+          type: 'terminal',
+          id: 'shell',
+          events: [{ timeMs: 0, kind: 'system', text: 'hi' }],
+        },
+      ],
+    });
+    assert.ok(issues.some((i) => i.code === 'invalid_terminal_event_kind'));
+  });
 });
 
 describe('storyboardToCompositionV2', () => {
@@ -142,6 +166,43 @@ describe('compileCompositionDocumentToTsx', () => {
     assert.match(code, /<ArchitectureDiagram/);
     assert.match(code, /<TechnicalScene/);
     assert.match(code, /Welcome to the technical explainer\./);
+  });
+
+  it('converts legacy terminal commands into visible events and steps', () => {
+    const { code } = compileCompositionDocumentToTsx({
+      version: '2.0',
+      id: 'terminal-legacy',
+      scenes: [
+        {
+          type: 'terminal',
+          id: 'shell',
+          commands: ['npm test', 'npm run build'],
+        },
+      ],
+    });
+
+    assert.match(code, /"text": "\$ npm test\\n"/);
+    assert.match(code, /"text": "\$ npm run build\\n"/);
+    assert.match(code, /shell-command-1/);
+    assert.match(code, /shell-command-2/);
+  });
+
+  it('passes explicit terminal events and steps through verbatim', () => {
+    const events = [
+      { timeMs: 0, kind: 'stdin', text: 'echo hi', transient: true },
+      { timeMs: 500, kind: 'stdout', text: 'hi\n' },
+    ];
+    const steps = [{ id: 's1', label: 'Run echo', timeMs: 0 }];
+    const { code } = compileCompositionDocumentToTsx({
+      version: '2.0',
+      id: 'terminal-explicit',
+      scenes: [{ type: 'terminal', id: 'shell', events, steps }],
+    });
+
+    assert.match(code, /"text": "echo hi"/);
+    assert.match(code, /"transient": true/);
+    assert.match(code, /"label": "Run echo"/);
+    assert.doesNotMatch(code, /shell-command-1/);
   });
 });
 

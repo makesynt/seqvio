@@ -109,11 +109,61 @@ export interface DiagramSceneSpec {
   annotations?: AnnotationSpec[];
 }
 
+/** Grid cell contract mirroring @seqvio/technical's runtime TerminalGridCell. */
+export interface TerminalGridCellSpec {
+  x: number;
+  chars: string;
+  width: number;
+  foreground?: string;
+  background?: string;
+  bold?: boolean;
+  dim?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+  inverse?: boolean;
+  invisible?: boolean;
+  strikethrough?: boolean;
+}
+
+/** Terminal viewport snapshot contract mirroring @seqvio/technical's TerminalGridSnapshot. */
+export interface TerminalGridSnapshotSpec {
+  cols: number;
+  rows: number;
+  cursorX: number;
+  cursorY: number;
+  lines: TerminalGridCellSpec[][];
+}
+
 /** Placeholder scene families compiled to stub components in Phase A. */
 export interface TerminalSceneSpec {
   type: 'terminal';
   id: string;
-  commands: string[];
+  /**
+   * Legacy field for placeholder terminal scenes.
+   * When only `commands` is provided, renderers may fall back to a simplified view.
+   */
+  commands?: string[];
+  /** Streamed terminal I/O events (typically from terminal-narrator). */
+  events?: Array<{
+    timeMs: number;
+    kind: 'stdin' | 'stdout' | 'stderr';
+    text: string;
+    /** Complete terminal viewport; replaces earlier persistent output. */
+    snapshot?: boolean;
+    /**
+     * If true, the event is shown only transiently while typed and does not
+     * persist in the scrollback. stdin events default to transient.
+     */
+    transient?: boolean;
+    /** Pre-rendered terminal viewport snapshot from a terminal emulator. */
+    grid?: TerminalGridSnapshotSpec;
+  }>;
+  /** Step boundaries used for highlighting and narration segmentation. */
+  steps?: Array<{
+    id: string;
+    label: string;
+    timeMs: number;
+  }>;
   narration?: string;
   duration?: number;
   annotations?: AnnotationSpec[];

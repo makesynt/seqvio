@@ -131,6 +131,38 @@ function compileDiagramScene(scene: DiagramSceneSpec, componentName: string): st
 }`;
 }
 
+function compileTerminalScene(scene: Extract<SceneSpec, { type: 'terminal' }>, componentName: string): string {
+  const annotations = serializeAnnotations(scene.annotations);
+  const legacyEvents = (scene.commands ?? []).map((command, index) => ({
+    timeMs: index * 1200,
+    kind: 'stdout' as const,
+    text: `$ ${command}\n`,
+  }));
+  const legacySteps = (scene.commands ?? []).map((command, index) => ({
+    id: `${scene.id}-command-${index + 1}`,
+    label: command,
+    timeMs: index * 1200,
+  }));
+  const events = JSON.stringify(scene.events?.length ? scene.events : legacyEvents, null, 2);
+  const steps = JSON.stringify(scene.steps?.length ? scene.steps : legacySteps, null, 2);
+
+  return `function ${componentName}() {
+  return (
+    <TechnicalScene width={W} height={H} annotations={${annotations}}>
+      <AnnotationTarget id=${JSON.stringify(scene.id)} style={{ width: '100%', height: '100%' }}>
+        <TerminalDemo
+          id=${JSON.stringify(scene.id)}
+          events={${events}}
+          steps={${steps}}
+          width={W}
+          height={H}
+        />
+      </AnnotationTarget>
+    </TechnicalScene>
+  );
+}`;
+}
+
 function compileGenericPlaceholder(scene: SceneSpec, componentName: string): string {
   const annotations =
     'annotations' in scene ? serializeAnnotations(scene.annotations) : '[]';
@@ -159,13 +191,15 @@ function compileSceneComponent(
       return compileCodeScene(scene, componentName);
     case 'diagram':
       return compileDiagramScene(scene, componentName);
+    case 'terminal':
+      return compileTerminalScene(scene, componentName);
     default:
       return compileGenericPlaceholder(scene, componentName);
   }
 }
 
-function sceneDurationFramesForCompile(scene: SceneSpec): number {
-  return sceneDurationFrames(scene);
+function sceneDurationFramesForCompile(scene: SceneSpec, fps: number): number {
+  return sceneDurationFrames(scene, fps);
 }
 
 export interface CompileCompositionResult {
@@ -193,7 +227,7 @@ export function compileCompositionDocumentToTsx(
   );
   const hasNarration = narratedScenes.length > 0;
 
-  const sceneDurations = doc.scenes.map(sceneDurationFramesForCompile);
+  const sceneDurations = doc.scenes.map((scene) => sceneDurationFramesForCompile(scene, r.fps));
   const totalDuration =
     sceneDurations.reduce((sum, d) => sum + d, 0) +
     Math.max(0, doc.scenes.length - 1) * r.transitionDuration;
@@ -236,6 +270,7 @@ export function compileCompositionDocumentToTsx(
   AnnotationTarget,
   CodeWalkthrough,
   ArchitectureDiagram,
+  TerminalDemo,
 } from '@seqvio/technical';`
     : '';
 

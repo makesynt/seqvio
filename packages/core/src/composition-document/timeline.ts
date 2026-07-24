@@ -27,7 +27,7 @@ export interface DocumentTimeline {
   totalFrames: number;
 }
 
-export function sceneDurationFrames(scene: SceneSpec): number {
+export function sceneDurationFrames(scene: SceneSpec, fps: number = COMPOSITION_DOCUMENT_DEFAULTS.fps): number {
   if (typeof scene.duration === 'number' && scene.duration > 0) {
     return scene.duration;
   }
@@ -43,17 +43,27 @@ export function sceneDurationFrames(scene: SceneSpec): number {
     const maxAt = scene.steps.reduce((max, step) => Math.max(max, step.at), 0);
     return Math.max(1, maxAt + 90 + SCENE_TAIL_PAD);
   }
+  if (scene.type === 'terminal') {
+    const events = scene.events ?? [];
+    const steps = scene.steps ?? [];
+    let maxMs = 0;
+    for (const e of events) if (typeof e.timeMs === 'number') maxMs = Math.max(maxMs, e.timeMs);
+    for (const s of steps) if (typeof s.timeMs === 'number') maxMs = Math.max(maxMs, s.timeMs);
+    const frames = Math.ceil((maxMs / 1000) * fps) + SCENE_TAIL_PAD;
+    return Math.max(1, frames);
+  }
   return 120;
 }
 
 export function computeDocumentTimeline(doc: CompositionDocument): DocumentTimeline {
   const transitionDuration =
     doc.transitionDuration ?? COMPOSITION_DOCUMENT_DEFAULTS.transitionDuration;
+  const fps = doc.fps ?? COMPOSITION_DOCUMENT_DEFAULTS.fps;
   let cursor = 0;
   const scenes: DocumentTimelineScene[] = [];
 
   doc.scenes.forEach((scene, index) => {
-    const duration = sceneDurationFrames(scene);
+    const duration = sceneDurationFrames(scene, fps);
     const startFrame = cursor;
     const endFrame = cursor + duration - 1;
     scenes.push({ id: scene.id, startFrame, endFrame, duration });

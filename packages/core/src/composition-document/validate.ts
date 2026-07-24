@@ -293,13 +293,134 @@ function validatePlaceholderScene(
   issues: CompositionIssue[]
 ): void {
   if (scene.type === 'terminal') {
-    if (!Array.isArray(scene.commands)) {
+    const terminal = scene as Extract<SceneSpec, { type: 'terminal' }>;
+    const hasEvents = Array.isArray(terminal.events) && terminal.events.length > 0;
+    const hasCommands = Array.isArray(terminal.commands) && terminal.commands.length > 0;
+
+    if (!hasEvents && !hasCommands) {
       issue(issues, {
         severity: 'error',
-        path: `${scenePath}.commands`,
-        code: 'missing_terminal_commands',
-        message: `${scenePath}.commands must be an array`,
+        path: scenePath,
+        code: 'missing_terminal_events_or_commands',
+        message: `${scenePath} must include either non-empty "events" or non-empty "commands"`,
         repairable: true,
+      });
+      return;
+    }
+
+    if (Array.isArray(terminal.events)) {
+      terminal.events.forEach((ev, index) => {
+        const evPath = `${scenePath}.events[${index}]`;
+        if (!isObject(ev)) {
+          issue(issues, {
+            severity: 'error',
+            path: evPath,
+            code: 'invalid_terminal_event',
+            message: `${evPath} must be an object`,
+            repairable: true,
+          });
+          return;
+        }
+        if (typeof ev.timeMs !== 'number' || ev.timeMs < 0) {
+          issue(issues, {
+            severity: 'error',
+            path: `${evPath}.timeMs`,
+            code: 'invalid_terminal_event_timeMs',
+            message: `${evPath}.timeMs must be a non-negative number`,
+            repairable: true,
+          });
+        }
+        if (
+          typeof ev.kind !== 'string' ||
+          !['stdin', 'stdout', 'stderr'].includes(ev.kind)
+        ) {
+          issue(issues, {
+            severity: 'error',
+            path: `${evPath}.kind`,
+            code: 'invalid_terminal_event_kind',
+            message: `${evPath}.kind must be one of stdin|stdout|stderr`,
+            repairable: true,
+          });
+        }
+        if (typeof ev.text !== 'string') {
+          issue(issues, {
+            severity: 'error',
+            path: `${evPath}.text`,
+            code: 'invalid_terminal_event_text',
+            message: `${evPath}.text must be a string`,
+            repairable: true,
+          });
+        }
+        if (ev.snapshot !== undefined && typeof ev.snapshot !== 'boolean') {
+          issue(issues, {
+            severity: 'error',
+            path: `${evPath}.snapshot`,
+            code: 'invalid_terminal_event_snapshot',
+            message: `${evPath}.snapshot must be a boolean when provided`,
+            repairable: true,
+          });
+        }
+        if (ev.transient !== undefined && typeof ev.transient !== 'boolean') {
+          issue(issues, {
+            severity: 'error',
+            path: `${evPath}.transient`,
+            code: 'invalid_terminal_event_transient',
+            message: `${evPath}.transient must be a boolean when provided`,
+            repairable: true,
+          });
+        }
+        if (ev.grid !== undefined && !isObject(ev.grid)) {
+          issue(issues, {
+            severity: 'error',
+            path: `${evPath}.grid`,
+            code: 'invalid_terminal_event_grid',
+            message: `${evPath}.grid must be an object when provided`,
+            repairable: true,
+          });
+        }
+      });
+    }
+
+    if (Array.isArray(terminal.steps)) {
+      terminal.steps.forEach((st, index) => {
+        const stPath = `${scenePath}.steps[${index}]`;
+        if (!isObject(st)) {
+          issue(issues, {
+            severity: 'error',
+            path: stPath,
+            code: 'invalid_terminal_step',
+            message: `${stPath} must be an object`,
+            repairable: true,
+          });
+          return;
+        }
+        if (typeof st.id !== 'string' || st.id.length === 0) {
+          issue(issues, {
+            severity: 'error',
+            path: `${stPath}.id`,
+            code: 'invalid_terminal_step_id',
+            message: `${stPath}.id must be a non-empty string`,
+            repairable: true,
+          });
+        }
+        if (typeof st.label !== 'string' || st.label.length === 0) {
+          issue(issues, {
+            severity: 'error',
+            path: `${stPath}.label`,
+            code: 'invalid_terminal_step_label',
+            message: `${stPath}.label must be a non-empty string`,
+            repairable: true,
+          });
+        }
+        if (typeof st.timeMs !== 'number' || st.timeMs < 0) {
+          issue(issues, {
+            severity: 'error',
+            path: `${stPath}.timeMs`,
+            code: 'invalid_terminal_step_timeMs',
+            message: `${stPath}.timeMs must be a non-negative number`,
+            repairable: true,
+          });
+        }
       });
     }
   } else if (scene.type === 'chat') {

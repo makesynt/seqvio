@@ -124,6 +124,10 @@ Open `http://127.0.0.1:4175`. The built-in sample runs without an AI provider; c
 
 **Requirements:** Node.js `>=18`, Chromium (via Puppeteer), FFmpeg (bundled in `@seqvio/renderer`). Local repo development uses npm workspaces and `package-lock.json`.
 
+### Terminal narrator (experimental)
+
+[`@seqvio/terminal-narrator`](./packages/terminal-narrator) uses `node-pty` to capture terminal sessions and orchestrates them into a Seqvio `TerminalDemo` composition, rendering the result to `final.mp4` with step captions overlaid by default.
+
 ## What You Can Build
 
 - Product and framework intro videos
@@ -198,6 +202,8 @@ Seqvio is the visual language for coding agents that need to explain, not merely
 - `@seqvio/whiteboard` components: `WhiteboardScene`, `DrawText`, `DrawShape`, `DrawImage`, `DrawIcon`, `Hand`, and style presets
 - `@seqvio/scatterbrain` sticky-note / cork-board components
 - `@seqvio/product-demo` components: `ProductDemoScene`, `BrowserFrame`, `ScreenshotPlaceholder`, `CursorPath`, `Callout`, `ProductTitle`
+- `@seqvio/technical` components: `TechnicalScene`, `AnnotationTarget`, `CodeWalkthrough`, `ArchitectureDiagram`, `TerminalDemo`, plus ANSI/grid utilities and bundled code fonts
+- Terminal scene support in the composition-document IR (`events` / `steps` / `commands`) with validation and TSX compilation
 - `@seqvio/core` scene and transition primitives: `VideoComposition`, `Scene`, `Transition`
 - Storyboard IR schema, layout registry, validation, and TSX compilation helpers
 - `seqvio-render` CLI for TSX-to-MP4 rendering
@@ -266,6 +272,8 @@ Voiceover is muxed automatically from the manifest. **Do not** add `--burnCaptio
 | [`@seqvio/core`](./packages/core) | Composition container, scenes, transitions, and timeline runtime |
 | [`@seqvio/scatterbrain`](./packages/scatterbrain) | Sticky-note / cork-board style components |
 | [`@seqvio/product-demo`](./packages/product-demo) | Browser frames, cursor paths, screenshot placeholders, callouts, and product walkthrough components |
+| [`@seqvio/technical`](./packages/technical) | Technical explainer runtime: code walkthroughs, architecture diagrams, terminal demos, annotations, and bundled fonts |
+| [`@seqvio/terminal-narrator`](./packages/terminal-narrator) | node-pty terminal capture → composition manifest → narrated MP4 |
 | [`@seqvio/renderer`](./packages/renderer) | TSX bundler plus `seqvio-render` and `seqvio-audio` CLIs |
 
 ## Documentation
