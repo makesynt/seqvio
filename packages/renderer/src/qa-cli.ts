@@ -12,7 +12,8 @@ import { bundleScene, resolveComponentPath, writeRenderShell } from './bundle-sc
 import { resolveCompositionDurationFrames } from './media-contract';
 
 interface QaOptions {
-  component: string;
+  component?: string;
+  document?: string;
   outDir: string;
   width: number;
   height: number;
@@ -83,10 +84,15 @@ function parseArgs(argv: string[]): QaOptions {
   }
 
   const component = args.get('component');
+  const document = args.get('document');
   const outDir = args.get('outDir');
-  if (typeof component !== 'string' || typeof outDir !== 'string') {
+  if (typeof outDir !== 'string') {
     printUsage();
-    throw new Error('Both --component and --outDir are required');
+    throw new Error('--outDir is required');
+  }
+  if (typeof component !== 'string' && typeof document !== 'string') {
+    printUsage();
+    throw new Error('Either --component or --document is required');
   }
 
   const framesArg = args.get('frames');
@@ -99,7 +105,8 @@ function parseArgs(argv: string[]): QaOptions {
       : undefined;
 
   return {
-    component: path.resolve(component),
+    component: typeof component === 'string' ? path.resolve(component) : undefined,
+    document: typeof document === 'string' ? path.resolve(document) : undefined,
     outDir: path.resolve(outDir),
     width: args.get('width') ? Number(args.get('width')) : 1280,
     height: args.get('height') ? Number(args.get('height')) : 720,
@@ -255,15 +262,118 @@ async function inspectDom(page: import('puppeteer').Page): Promise<{
   });
 }
 
+// === Ground-truth verifier (--document path) ===
+// Phase 2.3: data-only verification (no rendering). Checks IR scene data against
+// real-system ground truth. First version: terminal only (cast existence + basic
+// stdout completeness). Code/diagram/diff verifiers intentionally skipped.
+
+interface AsciinemaCastEvent {
+  time: number;
+  type: string; // 'o' = output, 'i' = input
+  text: string;
+}
+
+function parseAsciinemaCast(content: string): AsciinemaCastEvent[] {
+  const events: AsciinemaCastEvent[] = [];
+  for (const line of content.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (trimmed.length === 0 || trimmed.startsWith('{')) continue; // skip blank + header
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed) && parsed.length >= 3) {
+        events.push({
+          time: Number(parsed[0]),
+          type: String(parsed[1]),
+          text: String(parsed[2]),
+        });
+      }
+    } catch {
+      // skip malformed lines
+    }
+  }
+  return events;
+}
+
+interface QaIssue {
+  severity: 'error' | 'warning';
+  code: string;
+  message: string;
+  sceneId?: string;
+}
+
+function verifyTerminalScene(
+  scene: { id: string; type: string; events?: Array<{ kind?: string }> },
+  groundTruth: { castPath?: string } | undefined
+): QaIssue[] {
+  const castPath = groundTruth?.castPath;
+  if (!castPath) return []; // no ground truth, skip
+  if (!fs.existsSync(castPath)) {
+    return [{
+      severity: 'error',
+      code: 'cast_missing',
+      message: `cast not found: ${castPath}`,
+      sceneId: scene.id,
+    }];
+  }
+  const castEvents = parseAsciinemaCast(fs.readFileSync(castPath, 'utf8'));
+  const castStdoutCount = castEvents.filter((e) => e.type === 'o').length;
+  const irStdoutCount = (scene.events || []).filter((e) => e.kind === 'stdout').length;
+  // Coarse check: real cast has output but the IR scene has no stdout events ->
+  // terminal replay may be empty or fabricated. (Precise text comparison needs IR
+  // to keep raw stdout; events are currently processed into grid snapshots.)
+  if (castStdoutCount > 0 && irStdoutCount === 0) {
+    return [{
+      severity: 'error',
+      code: 'stdout_mismatch',
+      message: `cast has ${castStdoutCount} stdout event(s) but the IR scene has 0 stdout events (terminal replay may be empty or fabricated).`,
+      sceneId: scene.id,
+    }];
+  }
+  return [];
+}
+
+async function runDocumentVerifier(options: QaOptions): Promise<void> {
+  const doc = JSON.parse(fs.readFileSync(options.document as string, 'utf8')) as {
+    scenes: Array<{ id: string; type: string; events?: Array<{ kind?: string }> }>;
+    groundTruth?: Record<string, { castPath?: string }>;
+  };
+  const issues: QaIssue[] = [];
+  for (const scene of doc.scenes || []) {
+    if (scene.type === 'terminal') {
+      issues.push(...verifyTerminalScene(scene, doc.groundTruth?.[scene.id]));
+    }
+  }
+  const ok = !issues.some((i) => i.severity === 'error');
+  const report = {
+    ok,
+    document: options.document,
+    scenes: (doc.scenes || []).map((s) => ({ id: s.id, type: s.type })),
+    issues,
+  };
+  const reportPath = path.join(options.outDir, 'qa-report.json');
+  fs.writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
+  console.log(`Wrote QA report to ${reportPath}`);
+  if (!ok) {
+    console.error(`seqvio-qa found ${issues.length} issue(s).`);
+    process.exit(1);
+  }
+  console.log(`seqvio-qa passed (document verifier, ${issues.length} issue(s)).`);
+}
+
 async function main(): Promise<void> {
   const options = parseArgs(process.argv.slice(2));
   fs.mkdirSync(options.outDir, { recursive: true });
+
+  if (options.document) {
+    await runDocumentVerifier(options);
+    return;
+  }
 
   const tempDir = path.join(options.outDir, '.tmp');
   fs.rmSync(tempDir, { recursive: true, force: true });
   fs.mkdirSync(tempDir, { recursive: true });
 
-  const resolvedComponent = resolveComponentPath(options.component);
+  const resolvedComponent = resolveComponentPath(options.component!);
   const bundle = await bundleScene({
     componentPath: resolvedComponent,
     outDir: tempDir,
