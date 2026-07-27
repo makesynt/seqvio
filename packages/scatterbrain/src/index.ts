@@ -40,6 +40,8 @@ export {
   PinnedList,
   Doodle,
   Polaroid,
+  TextReveal,
+  ElasticNote,
 } from './components';
 export type {
   ScatterSceneProps,
@@ -48,6 +50,8 @@ export type {
   PinnedListProps,
   DoodleProps,
   PolaroidProps,
+  TextRevealProps,
+  ElasticNoteProps,
 } from './components';
 
 export { useReveal } from './anim';

@@ -1,4 +1,4 @@
-import React, { CSSProperties } from 'react';
+import React, { CSSProperties, useRef } from 'react';
 import {
   AnnotationLayer,
   AnnotationProvider,
@@ -6,7 +6,12 @@ import {
 } from '@seqvio/core';
 import { useReveal } from './anim';
 import { useCurrentFrame } from '@seqvio/core';
+import gsap from 'gsap';
+import { MotionPathPlugin } from 'gsap/MotionPathPlugin';
+import { useGsapReveal, useGsapTimeline } from './use-gsap';
 import { productFonts, productPalette } from './theme';
+
+gsap.registerPlugin(MotionPathPlugin);
 
 export interface ProductDemoSceneProps {
   children: React.ReactNode;
@@ -71,9 +76,17 @@ export const BrowserFrame: React.FC<BrowserFrameProps> = ({
   style,
   annotationId,
 }) => {
-  const progress = useReveal(start, duration, 'back-out');
+  const ref = useRef<HTMLDivElement>(null);
+  useGsapReveal(
+    `browser-frame-${start}`,
+    ref,
+    { opacity: 1, y: 0, scale: 1, ease: 'back.out(1.7)' },
+    start,
+    duration,
+  );
   return (
     <div
+      ref={ref}
       data-annotation-target={annotationId}
       style={{
         position: 'absolute',
@@ -81,8 +94,8 @@ export const BrowserFrame: React.FC<BrowserFrameProps> = ({
         top: position.y,
         width,
         height,
-        opacity: Math.min(1, progress),
-        transform: `translateY(${(1 - progress) * 22}px) scale(${0.96 + progress * 0.04})`,
+        opacity: 0,
+        transform: 'translateY(22px) scale(0.96)',
         border: `1px solid ${productPalette.line}`,
         background: productPalette.surface,
         boxShadow: `0 22px 54px ${productPalette.shadow}`,
@@ -143,14 +156,22 @@ export const ScreenshotPlaceholder: React.FC<ScreenshotPlaceholderProps> = ({
   style,
   annotationId,
 }) => {
-  const progress = useReveal(start, duration);
+  const ref = useRef<HTMLDivElement>(null);
+  useGsapReveal(
+    `screenshot-${start}`,
+    ref,
+    { opacity: 1, ease: 'power2.out' },
+    start,
+    duration,
+  );
   return (
     <div
+      ref={ref}
       data-annotation-target={annotationId}
       style={{
         position: 'absolute',
         inset: 0,
-        opacity: progress,
+        opacity: 0,
         background:
           'linear-gradient(90deg, rgba(37,99,235,0.10) 1px, transparent 1px), linear-gradient(0deg, rgba(37,99,235,0.10) 1px, transparent 1px), #FBFDFF',
         backgroundSize: '40px 40px',
@@ -217,17 +238,25 @@ export const Callout: React.FC<CalloutProps> = ({
   accent = productPalette.accent,
   annotationId,
 }) => {
-  const progress = useReveal(start, duration, 'back-out');
+  const ref = useRef<HTMLDivElement>(null);
+  useGsapReveal(
+    `callout-${start}`,
+    ref,
+    { opacity: 1, y: 0, scale: 1, ease: 'back.out(1.7)' },
+    start,
+    duration,
+  );
   return (
     <div
+      ref={ref}
       data-annotation-target={annotationId}
       style={{
         position: 'absolute',
         left: position.x,
         top: position.y,
         width,
-        opacity: Math.min(1, progress),
-        transform: `translateY(${(1 - progress) * 14}px) scale(${0.9 + progress * 0.1})`,
+        opacity: 0,
+        transform: 'translateY(14px) scale(0.9)',
         background: productPalette.ink,
         color: '#FFFFFF',
         padding: '16px 18px',
@@ -301,17 +330,30 @@ export const ProductTitle: React.FC<ProductTitleProps> = ({
   start = 0,
   annotationId,
 }) => {
-  const titleProgress = useReveal(start, 22);
-  const subtitleProgress = useReveal(start + 18, 22);
+  const titleRef = useRef<HTMLDivElement>(null);
+  const subtitleRef = useRef<HTMLDivElement>(null);
+  useGsapTimeline(
+    `product-title-${start}`,
+    (tl) => {
+      if (titleRef.current) {
+        tl.to(titleRef.current, { opacity: 1, y: 0, duration: 22 / 30, ease: 'power2.out' }, start / 30);
+      }
+      if (subtitleRef.current) {
+        tl.to(subtitleRef.current, { opacity: 1, y: 0, duration: 22 / 30, ease: 'power2.out' }, (start + 18) / 30);
+      }
+    },
+    [start],
+  );
   return (
     <div
       data-annotation-target={annotationId}
       style={{ position: 'absolute', left: position.x, top: position.y }}
     >
       <div
+        ref={titleRef}
         style={{
-          opacity: titleProgress,
-          transform: `translateY(${(1 - titleProgress) * 18}px)`,
+          opacity: 0,
+          transform: 'translateY(18px)',
           fontSize: 58,
           lineHeight: 1.05,
           fontWeight: 850,
@@ -322,11 +364,12 @@ export const ProductTitle: React.FC<ProductTitleProps> = ({
       </div>
       {subtitle && (
         <div
+          ref={subtitleRef}
           style={{
             marginTop: 18,
             maxWidth: 520,
-            opacity: subtitleProgress,
-            transform: `translateY(${(1 - subtitleProgress) * 14}px)`,
+            opacity: 0,
+            transform: 'translateY(14px)',
             fontSize: 24,
             lineHeight: 1.35,
             color: productPalette.muted,
@@ -602,6 +645,82 @@ export const RecordedBrowserDemo: React.FC<RecordedBrowserDemoProps> = ({
           }}
         />
       ) : null}
+    </div>
+  );
+};
+
+export interface MotionFlyProps {
+  children?: React.ReactNode;
+  /**
+   * SVG path 数据（`d` 属性），元素中心将沿此曲线运动。
+   * 坐标为场景绝对坐标（1280×720 基准），路径起点即元素出现的位置。
+   */
+  path: string;
+  start?: number;
+  duration?: number;
+  /** 起始缩放。 */
+  fromScale?: number;
+  /** 结束缩放。 */
+  toScale?: number;
+  /** 位移缓动（控制沿路径的速度曲线）。 */
+  ease?: string;
+  style?: CSSProperties;
+}
+
+/**
+ * 沿路径飞入 —— 元素沿一条 SVG 曲线运动到目标位置。
+ *
+ * 基于 GSAP 免费的 MotionPathPlugin：把 path 坐标作为 x/y 位移，
+ * 元素中心（alignOrigin [0.5, 0.5]）精确贴合曲线。叠加一层缩放/透明度
+ * 缓动，适合图标、徽章"飞"到图表某个位置的产品演示镜头。
+ */
+export const MotionFly: React.FC<MotionFlyProps> = ({
+  children,
+  path,
+  start = 0,
+  duration = 40,
+  fromScale = 0.6,
+  toScale = 1,
+  ease = 'power2.inOut',
+  style,
+}) => {
+  const ref = useRef<HTMLDivElement>(null);
+  useGsapTimeline(
+    `motion-fly-${start}`,
+    (tl) => {
+      const el = ref.current;
+      if (!el) return;
+      tl.to(
+        el,
+        {
+          motionPath: { path, alignOrigin: [0.5, 0.5] },
+          duration: duration / 30,
+          ease,
+        },
+        start / 30,
+      );
+      tl.fromTo(
+        el,
+        { opacity: 0, scale: fromScale },
+        { opacity: 1, scale: toScale, duration: duration / 30, ease: 'power2.out' },
+        start / 30,
+      );
+    },
+    [start, duration, path, fromScale, toScale, ease],
+  );
+  return (
+    <div
+      ref={ref}
+      style={{
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        opacity: 0,
+        willChange: 'transform',
+        ...style,
+      }}
+    >
+      {children}
     </div>
   );
 };

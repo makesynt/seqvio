@@ -7,6 +7,9 @@ import { promisify } from 'node:util';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { loadAudioManifest, resolveMaybeRelativePath } from './audio/manifest';
+import { applyVolumeEnvelopeToWav, buildVolumeExpression } from './audio/volume-envelope';
+import { generateDuckingEnvelope } from './audio/ducking';
+import type { VolumeKeyframe } from './audio/volume-envelope';
 // @ts-ignore
 import ffmpegPath from '@ffmpeg-installer/ffmpeg';
 
@@ -18,6 +21,7 @@ export interface ResolvedAudioTrack {
   kind: 'narration' | 'music' | 'sfx';
   volume: number;
   offsetMs: number;
+  volumeKeyframes?: VolumeKeyframe[];
 }
 
 export interface AudioMuxOptions {
@@ -28,6 +32,13 @@ export interface AudioMuxOptions {
   audioTrack?: string;
   mixMusic?: string;
   componentDir: string;
+  /** @internal No CLI wires autoDuck as of Phase 0. Unreachable until Phase 2
+   *  audio work or explicit demand (wire-up needs narrationCues extraction from
+   *  audioManifest, not just a flag). */
+  autoDuck?: boolean;
+  /** @internal Consumed only by autoDuck; same reachability gap. */
+  narrationCues?: Array<{ startMs?: number; endMs?: number; startFrame?: number; endFrame?: number }>;
+  fps?: number;
 }
 
 export function resolveAudioTracks(input: {
@@ -48,6 +59,7 @@ export function resolveAudioTracks(input: {
         kind: track.kind,
         volume: track.volume ?? 1,
         offsetMs: track.offsetMs ?? 0,
+        volumeKeyframes: track.volumeKeyframes,
       });
     }
   }
@@ -98,6 +110,11 @@ export async function muxAudioIntoVideo(options: AudioMuxOptions): Promise<void>
   const otherLabels: string[] = [];
   const args: string[] = ['-y', '-i', options.videoPath];
 
+  let duckingEnvelope: VolumeKeyframe[] | undefined;
+  if (options.autoDuck && options.narrationCues?.length) {
+    duckingEnvelope = generateDuckingEnvelope(options.narrationCues, options.fps ?? 30);
+  }
+
   tracks.forEach((track, index) => {
     const inputIndex = index + 1;
     args.push('-i', track.path);
@@ -108,9 +125,17 @@ export async function muxAudioIntoVideo(options: AudioMuxOptions): Promise<void>
     if (track.offsetMs > 0) {
       filterParts.push(`adelay=${track.offsetMs}|${track.offsetMs}`);
     }
-    if (track.volume !== 1) {
+
+    const effectiveKeyframes =
+      track.volumeKeyframes ??
+      (track.kind === 'music' && duckingEnvelope?.length ? duckingEnvelope : undefined);
+
+    if (effectiveKeyframes?.length) {
+      filterParts.push(buildVolumeExpression(effectiveKeyframes, 0));
+    } else if (track.volume !== 1) {
       filterParts.push(`volume=${track.volume}`);
     }
+
     const label = `a${index}`;
     filters.push(`[${inputIndex}:a]${filterParts.join(',')}[${label}]`);
     if (track.kind === 'music') {

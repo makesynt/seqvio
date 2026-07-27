@@ -14,12 +14,18 @@ export interface NarrationCue {
   silent?: boolean;
 }
 
+export interface VolumeKeyframe {
+  time: number;
+  volume: number;
+}
+
 export interface AudioTrackSpec {
   id: string;
   src: string;
   kind: AudioTrackKind;
   volume?: number;
   offsetMs?: number;
+  volumeKeyframes?: VolumeKeyframe[];
 }
 
 export interface CompositionAudioManifest {

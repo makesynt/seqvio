@@ -44,6 +44,8 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
+    "acorn": "^8.11.0",
+    "acorn-walk": "^8.3.0",
     "react": "^19.0.0"
   },
   "devDependencies": {

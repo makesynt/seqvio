@@ -90,6 +90,18 @@ export function useSceneLocalFrame(): number | null {
   return sceneFrame.frame;
 }
 
+/**
+ * Global frame offset of the active <Scene> (0 when not inside one).
+ *
+ * Animation adapters are flushed with the *global* composition clock, but scene
+ * components author timing relative to their scene start. Use this to convert a
+ * global frame into a scene-local time, e.g. `tl.seek((frame - globalStart)/fps)`.
+ */
+export function useSceneGlobalStart(): number {
+  const sceneFrame = useContext(SceneLocalFrameContext);
+  return sceneFrame?.type === 'global-start' ? sceneFrame.globalStart : 0;
+}
+
 /* ------------------------------------------------------------------ */
 /* FPS                                                                 */
 /* ------------------------------------------------------------------ */
