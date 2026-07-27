@@ -17,7 +17,7 @@ import type {
 
 // === Capture kinds ===
 
-export type CaptureKind = 'terminal' | 'browser' | 'git' | 'ci' | 'trace';
+export type CaptureKind = 'terminal' | 'browser' | 'ci' | 'trace';
 
 // === Capture context / progress ===
 
@@ -33,7 +33,6 @@ export interface CaptureProgress {
 }
 
 // === Capture step: operation semantics + captured real state (for AI explain) ===
-// SceneGroundTruth is imported from @seqvio/core - shared with the IR.
 
 export interface CaptureStep {
   id: string;
@@ -49,8 +48,7 @@ export interface CaptureStep {
 
 export type CaptureState =
   | { kind: 'terminal'; stdout?: string; stderr?: string }
-  | { kind: 'browser'; screenshot?: string; url?: string; pageTitle?: string }
-  | { kind: 'git'; commit?: string; diff?: string };
+  | { kind: 'browser'; screenshot?: string; url?: string; pageTitle?: string };
 
 // === Capture manifest (per-kind union) ===
 
@@ -62,8 +60,6 @@ export interface CaptureManifestBase {
   renderFps: number;
   /** Per-step operation semantics + captured real state. */
   steps: CaptureStep[];
-  /** Ground-truth references (verification + AI explanation). */
-  groundTruth?: SceneGroundTruth;
 }
 
 // --- Terminal ---
@@ -96,17 +92,9 @@ export interface BrowserCaptureManifest extends CaptureManifestBase {
   clicks: TimedPoint[];
 }
 
-// --- Git (Phase 1.4, stub) ---
-
-export interface GitCaptureManifest extends CaptureManifestBase {
-  kind: 'git';
-  commits: Array<{ sha: string; message: string; timeMs: number }>;
-}
-
 export type CaptureManifest =
   | TerminalCaptureManifest
-  | BrowserCaptureManifest
-  | GitCaptureManifest;
+  | BrowserCaptureManifest;
 
 // === Capture plan (per-kind; adapters define their own plan types) ===
 

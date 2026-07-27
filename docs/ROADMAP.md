@@ -112,7 +112,6 @@ state), not from the plan. Narration follows what actually happened.
 Then widen the sources. Each of these is something developers generate daily and
 have never been able to explain clearly:
 
-- git history and PR diffs - how a refactor actually evolved.
 - CI runs and failures - why this test broke.
 - OpenTelemetry traces - where this request spent its time.
 - Profiler flame graphs.

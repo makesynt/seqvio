@@ -80,12 +80,6 @@ control (maxZoom/zoomOnInput/presentation/typingCps) - follow-up.
 `browserCaptureSession` + `toBrowserCaptureManifest`. Smoke tests pass. Pipeline
 migration to IR is follow-up.
 
-### 1.4 git capture adapter (not started)
-
-- Record git history/diff as temporal events (commit sequence, hunk changes).
-- Emit `CaptureManifest` feeding the technical package's diff-animation
-  components.
-
 ### 1.5 Promote out of experimental (not started)
 
 Drop experimental markers; stabilize CLI; update README/skill docs.
@@ -112,8 +106,7 @@ work.
 
 ```
 Phase 0 ─> 1.1 (contract) ─┬─> 1.2 (terminal) ─┐
-                           ├─> 1.3 (browser)   ┤
-                           └─> 1.4 (git)       ┴─> 1.5 (promote)
+                           └─> 1.3 (browser)   ┴─> 1.5 (promote)
 Phase 2.1 (generic QA) - independent
 ```
 
@@ -124,5 +117,5 @@ Phase 2.1 (generic QA) - independent
   tsx). Migrating needs `TerminalSceneSpec` to carry visual control
   (maxZoom/zoomOnInput/etc.).
 - **Scope.** Phase 1 core (capture contract + terminal/browser compile +
-  session) is done. Remaining: git capture (1.4), promote (1.5), pipeline
+  session) is done. Remaining: promote (1.5), pipeline
   migration, optional generic-QA extensions.

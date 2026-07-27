@@ -79,7 +79,7 @@ The durable value lives in one thing that needs physical contact with the
 user's machine:
 
 - **AI-driven capture with temporal fidelity.** A real terminal session replayed
-  from a cast, a real browser walkthrough, a real CI failure, a real git history
+  from a cast, a real browser walkthrough, a real CI failure
   - turned into a composition as *what actually happened, in the order it
   happened*, not a reconstruction from a prompt. Capture is not passive
   recording: an agent controls the session (it runs the commands, clicks the UI)
@@ -161,7 +161,7 @@ style is a set of components, never a fork of the pipeline.
 - Deterministic verification of rendered output - layout, legibility, pacing, and
   narration/visual agreement - as machine-readable diagnostics an agent can act on.
 - Capture adapters that turn real system activity (terminal sessions, browser runs,
-  git history, CI, traces, and similar) into compositions, with temporal fidelity.
+  CI, traces, and similar) into compositions, with temporal fidelity.
 
 ### Out of Scope
 
