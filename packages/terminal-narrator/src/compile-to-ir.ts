@@ -92,13 +92,7 @@ export async function compileTerminalCapture(
     steps,
   };
 
-  // 5. CompositionDocument with groundTruth carried from the manifest. The
-  //    terminal cast path is mapped onto groundTruth.terminal.castPath.
-  const terminalGroundTruth = manifest.groundTruth
-    ? { ...manifest.groundTruth, castPath: manifest.castPath ?? manifest.groundTruth.castPath }
-    : manifest.castPath
-      ? { castPath: manifest.castPath }
-      : undefined;
+  // 5. CompositionDocument.
   const document: CompositionDocument = {
     version: '2.0',
     id: `terminal-capture-${manifest.name}`,
@@ -106,7 +100,6 @@ export async function compileTerminalCapture(
     height: manifest.viewport.height,
     fps: manifest.renderFps,
     scenes: [scene],
-    groundTruth: terminalGroundTruth ? { terminal: terminalGroundTruth } : undefined,
   };
 
   // 6. Audio manifest (per-step timed narration) - written if jobDir is provided.

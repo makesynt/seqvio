@@ -75,7 +75,6 @@ export async function compileBrowserCapture(
     height: manifest.viewport.height,
     fps: manifest.renderFps,
     scenes: [scene],
-    groundTruth: manifest.groundTruth ? { browser: manifest.groundTruth } : undefined,
   };
 
   // 4. Audio manifest (per-step timed narration) - written if jobDir is provided.

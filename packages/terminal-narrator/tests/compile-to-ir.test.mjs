@@ -42,9 +42,6 @@ test('compileTerminalCapture produces a terminal IR scene from a manifest', asyn
   assert.equal(scene.steps.length, 1);
   assert.equal(scene.steps[0].id, 's1');
 
-  // groundTruth carried from manifest
-  assert.equal(seed.document.groundTruth?.terminal?.castPath, '/tmp/smoke.cast');
-
   // audio manifest written
   assert.ok(seed.audioManifestPath);
   assert.ok(fs.existsSync(seed.audioManifestPath));

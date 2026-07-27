@@ -11,7 +11,6 @@
 
 import type {
   CompositionDocument,
-  SceneGroundTruth,
   TimedPoint,
   RecordedFocusTarget,
 } from '@seqvio/core';

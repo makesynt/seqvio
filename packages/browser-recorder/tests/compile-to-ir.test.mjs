@@ -19,7 +19,6 @@ test('compileBrowserCapture produces a browser IR scene from a manifest', async 
     cursorPoints: [{ timeMs: 0, x: 100, y: 200 }],
     focusTargets: [],
     clicks: [{ timeMs: 500, x: 100, y: 200 }],
-    groundTruth: { sourcePath: '/tmp/page.html' },
   };
   const jobDir = path.resolve('./temp/compile-browser-smoke');
   fs.rmSync(jobDir, { recursive: true, force: true });
@@ -33,9 +32,6 @@ test('compileBrowserCapture produces a browser IR scene from a manifest', async 
   assert.equal(scene.sourceVideo, '/tmp/smoke.mp4');
   assert.equal(scene.cursorPoints.length, 1);
   assert.equal(scene.recordingWidth, 1280);
-
-  // groundTruth carried from manifest
-  assert.equal(seed.document.groundTruth?.browser?.sourcePath, '/tmp/page.html');
 
   // audio manifest with per-step narration (label fallback)
   assert.ok(seed.audioManifestPath);

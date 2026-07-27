@@ -227,26 +227,6 @@ export interface BrowserSceneSpec {
   annotations?: AnnotationSpec[];
 }
 
-/**
- * Ground truth: the real data a scene references. Feeds Phase 2 verification
- * (code on screen vs source AST, diagram edges vs dependency graph, terminal
- * replay vs real stdout) and AI narration (the agent explains what it sees
- * because it knows the real data behind the scene). Keyed by scene id on the
- * document.
- */
-export interface SceneGroundTruth {
-  sourcePath?: string;
-  commit?: string;
-  graphSource?: {
-    type: 'import-graph' | 'call-graph';
-    rootPath: string;
-    commit?: string;
-  };
-  castPath?: string;
-  stdoutRef?: string;
-  gitRef?: { base: string; head: string; paths?: string[] };
-}
-
 export type SceneSpec =
   | WhiteboardSceneSpec
   | CodeSceneSpec
@@ -290,8 +270,6 @@ export interface CompositionDocument {
   scenes: SceneSpec[];
   /** Document-level annotations that may target any scene element id. */
   annotations?: AnnotationSpec[];
-  /** Per-scene ground truth (verification + AI narration). Keyed by scene id. */
-  groundTruth?: Record<string, SceneGroundTruth>;
 }
 
 export const COMPOSITION_DOCUMENT_DEFAULTS = {
