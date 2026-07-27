@@ -135,6 +135,8 @@ export interface NarrationProvider {
 export interface CompileOptions {
   /** AI explain: if provided, narration is generated per step from capturedState. */
   narration?: NarrationProvider;
+  /** Working directory for artifacts (audio manifest). Required to emit audio. */
+  jobDir?: string;
 }
 
 export interface CompositionDocumentSeed {
