@@ -31,6 +31,9 @@ interface SnapshotReport {
   elementCount: number;
   bodyTextLength: number;
   nonWhiteRatio: number;
+  textOverflowCount: number;
+  smallFontCount: number;
+  lowContrastCount: number;
   issues: Array<{
     severity: 'error' | 'warning';
     code: string;
@@ -165,6 +168,9 @@ async function inspectDom(page: import('puppeteer').Page): Promise<{
   elementCount: number;
   bodyTextLength: number;
   outOfBoundsCount: number;
+  textOverflowCount: number;
+  smallFontCount: number;
+  lowContrastCount: number;
 }> {
   return page.evaluate(() => {
     const elements = Array.from(document.querySelectorAll('#root *'));
@@ -173,6 +179,37 @@ async function inspectDom(page: import('puppeteer').Page): Promise<{
       height: window.innerHeight,
     };
     let outOfBoundsCount = 0;
+    let textOverflowCount = 0;
+    let smallFontCount = 0;
+    let lowContrastCount = 0;
+    const MIN_FONT_PX = 12;
+    const MIN_CONTRAST = 4.5;
+
+    const parseColor = (css: string): [number, number, number] | null => {
+      const m = css.match(/rgba?\(([^)]+)\)/);
+      if (!m) return null;
+      const parts = m[1].split(',').map((p) => parseFloat(p.trim()));
+      if (parts.length < 3 || parts.some((n) => !Number.isFinite(n))) return null;
+      return [parts[0], parts[1], parts[2]];
+    };
+    const luminance = (rgb: [number, number, number]): number => {
+      const linear = rgb.map((c) => {
+        const s = c / 255;
+        return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+    };
+    const contrastRatio = (
+      a: [number, number, number],
+      b: [number, number, number]
+    ): number => {
+      const la = luminance(a);
+      const lb = luminance(b);
+      const lighter = Math.max(la, lb);
+      const darker = Math.min(la, lb);
+      return (lighter + 0.05) / (darker + 0.05);
+    };
+
     for (const element of elements) {
       const rect = element.getBoundingClientRect();
       if (rect.width <= 0 || rect.height <= 0) continue;
@@ -184,11 +221,36 @@ async function inspectDom(page: import('puppeteer').Page): Promise<{
       ) {
         outOfBoundsCount += 1;
       }
+      // text overflow: content overflows the element's box
+      if (
+        element.scrollHeight > element.clientHeight + 1 ||
+        element.scrollWidth > element.clientWidth + 1
+      ) {
+        textOverflowCount += 1;
+      }
+      const style = window.getComputedStyle(element);
+      const text = (element.textContent || '').trim();
+      // font size floor (only for elements with text)
+      const fontSize = parseFloat(style.fontSize);
+      if (fontSize > 0 && fontSize < MIN_FONT_PX && text.length > 0) {
+        smallFontCount += 1;
+      }
+      // contrast (only for elements with text and a non-transparent background)
+      if (text.length > 0) {
+        const fg = parseColor(style.color);
+        const bg = parseColor(style.backgroundColor);
+        if (fg && bg && contrastRatio(fg, bg) < MIN_CONTRAST) {
+          lowContrastCount += 1;
+        }
+      }
     }
     return {
       elementCount: elements.length,
       bodyTextLength: document.body.innerText.trim().length,
       outOfBoundsCount,
+      textOverflowCount,
+      smallFontCount,
+      lowContrastCount,
     };
   });
 }
@@ -283,6 +345,27 @@ async function main(): Promise<void> {
         message: `${dom.outOfBoundsCount} element(s) have visible bounds outside the viewport.`,
       });
     }
+    if (dom.textOverflowCount > 0) {
+      issues.push({
+        severity: 'warning',
+        code: 'text_overflow',
+        message: `${dom.textOverflowCount} element(s) overflow their container.`,
+      });
+    }
+    if (dom.smallFontCount > 0) {
+      issues.push({
+        severity: 'warning',
+        code: 'small_font',
+        message: `${dom.smallFontCount} element(s) use font-size below 12px.`,
+      });
+    }
+    if (dom.lowContrastCount > 0) {
+      issues.push({
+        severity: 'warning',
+        code: 'low_contrast',
+        message: `${dom.lowContrastCount} element(s) have foreground/background contrast below WCAG AA (4.5:1).`,
+      });
+    }
 
     reports.push({
       frame: sourceFrame,
@@ -292,6 +375,9 @@ async function main(): Promise<void> {
       elementCount: dom.elementCount,
       bodyTextLength: dom.bodyTextLength,
       nonWhiteRatio: imageAnalysis.nonWhiteRatio,
+      textOverflowCount: dom.textOverflowCount,
+      smallFontCount: dom.smallFontCount,
+      lowContrastCount: dom.lowContrastCount,
       issues,
     });
   }
