@@ -45,9 +45,8 @@ renderer or a better closed loop — on that axis it has already lost.
 
 The hard part of an explainer is not the render loop, and increasingly not the
 closed loop around it. It is everything a closed engine is structurally
-positioned worst to do: reach a real system, and verify the result against what
-that system actually did. The bets below are where value lives; the table-stakes
-ones still ship, they just no longer defend the company:
+positioned worst to do: reach a real system. The bets below are where value
+lives; the table-stakes ones still ship, they just no longer defend the company:
 
 - **Narration-first timing.** Audio metadata and visual timing live in the same
   composition, and scene duration follows synthesized narration ("voice is the
@@ -76,8 +75,8 @@ studio on top. All four are now table stakes. They still ship — they are why
 Seqvio produces a better explainer than a blank canvas — but they no longer
 defend it.
 
-The durable value lives in two things that need physical contact with the
-user's machine, and a third that encodes judgment no fork can copy:
+The durable value lives in one thing that needs physical contact with the
+user's machine:
 
 - **AI-driven capture with temporal fidelity.** A real terminal session replayed
   from a cast, a real browser walkthrough, a real CI failure, a real git history
@@ -87,30 +86,13 @@ user's machine, and a third that encodes judgment no fork can copy:
   and explains it (it generates narration from what it actually did and saw).
   This needs permissions, format adapters, redaction, and domain semantics that
   run on the user's side. A stronger model and a cloud renderer both stop at the
-  composition boundary; capture starts there.
-- **Ground truth: for verification and for explanation.** Each scene declares
-  the real data it references (source path + commit, dependency graph, terminal
-  cast, diff range). This feeds two things: deterministic verification (code on
-  screen matches the real source AST, diagram edges match the real dependency
-  graph, terminal replay matches the real stdout), and agent narration (the
-  agent explains what it sees because it knows the real data behind the scene).
-  General verification (overflow, contrast, pacing, narration/visual agreement)
-  is correct and stays - but it is table stakes a competitor ships too. The edge
-  is a source of truth only capture provides. Generation commoditizes; ground
-  truth does not.
-- **A public benchmark of defective technical compositions and expected
-  diagnostics.** Judgment encoded in data: someone can fork the code but not the
-  eval set.
-
-The first two are a compound, not a list: capture is only a recorder without
-verification, and verification is only generic lint without capture's ground
-truth. The compound is the moat, and it is the one thing a closed engine is
-positioned worst to copy.
+  composition boundary; capture starts there. This is the moat - the one thing a
+  closed engine is positioned worst to copy, because none of it runs on their
+  side.
 
 The renderer is a means, not the identity. If commodity render engines keep
-improving, capture, ground-truth verification, and the benchmark are the parts
-of Seqvio that must remain worth existing — and that is where development
-effort concentrates.
+improving, capture is the part of Seqvio that must remain worth existing - and
+that is where development effort concentrates.
 
 ### The Threat, Stated Plainly
 
@@ -119,15 +101,14 @@ to emit working Remotion or raw HTML directly, and no framework is needed — an
 compounding that, that the closed layer a framework would defend has already been
 commoditized by a better-resourced competitor.
 
-What that does not solve, and where Seqvio stands: models cannot verify their own
-visual output (see above), and **models cannot reach into your systems.** A real
-terminal session, a real browser walkthrough, a real CI failure — turning those
-into video requires capture, permissions, format adapters, and domain semantics
-that live on the user's machine. `@seqvio/terminal-narrator` and
-`@seqvio/browser-recorder` are not early experiments on a side front — they are
-the front. The framing they point at is Seqvio's identity: not "draw an explainer
-from nothing," but **turn what already happened in a real system into something a
-person can follow — and verify the result against it.**
+What that does not solve, and where Seqvio stands: **models cannot reach into
+your systems.** A real terminal session, a real browser walkthrough, a real CI
+failure - turning those into video requires capture, permissions, format
+adapters, and domain semantics that live on the user's machine.
+`@seqvio/terminal-narrator` and `@seqvio/browser-recorder` are not early
+experiments on a side front - they are the front. The framing they point at is
+Seqvio's identity: not "draw an explainer from nothing," but **turn what already
+happened in a real system into something a person can follow.**
 
 [`ROADMAP.md`](./ROADMAP.md) orders the work accordingly.
 
@@ -177,10 +158,8 @@ style is a set of components, never a fork of the pipeline.
 - Structured narration, caption, and timing metadata with pluggable TTS providers.
 - Programmatic, deterministic, local rendering to MP4.
 - Multilingual narration and caption variants from one source composition.
-- Deterministic verification of rendered output — layout, legibility, pacing, and
-  narration/visual agreement — as machine-readable diagnostics an agent can act on.
-- Technical-correctness verification against captured ground truth (source AST,
-  dependency graph, real run output).
+- Deterministic verification of rendered output - layout, legibility, pacing, and
+  narration/visual agreement - as machine-readable diagnostics an agent can act on.
 - Capture adapters that turn real system activity (terminal sessions, browser runs,
   git history, CI, traces, and similar) into compositions, with temporal fidelity.
 
@@ -198,7 +177,7 @@ style is a set of components, never a fork of the pipeline.
 - A style-count race. Deepening an existing style is in scope; adding styles for
   breadth is not.
 - One-shot prompt-to-video as the product surface. The product surface is a
-  verifiable channel for real system events, not a generator from nothing.
+  channel for real system events, not a generator from nothing.
 
 Scope decisions can change, but they change here and deliberately — not by accretion.
 
@@ -211,9 +190,8 @@ Scope decisions can change, but they change here and deliberately — not by acc
   automatically over one that only looks good in a demo. A quality rule belongs in
   an executable check, not in a documented convention.
 - **Fidelity to the real system beats reconstruction.** A composition drawn from
-  what actually happened — in its real timing — is worth more than a prettier one
-  invented from a prompt. Capture and verify against the source of truth; do not
-  fabricate it.
+  what actually happened - in its real timing - is worth more than a prettier one
+  invented from a prompt. Capture from the real system; do not fabricate it.
 - **Reachable or absent.** Code that ships but no user can invoke is worse than a
   stale doc. Wire it up, mark it internal, or delete it.
 - **Clarity over generic motion.** Every primitive should help the agent communicate
