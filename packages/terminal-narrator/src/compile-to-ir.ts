@@ -30,6 +30,40 @@ import { mergeTerminalEvents } from './compose';
 import type { TerminalEvent } from './types';
 import { DEFAULT_TRAILING_HOLD_MS } from './constants';
 
+function mapEventsToSchema(events: TerminalEvent[]): TerminalSceneSpec['events'] {
+  return events.map((event) => ({
+    timeMs: event.timeMs,
+    kind: event.kind,
+    text: event.text,
+    transient: event.transient,
+    snapshot: event.snapshot,
+    grid: event.grid
+      ? {
+          cols: event.grid.cols,
+          rows: event.grid.rows,
+          cursorX: event.grid.cursorX,
+          cursorY: event.grid.cursorY,
+          lines: event.grid.lines.map((row) =>
+            row.map((cell) => ({
+              x: cell.x,
+              chars: cell.chars,
+              width: cell.width,
+              foreground: cell.foreground,
+              background: cell.background,
+              bold: cell.bold,
+              dim: cell.dim,
+              italic: cell.italic,
+              underline: cell.underline,
+              inverse: cell.inverse,
+              invisible: cell.invisible,
+              strikethrough: cell.strikethrough,
+            }))
+          ),
+        }
+      : undefined,
+  }));
+}
+
 export async function compileTerminalCapture(
   manifest: TerminalCaptureManifest,
   options?: CompileOptions
@@ -88,7 +122,7 @@ export async function compileTerminalCapture(
   const scene: TerminalSceneSpec = {
     type: 'terminal',
     id: 'terminal',
-    events: timeline.events as unknown as TerminalSceneSpec['events'],
+    events: mapEventsToSchema(timeline.events),
     steps,
   };
 

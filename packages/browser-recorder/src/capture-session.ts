@@ -37,6 +37,7 @@ export function toBrowserCaptureManifest(
       id: action.id,
       label: action.label,
       timeMs: index * stepDuration,
+      capturedState: { kind: 'browser', url: plan.startUrl },
     })),
     sourceVideo: recording.sourceVideo,
     cursorPoints: recording.cursorPoints,

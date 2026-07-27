@@ -31,11 +31,23 @@ export function toCaptureManifest(
     durationMs: recording.durationMs,
     viewport: recording.viewport,
     renderFps: recording.renderFps,
-    steps: recording.steps.map((step) => ({
-      id: step.id,
-      label: step.label,
-      timeMs: step.timeMs,
-    })),
+    steps: recording.steps.map((step, index) => {
+      const startMs = step.timeMs;
+      const endMs =
+        index + 1 < recording.steps.length
+          ? recording.steps[index + 1].timeMs
+          : recording.durationMs;
+      const stdout = recording.events
+        .filter((e) => e.kind === 'stdout' && e.timeMs >= startMs && e.timeMs < endMs)
+        .map((e) => e.text)
+        .join('');
+      return {
+        id: step.id,
+        label: step.label,
+        timeMs: step.timeMs,
+        capturedState: stdout ? { kind: 'terminal', stdout } : undefined,
+      };
+    }),
     events: recording.events.map((event) => ({
       timeMs: event.timeMs,
       kind: event.kind,
