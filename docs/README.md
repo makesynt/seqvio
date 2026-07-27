@@ -32,6 +32,7 @@ These docs describe the repository as it exists today:
 | File | Notes |
 | --- | --- |
 | [`VISION.md`](./VISION.md) | Product positioning, target users, scope, and design principles (slow-changing source of truth) |
+| [`ROADMAP.md`](./ROADMAP.md) | Directional bet and phase ordering; what to build next and why. Subordinate to `VISION.md` |
 
 Active, time-boxed work items live in GitHub issues and milestones, not in a docs file.
 

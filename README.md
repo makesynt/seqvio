@@ -295,17 +295,20 @@ If documentation conflicts with code, treat the code and [`docs/COMPOSITION-AUTH
 
 ## Roadmap
 
-Planned or in-progress work includes:
+Full phase ordering and the reasoning behind it: [`docs/ROADMAP.md`](./docs/ROADMAP.md). In short:
 
-- AI-assisted scene generation CLI
-- Richer script-to-voice authoring beyond the current TTS workflow
-- Visual editor / studio workflow
-- Storyboard JSON and template auto-layout expansion beyond the current validation/layout registry
-- Expanded transition catalog (today: `fade`, `slide`, and `wipe`)
+1. **Clear the floor** - shader transitions deleted; audio ducking and `TransportClock` marked `@internal`. Stop investing in the closed layer.
+2. **System capture adapters** - one `CaptureSession -> CompositionDocument` contract, with temporal fidelity, extended to terminal sessions, git history, CI failures, and traces. The data-access moat.
+3. **Technical-correctness verification** - deterministic checks against captured ground truth: code on screen vs source AST, diagram edges vs dependency graph, terminal replay vs real stdout.
+4. **Video as a CI guardian** - PR-scoped regression: re-render only affected chapters and verify, blocking PRs that break existing technical videos.
+5. **Public technical-video benchmark** - deliberately defective compositions paired with expected diagnostics. Judgment that survives a fork.
+
+Multi-target IR output and a studio editor are deprioritized (HyperFrames owns the closed layer).
 
 Product positioning and scope:
 
 - [`docs/VISION.md`](./docs/VISION.md)
+- [`docs/ROADMAP.md`](./docs/ROADMAP.md)
 
 Historical notes:
 
