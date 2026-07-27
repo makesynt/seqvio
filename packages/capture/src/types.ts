@@ -17,7 +17,7 @@ import type {
 
 // === Capture kinds ===
 
-export type CaptureKind = 'terminal' | 'browser' | 'ci' | 'trace';
+export type CaptureKind = 'terminal' | 'browser';
 
 // === Capture context / progress ===
 

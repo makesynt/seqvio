@@ -21,6 +21,7 @@ interface QaOptions {
   frames?: number[];
   pixelRatio: number;
   blankThreshold: number;
+  ci?: boolean;
 }
 
 interface SnapshotReport {
@@ -38,6 +39,7 @@ interface SnapshotReport {
     severity: 'error' | 'warning';
     code: string;
     message: string;
+    repair?: string;
   }>;
 }
 
@@ -55,6 +57,7 @@ Options:
   --frames <csv>           Frames to inspect, e.g. 0,60,120
   --pixelRatio <n>         Screenshot device scale factor (default: 1)
   --blankThreshold <n>     Minimum non-white pixel ratio (default: 0.01)
+  --ci                     CI mode (exit non-zero on error; machine-readable report)
   --help
 `);
 }
@@ -65,7 +68,7 @@ function parseArgs(argv: string[]): QaOptions {
     const token = argv[i];
     if (!token.startsWith('--')) continue;
     const key = token.slice(2);
-    if (key === 'help') {
+    if (key === 'help' || key === 'ci') {
       args.set(key, true);
       continue;
     }
@@ -108,6 +111,7 @@ function parseArgs(argv: string[]): QaOptions {
     frames,
     pixelRatio: args.get('pixelRatio') ? Number(args.get('pixelRatio')) : 1,
     blankThreshold: args.get('blankThreshold') ? Number(args.get('blankThreshold')) : 0.01,
+    ci: args.get('ci') === true,
   };
 }
 
@@ -336,6 +340,7 @@ async function main(): Promise<void> {
         severity: 'error',
         code: 'empty_dom',
         message: 'No rendered DOM elements were found under #root.',
+        repair: 'Ensure the scene renders content under #root at this frame.',
       });
     }
     if (dom.outOfBoundsCount > 0) {
@@ -343,6 +348,7 @@ async function main(): Promise<void> {
         severity: 'warning',
         code: 'offscreen_elements',
         message: `${dom.outOfBoundsCount} element(s) have visible bounds outside the viewport.`,
+        repair: 'Move or resize elements to stay within the viewport.',
       });
     }
     if (dom.textOverflowCount > 0) {
@@ -350,6 +356,7 @@ async function main(): Promise<void> {
         severity: 'warning',
         code: 'text_overflow',
         message: `${dom.textOverflowCount} element(s) overflow their container.`,
+        repair: 'Increase container size, reduce text, or enable wrapping/scroll.',
       });
     }
     if (dom.smallFontCount > 0) {
@@ -357,6 +364,7 @@ async function main(): Promise<void> {
         severity: 'warning',
         code: 'small_font',
         message: `${dom.smallFontCount} element(s) use font-size below 12px.`,
+        repair: 'Increase font-size to at least 12px.',
       });
     }
     if (dom.lowContrastCount > 0) {
@@ -364,6 +372,7 @@ async function main(): Promise<void> {
         severity: 'warning',
         code: 'low_contrast',
         message: `${dom.lowContrastCount} element(s) have foreground/background contrast below WCAG AA (4.5:1).`,
+        repair: 'Increase foreground/background contrast to at least 4.5:1.',
       });
     }
 
