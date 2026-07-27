@@ -79,21 +79,25 @@ defend it.
 The durable value lives in two things that need physical contact with the
 user's machine, and a third that encodes judgment no fork can copy:
 
-- **System capture with temporal fidelity.** A real terminal session replayed
+- **AI-driven capture with temporal fidelity.** A real terminal session replayed
   from a cast, a real browser walkthrough, a real CI failure, a real git history
-  — turned into a composition as *what actually happened, in the order it
-  happened*, not a reconstruction from a prompt. This needs permissions, format
-  adapters, redaction, and domain semantics that run on the user's side. A
-  stronger model and a cloud renderer both stop at the composition boundary;
-  capture starts there.
-- **Technical-correctness verification against ground truth.** Deterministic
-  checks that the code on screen matches the real source AST, that an
-  architecture diagram's edges match the real dependency graph, that a terminal
-  replay's output matches the real run. General verification (overflow, contrast,
-  pacing, narration/visual agreement) is correct and stays — but it is table
-  stakes a competitor ships too. The edge is verification that needs a source of
-  truth, and only capture provides one. Generation commoditizes; verification
-  against ground truth does not.
+  - turned into a composition as *what actually happened, in the order it
+  happened*, not a reconstruction from a prompt. Capture is not passive
+  recording: an agent controls the session (it runs the commands, clicks the UI)
+  and explains it (it generates narration from what it actually did and saw).
+  This needs permissions, format adapters, redaction, and domain semantics that
+  run on the user's side. A stronger model and a cloud renderer both stop at the
+  composition boundary; capture starts there.
+- **Ground truth: for verification and for explanation.** Each scene declares
+  the real data it references (source path + commit, dependency graph, terminal
+  cast, diff range). This feeds two things: deterministic verification (code on
+  screen matches the real source AST, diagram edges match the real dependency
+  graph, terminal replay matches the real stdout), and agent narration (the
+  agent explains what it sees because it knows the real data behind the scene).
+  General verification (overflow, contrast, pacing, narration/visual agreement)
+  is correct and stays - but it is table stakes a competitor ships too. The edge
+  is a source of truth only capture provides. Generation commoditizes; ground
+  truth does not.
 - **A public benchmark of defective technical compositions and expected
   diagnostics.** Judgment encoded in data: someone can fork the code but not the
   eval set.

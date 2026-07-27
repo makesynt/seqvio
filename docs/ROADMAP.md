@@ -104,10 +104,19 @@ moat.** Promoted from the previous Phase 3 because the closed-layer moat it was
 sitting behind is gone.
 
 Promote `browser-recorder` and `terminal-narrator` from "experimental" to a
-single capture-adapter contract: `CaptureSession -> CompositionDocument`.
-`terminal-narrator` (~2.4k lines: `record.ts`, `cast.ts`, `timing.ts`,
-`redact.ts`, `validate.ts`) and `browser-recorder` (~0.7k lines) already exist;
-the work is the contract, the hardening, and the sources beyond them.
+single capture-adapter contract: `CaptureSession -> CaptureManifest ->
+CompositionDocument`. Both already produce compositions (they hand-string tsx
+via `writeComposition`); the work is routing them through the IR instead, so
+they pick up narration, groundTruth, and CI-diffability. `terminal-narrator`
+(~2.4k lines: `record.ts`, `cast.ts`, `timing.ts`, `redact.ts`, `validate.ts`)
+maps to the existing `TerminalSceneSpec`; `browser-recorder` (~0.7k lines) needs
+a new `BrowserSceneSpec` (peer to terminal: sourceVideo + cursor + focus +
+actions + narration + groundTruth), compiled to `RecordedBrowserDemo`.
+
+Capture is agent-driven, not passive recording: the agent controls the session
+(runs the commands, clicks the UI) and explains it - an **AI explain** step
+generates narration from the manifest's real recorded state (stdout, page
+state), not from the plan. Narration follows what actually happened.
 
 Then widen the sources. Each of these is something developers generate daily and
 have never been able to explain clearly:

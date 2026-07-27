@@ -16,7 +16,7 @@
 | visual-regression.mjs | `scripts/visual-regression.mjs`: FFmpeg PSNR vs baseline, `--update`, non-zero exit | Extend from repo-wide fixed cases to PR/chapter scope |
 | seqvio-qa | `renderer/qa-cli.ts`: puppeteer frame snapshots, DOM checks, `exit(1)` on error; checks only `mostly_blank_frame` / `empty_dom` / `offscreen_elements` | Extend; framework stays, checks and ground-truth comparison are new |
 | terminal-narrator | `node-pty` + `writeAsciinemaCast`, ~2.4k lines, composition-based, has `redact.ts` | Refactor onto the capture contract; temporal-fidelity core preserved |
-| browser-recorder | ~0.7k lines, video-based (emits a video, not a composition) | Align as a video-asset adapter (Decision 2) |
+| browser-recorder | ~0.7k lines, already composition-based (`writeComposition` emits tsx using `RecordedBrowserDemo` with cursor/focus overlay + maxZoom) | Migrate to IR: add `BrowserSceneSpec`, compile to `RecordedBrowserDemo` (Decision 2) |
 | technical components | `CodeWalkthrough{source,steps}`, `ArchitectureDiagram`, `TerminalDemo`, `ansi.ts`, `code-utils.ts` | Reuse; the targets of Phase 2 domain verification |
 | groundTruth references | Do not exist | Build new; the spine shared by Phases 2 and 3 |
 
@@ -25,15 +25,23 @@
 1. **CaptureSession contract lives in a new `@seqvio/capture` package.** Not in
    `core` - capture is a distinct concern and `core` stays render/IR-agnostic.
    Defines a `CaptureSession` interface (`record() -> CaptureManifest`), a
-   `CaptureManifest` schema, and a `CaptureManifest -> CompositionDocument`
-   compiler. terminal-narrator, browser-recorder, git, CI, and trace all
-   implement this interface.
-2. **browser-recorder aligns as a video-asset adapter.** It emits a real screen
-   recording, not a composition. Unify at the `CaptureManifest` layer: the
-   recording becomes a `<Video>` media element in a composition (or a standalone
-   clip). terminal-narrator stays composition-based (terminal I/O is
-   structurally replayable); browser-recorder stays video-based (real
-   interaction is only recordable). Same contract, different product shape.
+   `CaptureManifest` schema (carries per-step operation semantics + captured
+   state: terminal stdout, browser cursor/focus/screenshot), a
+   `CaptureManifest -> CompositionDocument` compiler, and an **AI explain** step
+   (agent generates narration from the manifest's real recorded state, injected
+   into `scene.narration`). terminal-narrator, browser-recorder, git, CI, and
+   trace all implement this interface. Capture is agent-driven: the agent
+   controls the session (runs commands, clicks the UI) and explains it
+   (generates narration from what actually happened, not from the plan).
+2. **browser-recorder migrates to the IR like terminal.** It already produces a
+   composition (`writeComposition` emits tsx using `RecordedBrowserDemo` with
+   cursor/focus overlay + maxZoom) - it just bypasses the IR by hand-stringing
+   tsx. Under X, both capture sources go through the IR: add a `BrowserSceneSpec`
+   to `SceneSpec` (peer to `TerminalSceneSpec`: sourceVideo + cursorPoints +
+   focusTargets + actions + narration + groundTruth), and a `compileBrowserScene`
+   in `compile.ts` that emits `RecordedBrowserDemo`. The video-asset adapter idea
+   is dropped - browser needs the IR to get narration (AI explain) and groundTruth,
+   same as terminal.
 3. **groundTruth is a first-class CompositionDocument field.** The IR gains a
    `groundTruth` field: each chapter/scene declares the real data it references
    (`sourcePath`+`commit`, `graphSource`, `castPath`, `stdoutRef`). qa reads it
