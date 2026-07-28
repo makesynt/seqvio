@@ -161,6 +161,10 @@ export class VideoRenderer {
   private onProgress?: (progress: RenderProgress) => void;
   private cliWidth: number | undefined;
   private cliHeight: number | undefined;
+  /** Set by optimizeNarrationTracks() when pre-concat→AAC succeeds.
+   *  When non-null, the main H.264 encode inlines this AAC as a second
+   *  input so the video+audio land in one ffmpeg pass — zero extra mux. */
+  private inlineAudioPath: string | null = null;
 
   private browserLaunchOptions(): Parameters<typeof puppeteer.launch>[0] {
     return {
@@ -300,6 +304,12 @@ export class VideoRenderer {
         await this.calibrateWorkers(totalFrames);
       }
 
+      // Pre-concat narration → AAC now so the main H.264 encode can
+      // inline it as a second input — zero-cost mux.
+      if (this.resolvedAudioTracks.length > 0) {
+        await this.optimizeNarrationTracks();
+      }
+
       this.reportProgress({
         phase: "rendering",
         currentFrame: 0,
@@ -311,7 +321,8 @@ export class VideoRenderer {
       const tRender = Date.now();
 
       let tMux = tRender;
-      if (this.resolvedAudioTracks.length > 0) {
+      // Skip separate mux when audio was inlined into the main encode.
+      if (!this.inlineAudioPath && this.resolvedAudioTracks.length > 0) {
         this.reportProgress({
           phase: "muxing",
           percent: 0,
@@ -535,6 +546,17 @@ export class VideoRenderer {
       String(this.effectiveFps),
       "-i",
       "-",
+    ];
+
+    // Inline audio: pre-concat AAC rides alongside the image2pipe frames
+    // so video encode + audio mux happen in a single ffmpeg pass.
+    if (this.inlineAudioPath) {
+      args.push("-i", this.inlineAudioPath);
+    }
+
+    args.push(
+      "-map",
+      "0:v",
       "-c:v",
       "libx264",
       "-pix_fmt",
@@ -543,13 +565,24 @@ export class VideoRenderer {
       String(this.crfForQuality()),
       "-preset",
       "medium",
-      "-movflags",
-      "+faststart",
-    ];
+    );
+
+    if (this.inlineAudioPath) {
+      args.push("-map", "1:a", "-c:a", "copy");
+    }
+
     if (this.options.pixelRatio > 1) {
       args.push("-vf", `scale=${this.options.width}:${this.options.height}`);
     }
-    args.push("-r", String(this.effectiveFps), targetPath);
+
+    args.push(
+      "-shortest",
+      "-movflags",
+      "+faststart",
+      "-r",
+      String(this.effectiveFps),
+      targetPath,
+    );
     return args;
   }
 
@@ -676,10 +709,14 @@ export class VideoRenderer {
    * remains inadvisable; cross-machine is a separate orchestration concern.
    */
   private async renderAndEncode(totalFrames: number): Promise<string> {
-    const targetPath =
-      this.resolvedAudioTracks.length > 0
-        ? path.join(this.options.tempDir, "video-only.mp4")
-        : this.options.output;
+    // When audio is inlined, output goes directly to the final path
+    // (video + audio land in one pass).  Otherwise write video-only and
+    // let muxAudio() add audio afterwards.
+    const needsSeparateMux =
+      !this.inlineAudioPath && this.resolvedAudioTracks.length > 0;
+    const targetPath = needsSeparateMux
+      ? path.join(this.options.tempDir, "video-only.mp4")
+      : this.options.output;
 
     if (this.options.workers > 1) {
       if (this.options.staticFrameDedup) {
@@ -919,7 +956,170 @@ export class VideoRenderer {
     return resolved;
   }
 
+  /**
+   * Pre-concatenates sequential back-to-back narration tracks into a single
+   * WAV (stream copy, near-instant).  This lets the mux filter-graph skip
+   * the per-track adelay + aresample chains and the multi-input amix,
+   * reducing mux time substantially on CosyVoice-style pipelines where
+   * narration cues sit end-to-end with no gaps or overlaps.
+   *
+   * Only activates when ALL *manifest* narration tracks are sequential
+   * (checked via the audio manifest's per-cue startMs/endMs).  CLI-provided
+   * --audioTrack and --mixMusic tracks are left untouched so sidechain
+   * compression still works when music is present.
+   */
+  private async optimizeNarrationTracks(): Promise<void> {
+    const manifestNarration = this.resolvedAudioTracks.filter(
+      (t) =>
+        t.kind === "narration" &&
+        t.id !== "cli-audio-track" &&
+        t.id !== "cli-music-track",
+    );
+    if (manifestNarration.length <= 1) return;
+
+    const cues = this.audioManifest?.narration;
+    if (!cues || cues.length === 0) return;
+
+    // Verify sequential: back-to-back, no gaps > 200ms
+    let prevEndMs = 0;
+    let allSequential = true;
+    const orderedPaths: string[] = [];
+
+    for (const cue of cues) {
+      const track = manifestNarration.find((t) => t.id === cue.id);
+      if (!track) {
+        allSequential = false;
+        break;
+      }
+      const cueStart = cue.startMs ?? 0;
+      if (Math.abs(cueStart - prevEndMs) > 200) {
+        allSequential = false;
+        break;
+      }
+      orderedPaths.push(track.path);
+      prevEndMs = cue.endMs ?? cueStart + 1000;
+    }
+
+    if (!allSequential || orderedPaths.length <= 1) return;
+
+    // Concat WAVs → AAC in one pass.  No intermediate PCM WAV on disk,
+    // and the encode time overlaps with browser screenshot work since
+    // this runs between setup and the render phase.
+    const aacPath = path.join(
+      this.options.tempDir,
+      "narration-premix.aac",
+    );
+    const listPath = `${aacPath}.txt`;
+    fs.writeFileSync(
+      listPath,
+      orderedPaths
+        .map((file) => `file '${file.replace(/'/g, "'\\''")}'`)
+        .join("\n"),
+    );
+
+    await new Promise<void>((resolve, reject) => {
+      const proc = spawn(
+        ffmpegPath.path,
+        [
+          "-y",
+          "-f",
+          "concat",
+          "-safe",
+          "0",
+          "-i",
+          listPath,
+          "-c:a",
+          "aac",
+          "-b:a",
+          "128k",
+          aacPath,
+        ],
+        { windowsHide: true },
+      );
+      proc.stderr.on("data", () => {}); // silence ffmpeg log
+      proc.on("close", (code) => {
+        if (code === 0) resolve();
+        else reject(new Error(`Pre-concat failed with code ${code}`));
+      });
+      proc.on("error", reject);
+    });
+
+    try {
+      fs.unlinkSync(listPath);
+    } catch {
+      // best-effort cleanup
+    }
+
+    // Replace manifest narration tracks with the single AAC pre-mix
+    // and flag that the main H.264 encode should inline it.
+    this.resolvedAudioTracks = [
+      {
+        id: "narration-premix",
+        path: aacPath,
+        kind: "narration" as const,
+        volume: 1,
+        offsetMs: 0,
+      },
+      ...this.resolvedAudioTracks.filter(
+        (t) =>
+          t.id === "cli-audio-track" ||
+          t.id === "cli-music-track" ||
+          t.kind !== "narration",
+      ),
+    ];
+    this.inlineAudioPath = aacPath;
+
+    this.reportProgress({
+      phase: "rendering",
+      message: `Pre-mixed ${orderedPaths.length} narration tracks -> 1`,
+    });
+  }
+
   private async muxAudio(videoPath: string): Promise<void> {
+    // Fast path: single narration track, no music/SFX.  The pre-concat
+    // step already produced an AAC file — just stream-copy video and
+    // audio into the output container (no encoding, near-instant).
+    const narrationTracks = this.resolvedAudioTracks.filter(
+      (t) => t.kind === "narration",
+    );
+    const otherTracks = this.resolvedAudioTracks.filter(
+      (t) => t.kind !== "narration",
+    );
+    if (narrationTracks.length === 1 && otherTracks.length === 0) {
+      const track = narrationTracks[0];
+      return new Promise((resolve, reject) => {
+        execFile(
+          ffmpegPath.path,
+          [
+            "-y",
+            "-i",
+            videoPath,
+            "-i",
+            track.path,
+            "-c",
+            "copy",
+            "-shortest",
+            "-movflags",
+            "+faststart",
+            this.options.output,
+          ],
+          { windowsHide: true },
+          (error, _stdout, stderr) => {
+            if (error) {
+              reject(new Error(stderr || error.message));
+              return;
+            }
+            this.reportProgress({
+              phase: "muxing",
+              percent: 100,
+              message: "Muxing: 100% (stream copy)",
+            });
+            resolve();
+          },
+        );
+      });
+    }
+
     return new Promise((resolve, reject) => {
       const targetDurationSeconds = this.sceneDuration / this.effectiveFps;
       const filters: string[] = [];

@@ -1,10 +1,23 @@
 #!/usr/bin/env node
 
 import * as path from 'path';
+import * as fs from 'fs';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
 import { render, RenderOptions, RenderResult } from './renderer';
-import { renderChapters } from './chapter-render';
+import { renderChapters, type ChapterRenderReport } from './chapter-render';
 import { SEQVIO_BRAND } from './brand';
 import { normalizeWhiteboardOptimize } from './whiteboard-optimization';
+import {
+  generateRenderPlan,
+  syncPlanWithManifest,
+  type ManifestCue,
+  type RenderSettings,
+} from './generate-render-plan';
+// @ts-ignore
+import ffmpegPath from '@ffmpeg-installer/ffmpeg';
+
+const execFileAsync = promisify(execFile);
 
 function printUsage(): void {
   console.log(`Usage:
@@ -52,6 +65,14 @@ Options:
   --ir <path>           CompositionDocument v2 JSON; refreshes hashes/frame ranges
   --onlyChapters <ids>  Comma-separated chapter ids to render (stitch still uses full plan)
   --resume              Skip chapters whose content/settings hash already rendered
+  --chapters            Auto-generate render plan from composition + manifest and
+                        render only changed scenes.  Requires --audioManifest.
+                        Caches chapter MP4s in --chapterDir (default: <output>/.chapters/).
+  --remuxAudio          Skip rendering entirely — concat narration tracks → AAC,
+                        then stream-copy remux with an existing video. Use when
+                        only audio changed (new CosyVoice pass, same visuals).
+                        Requires --audioManifest and --video.
+  --video <path>        Existing video file to remux audio into (used with --remuxAudio)
   --keepFrames          Keep intermediate frame files after render
   --help                Show this help
 `);
@@ -87,6 +108,9 @@ function parseArgs(argv: string[]): {
   documentPath?: string;
   onlyChapters?: string[];
   resume?: boolean;
+  chapters?: boolean;
+  remuxAudio?: boolean;
+  videoInput?: string;
 } {
   const args = new Map<string, string | boolean>();
 
@@ -94,7 +118,7 @@ function parseArgs(argv: string[]): {
     const token = argv[i];
     if (!token.startsWith('--')) continue;
     const key = token.slice(2);
-    if (key === 'keepFrames' || key === 'help' || key === 'burnCaptions' || key === 'staticFrameDedup' || key === 'resume') {
+    if (key === 'keepFrames' || key === 'help' || key === 'burnCaptions' || key === 'staticFrameDedup' || key === 'resume' || key === 'remuxAudio' || key === 'chapters') {
       args.set(key, true);
       continue;
     }
@@ -113,10 +137,18 @@ function parseArgs(argv: string[]): {
 
   const component = args.get('component');
   const output = args.get('output');
+  const isRemux = Boolean(args.get('remuxAudio'));
 
-  if (typeof component !== 'string' || typeof output !== 'string') {
+  if (typeof output !== 'string') {
     printUsage();
-    throw new Error('Both --component and --output are required');
+    throw new Error('--output is required');
+  }
+  const needsComponent = !isRemux || Boolean(args.get('chapters'));
+  if (needsComponent && typeof component !== 'string') {
+    printUsage();
+    throw new Error(
+      '--component is required (only --remuxAudio skips it)',
+    );
   }
 
   const width       = args.get('width');
@@ -135,6 +167,7 @@ function parseArgs(argv: string[]): {
   const audioTrack  = args.get('audioTrack');
   const captions    = args.get('captions');
   const mixMusic    = args.get('mixMusic');
+  const videoInput  = args.get('video');
   const preset      = args.get('preset');
   const whiteboardOptimize = args.get('whiteboardOptimize');
   const renderPlan = args.get('renderPlan');
@@ -143,7 +176,7 @@ function parseArgs(argv: string[]): {
   const onlyChaptersRaw = args.get('onlyChapters');
 
   const options: RenderOptions = {
-    component:    path.resolve(component),
+    component:    typeof component === 'string' ? path.resolve(component) : '',
     output:       path.resolve(output),
     width:        typeof width       === 'string' ? Number(width)       : undefined,
     height:       typeof height      === 'string' ? Number(height)      : undefined,
@@ -181,6 +214,9 @@ function parseArgs(argv: string[]): {
         ? onlyChaptersRaw.split(',').map((id) => id.trim()).filter(Boolean)
         : undefined,
     resume: Boolean(args.get('resume')),
+    chapters: Boolean(args.get('chapters')),
+    remuxAudio: Boolean(args.get('remuxAudio')),
+    videoInput: typeof videoInput === 'string' ? path.resolve(videoInput) : undefined,
   };
 }
 
@@ -208,12 +244,283 @@ function printTimingSummary(result: RenderResult): void {
   console.log('─────────────────────────────');
 }
 
+async function remuxAudio(options: {
+  audioManifest: string;
+  videoPath: string;
+  output: string;
+}): Promise<void> {
+  const manifest = JSON.parse(
+    fs.readFileSync(options.audioManifest, 'utf8'),
+  );
+  const cues = manifest.narration ?? [];
+  const tracks: { id: string; src: string; offsetMs?: number }[] =
+    manifest.tracks ?? [];
+
+  // --- measure duration via ffmpeg (just reads header, no decode) ---
+  const getDuration = async (filePath: string): Promise<number> => {
+    try {
+      await execFileAsync(
+        ffmpegPath.path,
+        ['-i', filePath],
+        { windowsHide: true, timeout: 8000 },
+      );
+    } catch (e: any) {
+      // ffmpeg exits 1 with no output, but stderr carries the Duration line.
+      const stderr: string = e.stderr ?? '';
+      const m = stderr.match(/Duration: (\d+):(\d+):(\d+\.\d+)/);
+      if (m) {
+        const sec =
+          parseInt(m[1], 10) * 3600 +
+          parseInt(m[2], 10) * 60 +
+          parseFloat(m[3]);
+        if (sec > 0) return sec;
+      }
+    }
+    throw new Error(`Could not determine duration of ${filePath}`);
+  };
+
+  const videoDurationSec = await getDuration(options.videoPath);
+
+  // --- collect & concat narration tracks ---
+  const ordered: string[] = [];
+  // Also extract the sample rate from the first WAV (needed for apad later)
+  for (const cue of cues) {
+    const track = tracks.find(
+      (t: { id: string }) => t.id === cue.id,
+    );
+    if (track) {
+      const src = path.resolve(
+        path.dirname(options.audioManifest),
+        track.src,
+      );
+      if (fs.existsSync(src)) ordered.push(src);
+    }
+  }
+
+  if (ordered.length === 0) {
+    throw new Error('No narration track files found in manifest');
+  }
+
+  // Two-step: concat WAVs → PCM (stream copy, fast), then PCM → AAC.
+  // Single-step concat → AAC can misreport duration on old ffmpeg.
+  const tmpDir = path.dirname(options.output);
+  const wavPath = path.join(tmpDir, '.remux-narration.wav');
+  const aacPath = path.join(tmpDir, '.remux-narration.aac');
+  const listPath = path.join(tmpDir, '.remux-concat.txt');
+  fs.writeFileSync(
+    listPath,
+    ordered
+      .map((file) => `file '${file.replace(/'/g, "'\\''")}'`)
+      .join('\n'),
+  );
+
+  console.log(
+    `[remux] Concatenating ${ordered.length} track(s) → AAC ...`,
+  );
+  await execFileAsync(
+    ffmpegPath.path,
+    ['-y', '-f', 'concat', '-safe', '0', '-i', listPath, '-c', 'copy', wavPath],
+    { windowsHide: true },
+  );
+  await execFileAsync(
+    ffmpegPath.path,
+    ['-y', '-i', wavPath, '-c:a', 'aac', '-b:a', '128k', aacPath],
+    { windowsHide: true },
+  );
+  try { fs.unlinkSync(listPath); } catch {}
+  try { fs.unlinkSync(wavPath); } catch {}
+
+  // --- measure audio duration (from manifest, not ffmpeg probe) ---
+  // AAC "Estimating duration from bitrate" is unreliable for raw streams;
+  // the manifest's last-cue endMs is the ground truth.
+  const lastCue = cues[cues.length - 1];
+  const audioDurationSec = (lastCue.endMs ?? 0) / 1000;
+  if (audioDurationSec <= 0) {
+    throw new Error(
+      'Could not determine audio duration from manifest narration cues',
+    );
+  }
+
+  // --- enforce length constraints ---
+  const diffSec = audioDurationSec - videoDurationSec;
+  console.log(
+    `[remux] Video: ${videoDurationSec.toFixed(1)}s  ` +
+    `Audio: ${audioDurationSec.toFixed(1)}s  ` +
+    `(Δ ${diffSec > 0 ? '+' : ''}${diffSec.toFixed(1)}s)`,
+  );
+
+  const TOLERANCE_S = 0.2;
+  if (diffSec > TOLERANCE_S) {
+    try { fs.unlinkSync(aacPath); } catch {}
+    throw new Error(
+      `New audio (${audioDurationSec.toFixed(1)}s) is longer than the ` +
+      `existing video (${videoDurationSec.toFixed(1)}s) by ` +
+      `${diffSec.toFixed(1)}s.\n\n` +
+      `Refusing to truncate — shorten the narration to stay within ` +
+      `${videoDurationSec.toFixed(1)}s, or re-render the full video.`,
+    );
+  }
+
+  // --- remux ---
+  const needsPad = -diffSec > TOLERANCE_S;
+  console.log(
+    `[remux] Remuxing${
+      needsPad ? ` (padding ${(-diffSec).toFixed(1)}s silence)` : ''
+    } ...`,
+  );
+  const t0 = Date.now();
+
+  const ffArgs: string[] = ['-y', '-i', options.videoPath, '-i', aacPath];
+
+  if (needsPad) {
+    // apad inserts silence at the end to exactly match video duration.
+    // Old ffmpeg rejects both whole_len & pad_len together; use pad_len
+    // with the exact sample deficit. CosyVoice output is always 22050 Hz.
+    const sampleRate = 22050;
+    const deficitSamples = Math.round(-diffSec * sampleRate);
+    ffArgs.push(
+      '-filter_complex',
+      `[1:a]apad=pad_len=${deficitSamples}[a]`,
+      '-map', '0:v',
+      '-map', '[a]',
+      '-c:v', 'copy',
+      '-c:a', 'aac',
+      '-b:a', '128k',
+    );
+  } else {
+    ffArgs.push('-c', 'copy');
+  }
+
+  ffArgs.push('-movflags', '+faststart', options.output);
+
+  await execFileAsync(ffmpegPath.path, ffArgs, { windowsHide: true });
+  const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+
+  try { fs.unlinkSync(aacPath); } catch {}
+
+  const size = fs.statSync(options.output).size;
+  const mb = (size / 1024 / 1024).toFixed(2);
+  console.log(`[remux] Done in ${elapsed}s — ${mb} MB`);
+}
+
 async function main(): Promise<void> {
   try {
-    const { options, preset, renderPlan, chapterDir, documentPath, onlyChapters, resume } = parseArgs(process.argv.slice(2));
+    const { options, preset, renderPlan, chapterDir, documentPath, onlyChapters, resume, chapters: useChapters, remuxAudio: isRemux, videoInput } = parseArgs(process.argv.slice(2));
+
+    if (isRemux) {
+      if (!options.audioManifest || !videoInput) {
+        console.error('Error: --remuxAudio requires --audioManifest and --video');
+        process.exit(1);
+      }
+      await remuxAudio({
+        audioManifest: options.audioManifest,
+        videoPath: videoInput,
+        output: options.output,
+      });
+      return;
+    }
 
     if (preset) {
       applyPreset(options, preset);
+    }
+
+    // --chapters: auto-generate render plan from manifest + composition,
+    // then use the chapter-render engine for incremental rendering.
+    if (useChapters) {
+      if (!options.audioManifest) {
+        throw new Error('--chapters requires --audioManifest (resolved manifest)');
+      }
+      const outputDir = path.dirname(options.output);
+      const planPath =
+        renderPlan ?? path.join(outputDir, '.render-plan.json');
+      const chapterOutDir =
+        chapterDir ?? path.join(outputDir, '.chapters');
+      const compositionId =
+        path.basename(options.component, path.extname(options.component));
+
+      // Build render settings for content hashing.
+      const settings: RenderSettings = {
+        width: options.width ?? 0,
+        height: options.height ?? 0,
+        fps: options.fps ?? 0,
+        quality: options.quality ?? 'medium',
+        pixelRatio: options.pixelRatio ?? 1,
+      };
+
+      // Read resolved manifest cues.
+      const manifest = JSON.parse(
+        fs.readFileSync(options.audioManifest, 'utf8'),
+      );
+      const cues: ManifestCue[] = (manifest.narration ?? []).map(
+        (cue: any) => ({
+          id: cue.id,
+          text: cue.text,
+          startFrame: cue.startFrame,
+          endFrame: cue.endFrame,
+        }),
+      );
+
+      // Create or sync the render plan.
+      let planChanged: string[] = [];
+      if (fs.existsSync(planPath)) {
+        const existing = JSON.parse(
+          fs.readFileSync(planPath, 'utf8'),
+        );
+        const synced = syncPlanWithManifest(existing, {
+          cues,
+          settings,
+          planPath,
+        });
+        planChanged = synced.changedChapterIds;
+        console.log(
+          `[chapters] ${planChanged.length}/${cues.length} chapter(s) changed: ` +
+            (planChanged.length > 0
+              ? planChanged.join(', ')
+              : '(all cached)'),
+        );
+      } else {
+        generateRenderPlan({
+          compositionId,
+          cues,
+          settings,
+          planPath,
+        });
+        console.log(
+          `[chapters] Created plan with ${cues.length} chapter(s)`,
+        );
+      }
+
+      const { result, report } = await renderChapters(
+        {
+          ...options,
+          component: options.component,   // required by renderChapters
+          renderPlanPath: planPath,
+          chapterDir: chapterOutDir,
+          resume: true,  // chapters mode always caches (delete .render-plan.json to reset)
+          presetName: preset,
+        },
+        (progress) => {
+          if (progress.percent !== undefined) {
+            console.log(
+              `[${progress.phase}] ${progress.percent}% ${progress.message}`,
+            );
+          } else {
+            console.log(`[${progress.phase}] ${progress.message}`);
+          }
+        },
+      );
+
+      printTimingSummary(result);
+      console.log(
+        `  Chapters: ${report.chapters.length} ` +
+          `(${report.resumed ? 'resumed, ' : ''}` +
+          `${report.changedChapterIds.length} changed)`,
+      );
+      if (report.audioMuxed) {
+        console.log('  Audio:    muxed into final output');
+      }
+      console.log(`  Plan:     ${planPath}`);
+      return;
     }
 
     if (renderPlan) {
