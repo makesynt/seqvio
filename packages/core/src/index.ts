@@ -26,4 +26,7 @@ export type {
 export * from './storyboard';
 export * from './composition-document';
 export * from './seekable';
+export * from './adapters';
+export * from './clock';
+export * from './parsers';
 

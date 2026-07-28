@@ -1,3 +1,5 @@
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import type {
   PipelineOptions,
   PipelineProgress,
@@ -6,7 +8,10 @@ import type {
 } from './types';
 import { synthesizeNarration } from './audio';
 import { recordPlan } from './record';
-import { renderRecording, writeComposition } from './compose';
+import { renderRecording } from './compose';
+import { toCaptureManifest } from './capture-session';
+import { compileTerminalCapture } from './compile-to-ir';
+import { compileCompositionDocumentToTsx } from '@seqvio/core';
 
 export async function runPipeline(
   plan: TerminalNarratorPlan,
@@ -15,12 +20,21 @@ export async function runPipeline(
   options: PipelineOptions = {}
 ): Promise<PipelineResult> {
   const recorded = await recordPlan(plan, jobDir, onProgress);
-  const composed = await writeComposition(recorded.manifest, jobDir, plan, onProgress);
+
+  // IR path: manifest -> CompositionDocument IR -> tsx (replaces hand-stringed
+  // writeComposition). Visual control (maxZoom/zoomOnInput/presentation/typingCps)
+  // is carried via renderOptions on the IR.
+  const captureManifest = toCaptureManifest(recorded.manifest, plan, recorded.castPath);
+  const seed = await compileTerminalCapture(captureManifest, { jobDir });
+  const tsxResult = compileCompositionDocumentToTsx(seed.document);
+  const componentPath = path.join(jobDir, 'composition.tsx');
+  fs.writeFileSync(componentPath, tsxResult.code, 'utf8');
+  const audioManifestPath = seed.audioManifestPath;
 
   let resolvedAudioManifestPath: string | undefined;
-  if (options.withAudio) {
+  if (options.withAudio && audioManifestPath) {
     resolvedAudioManifestPath = await synthesizeNarration({
-      manifestPath: composed.audioManifestPath,
+      manifestPath: audioManifestPath,
       outDir: jobDir,
       provider: options.audioProvider,
       voice: options.audioVoice,
@@ -29,7 +43,7 @@ export async function runPipeline(
   }
 
   const outputVideoPath = await renderRecording(
-    composed.componentPath,
+    componentPath,
     recorded.manifest,
     jobDir,
     onProgress,
@@ -42,8 +56,8 @@ export async function runPipeline(
     manifest: recorded.manifest,
     manifestPath: recorded.manifestPath,
     castPath: recorded.castPath,
-    componentPath: composed.componentPath,
-    audioManifestPath: composed.audioManifestPath,
+    componentPath,
+    audioManifestPath,
     resolvedAudioManifestPath,
     outputVideoPath,
   };

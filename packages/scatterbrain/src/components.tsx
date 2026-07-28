@@ -7,8 +7,9 @@
  * 难以表达、却正是 scatterbrain 灵魂的效果。
  */
 
-import React, { CSSProperties } from 'react';
-import { useReveal, type Easing } from './anim';
+import React, { CSSProperties, useRef } from 'react';
+import { type Easing } from './anim';
+import { useGsapReveal, useGsapTimeline } from './use-gsap';
 import {
   palette,
   fonts,
@@ -17,6 +18,14 @@ import {
   FONT_FACE_CSS,
   type StickyColor,
 } from './theme';
+
+const gsapEaseMap: Record<Easing, string> = {
+  linear: 'none',
+  'ease-in': 'power1.in',
+  'ease-out': 'power1.out',
+  'ease-in-out': 'power1.inOut',
+  'back-out': 'back.out(1.7)',
+};
 
 // ─── 场景容器 ─────────────────────────────────────────────────────────────────
 
@@ -144,19 +153,30 @@ export const StickyNote: React.FC<StickyNoteProps> = ({
   fontSize = typeScale.body,
   style,
 }) => {
-  const progress = useReveal(start, duration, 'back-out');
+  const ref = useRef<HTMLDivElement>(null);
   const sticky = stickyColors[color];
+  useGsapTimeline(
+    `sticky-${start}-${position.x}-${position.y}`,
+    (tl) => {
+      const el = ref.current;
+      if (!el) return;
+      tl.to(el, { opacity: 1, duration: (duration * 0.71) / 30, ease: 'power1.out' }, start / 30);
+      tl.to(el, { scale: 1, duration: duration / 30, ease: 'back.out(1.7)' }, start / 30);
+    },
+    [start, duration, position.x, position.y],
+  );
 
   return (
     <div
+      ref={ref}
       style={{
         position: 'absolute',
         left: position.x,
         top: position.y,
         width,
         height,
-        opacity: Math.min(1, progress * 1.4),
-        transform: `rotate(${rotate}deg) scale(${0.85 + progress * 0.15})`,
+        opacity: 0,
+        transform: `rotate(${rotate}deg) scale(0.85)`,
         transformOrigin: 'center top',
         background: `linear-gradient(135deg, ${sticky.base} 0%, ${sticky.deep} 100%)`,
         boxShadow: `2px 4px 16px ${palette.shadow}, 0 1px 3px ${palette.shadowDeep}`,
@@ -252,17 +272,25 @@ export const Scrawl: React.FC<ScrawlProps> = ({
   easing = 'ease-out',
   width,
 }) => {
-  const progress = useReveal(start, duration, easing);
+  const ref = useRef<HTMLDivElement>(null);
+  useGsapReveal(
+    `scrawl-${start}-${position.x}-${position.y}`,
+    ref,
+    { opacity: 1, y: 0, ease: gsapEaseMap[easing] },
+    start,
+    duration,
+  );
   return (
     <div
+      ref={ref}
       style={{
         position: 'absolute',
         left: position.x,
         top: position.y,
         width,
         textAlign: align,
-        opacity: progress,
-        transform: `rotate(${rotate}deg) translateY(${(1 - progress) * 18}px)`,
+        opacity: 0,
+        transform: `rotate(${rotate}deg) translateY(18px)`,
         transformOrigin: 'left center',
         fontFamily: hand ? fonts.display : fonts.body,
         fontSize,
@@ -354,7 +382,8 @@ export const Doodle: React.FC<DoodleProps> = ({
   duration = 20,
   opacity = 0.85,
 }) => {
-  const progress = useReveal(start, duration, 'ease-out');
+  const svgRef = useRef<SVGSVGElement>(null);
+  const pathRef = useRef<SVGPathElement>(null);
   const paths: Record<DoodleProps['type'], string> = {
     circle: 'M 50,8 C 78,8 92,30 92,50 C 92,74 72,92 50,92 C 26,92 8,72 8,50 C 8,28 24,8 50,8',
     squiggle: 'M 6,50 Q 22,20 38,50 T 70,50 T 96,46',
@@ -362,10 +391,22 @@ export const Doodle: React.FC<DoodleProps> = ({
     star: 'M 50,8 L 61,38 L 92,38 L 67,58 L 77,90 L 50,70 L 23,90 L 33,58 L 8,38 L 39,38 Z',
     underline: 'M 4,28 C 30,18 70,18 96,26 C 72,30 30,30 6,34',
   };
-  // 用 stroke-dasharray 模拟"画出来"的效果
   const len = 400;
+  useGsapTimeline(
+    `doodle-${start}-${position.x}-${position.y}`,
+    (tl) => {
+      if (svgRef.current) {
+        tl.to(svgRef.current, { opacity, duration: duration / 30, ease: 'power1.out' }, start / 30);
+      }
+      if (pathRef.current) {
+        tl.to(pathRef.current, { strokeDashoffset: 0, duration: duration / 30, ease: 'power1.out' }, start / 30);
+      }
+    },
+    [start, duration, position.x, position.y, opacity],
+  );
   return (
     <svg
+      ref={svgRef}
       width={size}
       height={size}
       viewBox="0 0 100 100"
@@ -374,11 +415,12 @@ export const Doodle: React.FC<DoodleProps> = ({
         left: position.x,
         top: position.y,
         transform: `rotate(${rotate}deg)`,
-        opacity: opacity * progress,
+        opacity: 0,
         overflow: 'visible',
       }}
     >
       <path
+        ref={pathRef}
         d={paths[type]}
         fill="none"
         stroke={color}
@@ -386,7 +428,7 @@ export const Doodle: React.FC<DoodleProps> = ({
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeDasharray={len}
-        strokeDashoffset={len * (1 - progress)}
+        strokeDashoffset={len}
       />
     </svg>
   );
@@ -417,10 +459,21 @@ export const Polaroid: React.FC<PolaroidProps> = ({
   duration = 16,
   children,
 }) => {
-  const progress = useReveal(start, duration, 'back-out');
+  const ref = useRef<HTMLDivElement>(null);
   const innerH = width * 0.75; // 4:3
+  useGsapTimeline(
+    `polaroid-${start}-${position.x}-${position.y}`,
+    (tl) => {
+      const el = ref.current;
+      if (!el) return;
+      tl.to(el, { opacity: 1, duration: (duration * 0.71) / 30, ease: 'power1.out' }, start / 30);
+      tl.to(el, { scale: 1, duration: duration / 30, ease: 'back.out(1.7)' }, start / 30);
+    },
+    [start, duration, position.x, position.y],
+  );
   return (
     <div
+      ref={ref}
       style={{
         position: 'absolute',
         left: position.x,
@@ -430,8 +483,8 @@ export const Polaroid: React.FC<PolaroidProps> = ({
         padding: 14,
         paddingBottom: caption ? 8 : 14,
         boxShadow: `3px 5px 18px ${palette.shadow}`,
-        opacity: Math.min(1, progress * 1.4),
-        transform: `rotate(${rotate}deg) scale(${0.88 + progress * 0.12})`,
+        opacity: 0,
+        transform: `rotate(${rotate}deg) scale(0.88)`,
         transformOrigin: 'center',
         boxSizing: 'border-box',
       }}
@@ -461,6 +514,201 @@ export const Polaroid: React.FC<PolaroidProps> = ({
         >
           {caption}
         </div>
+      )}
+    </div>
+  );
+};
+
+// ─── 逐字弹入标题 ─────────────────────────────────────────────────────────────
+
+export interface TextRevealProps {
+  text: string;
+  position: { x: number; y: number };
+  fontSize?: number;
+  color?: string;
+  align?: 'left' | 'center' | 'right';
+  rotate?: number;
+  /** 是否用手写 display 体。 */
+  hand?: boolean;
+  start?: number;
+  /** 单字符动画时长（帧）。 */
+  duration?: number;
+  /** 相邻字符的起始间隔（帧）—— GSAP stagger。 */
+  stagger?: number;
+}
+
+/**
+ * 逐字弹入标题 —— 每个字符依次带回弹地跳出来。
+ *
+ * 这是 GSAP stagger 编排的典型效果：手写拆分每个字符为独立 span，
+ * 用一条 timeline + `stagger` 让整行字像打字机一样活泼地浮现。
+ */
+export const TextReveal: React.FC<TextRevealProps> = ({
+  text,
+  position,
+  fontSize = typeScale.h1,
+  color = palette.ink,
+  align = 'left',
+  rotate = 0,
+  hand = true,
+  start = 0,
+  duration = 14,
+  stagger = 2,
+}) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const chars = Array.from(text);
+  useGsapTimeline(
+    `text-reveal-${start}-${position.x}-${position.y}`,
+    (tl) => {
+      const el = ref.current;
+      if (!el) return;
+      const spans = Array.from(el.querySelectorAll<HTMLSpanElement>('[data-char]'));
+      if (spans.length === 0) return;
+      tl.to(
+        spans,
+        {
+          opacity: 1,
+          y: 0,
+          rotation: 0,
+          duration: duration / 30,
+          ease: 'back.out(2.2)',
+          stagger: stagger / 30,
+        },
+        start / 30,
+      );
+    },
+    [start, duration, stagger, text, position.x, position.y],
+  );
+  return (
+    <div
+      ref={ref}
+      style={{
+        position: 'absolute',
+        left: position.x,
+        top: position.y,
+        textAlign: align,
+        fontFamily: hand ? fonts.display : fonts.body,
+        fontSize,
+        fontWeight: 700,
+        lineHeight: 1.1,
+        color,
+        transform: `rotate(${rotate}deg)`,
+      }}
+    >
+      {chars.map((ch, i) => (
+        <span
+          key={i}
+          data-char
+          style={{
+            display: 'inline-block',
+            opacity: 0,
+            transform: 'translateY(26px) rotate(9deg)',
+            whiteSpace: ch === ' ' ? 'pre' : 'normal',
+          }}
+        >
+          {ch}
+        </span>
+      ))}
+    </div>
+  );
+};
+
+// ─── 弹性便签 ─────────────────────────────────────────────────────────────────
+
+export interface ElasticNoteProps {
+  children?: React.ReactNode;
+  title?: string;
+  position: { x: number; y: number };
+  width?: number;
+  color?: StickyColor;
+  /** 落定后的旋转角度。 */
+  rotate?: number;
+  start?: number;
+  duration?: number;
+  fontSize?: number;
+  style?: CSSProperties;
+}
+
+/**
+ * 弹性便签 —— 从上方"啪"地弹跳落定，投影随之收紧。
+ *
+ * 展示 GSAP 的 elastic 缓动（比 back-out 回弹次数更多、更活泼）与
+ * boxShadow 补间：落定瞬间投影从"悬空的大虚影"收紧为"贴实的清晰影"，
+ * 强化便签被按上墙的物理手感。这是手写插值难以做到的效果。
+ */
+export const ElasticNote: React.FC<ElasticNoteProps> = ({
+  children,
+  title,
+  position,
+  width = 320,
+  color = 'yellow',
+  rotate = 0,
+  start = 0,
+  duration = 26,
+  fontSize = typeScale.body,
+  style,
+}) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const sticky = stickyColors[color];
+  useGsapTimeline(
+    `elastic-note-${start}-${position.x}-${position.y}`,
+    (tl) => {
+      const el = ref.current;
+      if (!el) return;
+      // 从上方掉落 + 回弹落定（elastic）
+      tl.to(
+        el,
+        { y: 0, rotation: rotate, duration: duration / 30, ease: 'elastic.out(1, 0.45)' },
+        start / 30,
+      );
+      // 快速淡入
+      tl.to(el, { opacity: 1, duration: (duration * 0.35) / 30, ease: 'power1.out' }, start / 30);
+      // 落定时投影收紧，模拟"贴实"
+      tl.to(
+        el,
+        {
+          boxShadow: `2px 5px 16px ${palette.shadowDeep}, 0 1px 3px ${palette.shadowDeep}`,
+          duration: duration / 30,
+          ease: 'power2.out',
+        },
+        start / 30,
+      );
+    },
+    [start, duration, rotate, position.x, position.y],
+  );
+  return (
+    <div
+      ref={ref}
+      style={{
+        position: 'absolute',
+        left: position.x,
+        top: position.y,
+        width,
+        opacity: 0,
+        transform: `translateY(-70px) rotate(${rotate - 7}deg)`,
+        background: `linear-gradient(135deg, ${sticky.base} 0%, ${sticky.deep} 100%)`,
+        boxShadow: `10px 18px 34px ${palette.shadow}, 0 3px 8px ${palette.shadow}`,
+        padding: '26px 30px',
+        boxSizing: 'border-box',
+        ...style,
+      }}
+    >
+      {title && (
+        <div
+          style={{
+            fontFamily: fonts.display,
+            fontSize: typeScale.h2,
+            fontWeight: 700,
+            lineHeight: 1.05,
+            marginBottom: children ? 14 : 0,
+            color: palette.ink,
+          }}
+        >
+          {title}
+        </div>
+      )}
+      {children && (
+        <div style={{ fontSize, lineHeight: 1.55, color: palette.ink }}>{children}</div>
       )}
     </div>
   );

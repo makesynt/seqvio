@@ -296,17 +296,18 @@ node packages/renderer/dist/cli.js \
 
 ## Roadmap
 
-计划或进行中的工作包括：
+完整的阶段划分和取舍理由见 [`docs/ROADMAP.md`](./docs/ROADMAP.md)。方向概要：
 
-- AI-assisted scene generation CLI
-- 更完整的 script-to-voice authoring
-- Visual editor / studio workflow
-- Storyboard JSON 和 template auto-layout 在当前 validation/layout registry 基础上的扩展
-- 更丰富的 transition catalog（当前：`fade`、`slide`、`wipe`）
+1. **清理地基** -- shader 转场已删除；audio ducking 与 `TransportClock` 标记为 `@internal`。不再向 closed layer 投入工程。
+2. **系统捕获适配器** -- 统一 `CaptureSession -> CompositionDocument` 契约，保持时序保真，覆盖终端会话与浏览器操作。数据访问护城河。
+3. **通用 QA 检查** -- 文字溢出、字号下限、对比度（WCAG AA）、越界元素；确定性，无 LLM，`--ci` 退出码。
+
+IR 多目标输出、studio 编辑器、groundTruth 校验、CI 守护、基准等已评估并砍掉（见 docs）。
 
 产品定位与范围：
 
 - [`docs/VISION.md`](./docs/VISION.md)
+- [`docs/ROADMAP.md`](./docs/ROADMAP.md)
 
 历史说明：
 

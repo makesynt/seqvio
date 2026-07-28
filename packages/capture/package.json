@@ -1,25 +1,17 @@
 {
-  "name": "@seqvio/core",
-  "version": "0.6.0",
-  "description": "Core timeline and composition engine for Seqvio",
+  "name": "@seqvio/capture",
+  "version": "0.1.0",
+  "description": "Capture-session contract and manifest->CompositionDocument compiler for Seqvio",
   "keywords": [
     "seqvio",
-    "video",
-    "composition",
-    "timeline",
-    "react"
+    "capture",
+    "terminal",
+    "browser",
+    "agent",
+    "video"
   ],
   "license": "MIT",
   "author": "Seqvio Team",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/makesynt/seqvio.git",
-    "directory": "packages/core"
-  },
-  "bugs": {
-    "url": "https://github.com/makesynt/seqvio/issues"
-  },
-  "homepage": "https://github.com/makesynt/seqvio#readme",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -44,15 +36,9 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "acorn": "^8.11.0",
-    "acorn-walk": "^8.3.0",
-    "react": "^19.0.0"
+    "@seqvio/core": "0.6.0"
   },
   "devDependencies": {
-    "@types/react": "^19.0.0",
     "typescript": "^5.3.0"
-  },
-  "peerDependencies": {
-    "react": "^18.0.0 || ^19.0.0"
   }
 }

@@ -1,5 +1,7 @@
 export * from './audio';
+export * from './capture-session';
 export * from './cast';
+export * from './compile-to-ir';
 export * from './pipeline';
 export * from './record';
 export * from './compose';

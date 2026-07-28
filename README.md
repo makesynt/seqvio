@@ -295,17 +295,18 @@ If documentation conflicts with code, treat the code and [`docs/COMPOSITION-AUTH
 
 ## Roadmap
 
-Planned or in-progress work includes:
+Full phase ordering and the reasoning behind it: [`docs/ROADMAP.md`](./docs/ROADMAP.md). In short:
 
-- AI-assisted scene generation CLI
-- Richer script-to-voice authoring beyond the current TTS workflow
-- Visual editor / studio workflow
-- Storyboard JSON and template auto-layout expansion beyond the current validation/layout registry
-- Expanded transition catalog (today: `fade`, `slide`, and `wipe`)
+1. **Clear the floor** - shader transitions deleted; audio ducking and `TransportClock` marked `@internal`. Stop investing in the closed layer.
+2. **System capture adapters** - one `CaptureSession -> CompositionDocument` contract, with temporal fidelity, for terminal sessions and browser walkthroughs. The data-access moat.
+3. **Generic QA checks** - text overflow, font-size floor, contrast (WCAG AA), offscreen elements; deterministic, no LLM, `--ci` exit code.
+
+Multi-target IR output, a studio editor, ground-truth verification, CI guardianship, and a benchmark were considered and dropped (see docs).
 
 Product positioning and scope:
 
 - [`docs/VISION.md`](./docs/VISION.md)
+- [`docs/ROADMAP.md`](./docs/ROADMAP.md)
 
 Historical notes:
 

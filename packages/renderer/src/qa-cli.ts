@@ -21,6 +21,7 @@ interface QaOptions {
   frames?: number[];
   pixelRatio: number;
   blankThreshold: number;
+  ci?: boolean;
 }
 
 interface SnapshotReport {
@@ -31,10 +32,14 @@ interface SnapshotReport {
   elementCount: number;
   bodyTextLength: number;
   nonWhiteRatio: number;
+  textOverflowCount: number;
+  smallFontCount: number;
+  lowContrastCount: number;
   issues: Array<{
     severity: 'error' | 'warning';
     code: string;
     message: string;
+    repair?: string;
   }>;
 }
 
@@ -52,6 +57,7 @@ Options:
   --frames <csv>           Frames to inspect, e.g. 0,60,120
   --pixelRatio <n>         Screenshot device scale factor (default: 1)
   --blankThreshold <n>     Minimum non-white pixel ratio (default: 0.01)
+  --ci                     CI mode (exit non-zero on error; machine-readable report)
   --help
 `);
 }
@@ -62,7 +68,7 @@ function parseArgs(argv: string[]): QaOptions {
     const token = argv[i];
     if (!token.startsWith('--')) continue;
     const key = token.slice(2);
-    if (key === 'help') {
+    if (key === 'help' || key === 'ci') {
       args.set(key, true);
       continue;
     }
@@ -105,6 +111,7 @@ function parseArgs(argv: string[]): QaOptions {
     frames,
     pixelRatio: args.get('pixelRatio') ? Number(args.get('pixelRatio')) : 1,
     blankThreshold: args.get('blankThreshold') ? Number(args.get('blankThreshold')) : 0.01,
+    ci: args.get('ci') === true,
   };
 }
 
@@ -164,7 +171,11 @@ async function analyzePngWithCanvas(
 async function inspectDom(page: import('puppeteer').Page): Promise<{
   elementCount: number;
   bodyTextLength: number;
+  bodyText: string;
   outOfBoundsCount: number;
+  textOverflowCount: number;
+  smallFontCount: number;
+  lowContrastCount: number;
 }> {
   return page.evaluate(() => {
     const elements = Array.from(document.querySelectorAll('#root *'));
@@ -173,6 +184,37 @@ async function inspectDom(page: import('puppeteer').Page): Promise<{
       height: window.innerHeight,
     };
     let outOfBoundsCount = 0;
+    let textOverflowCount = 0;
+    let smallFontCount = 0;
+    let lowContrastCount = 0;
+    const MIN_FONT_PX = 12;
+    const MIN_CONTRAST = 4.5;
+
+    const parseColor = (css: string): [number, number, number] | null => {
+      const m = css.match(/rgba?\(([^)]+)\)/);
+      if (!m) return null;
+      const parts = m[1].split(',').map((p) => parseFloat(p.trim()));
+      if (parts.length < 3 || parts.some((n) => !Number.isFinite(n))) return null;
+      return [parts[0], parts[1], parts[2]];
+    };
+    const luminance = (rgb: [number, number, number]): number => {
+      const linear = rgb.map((c) => {
+        const s = c / 255;
+        return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+    };
+    const contrastRatio = (
+      a: [number, number, number],
+      b: [number, number, number]
+    ): number => {
+      const la = luminance(a);
+      const lb = luminance(b);
+      const lighter = Math.max(la, lb);
+      const darker = Math.min(la, lb);
+      return (lighter + 0.05) / (darker + 0.05);
+    };
+
     for (const element of elements) {
       const rect = element.getBoundingClientRect();
       if (rect.width <= 0 || rect.height <= 0) continue;
@@ -184,11 +226,37 @@ async function inspectDom(page: import('puppeteer').Page): Promise<{
       ) {
         outOfBoundsCount += 1;
       }
+      // text overflow: content overflows the element's box
+      if (
+        element.scrollHeight > element.clientHeight + 1 ||
+        element.scrollWidth > element.clientWidth + 1
+      ) {
+        textOverflowCount += 1;
+      }
+      const style = window.getComputedStyle(element);
+      const text = (element.textContent || '').trim();
+      // font size floor (only for elements with text)
+      const fontSize = parseFloat(style.fontSize);
+      if (fontSize > 0 && fontSize < MIN_FONT_PX && text.length > 0) {
+        smallFontCount += 1;
+      }
+      // contrast (only for elements with text and a non-transparent background)
+      if (text.length > 0) {
+        const fg = parseColor(style.color);
+        const bg = parseColor(style.backgroundColor);
+        if (fg && bg && contrastRatio(fg, bg) < MIN_CONTRAST) {
+          lowContrastCount += 1;
+        }
+      }
     }
     return {
       elementCount: elements.length,
       bodyTextLength: document.body.innerText.trim().length,
+      bodyText: document.body.innerText.trim(),
       outOfBoundsCount,
+      textOverflowCount,
+      smallFontCount,
+      lowContrastCount,
     };
   });
 }
@@ -274,6 +342,7 @@ async function main(): Promise<void> {
         severity: 'error',
         code: 'empty_dom',
         message: 'No rendered DOM elements were found under #root.',
+        repair: 'Ensure the scene renders content under #root at this frame.',
       });
     }
     if (dom.outOfBoundsCount > 0) {
@@ -281,7 +350,57 @@ async function main(): Promise<void> {
         severity: 'warning',
         code: 'offscreen_elements',
         message: `${dom.outOfBoundsCount} element(s) have visible bounds outside the viewport.`,
+        repair: 'Move or resize elements to stay within the viewport.',
       });
+    }
+    if (dom.textOverflowCount > 0) {
+      issues.push({
+        severity: 'warning',
+        code: 'text_overflow',
+        message: `${dom.textOverflowCount} element(s) overflow their container.`,
+        repair: 'Increase container size, reduce text, or enable wrapping/scroll.',
+      });
+    }
+    if (dom.smallFontCount > 0) {
+      issues.push({
+        severity: 'warning',
+        code: 'small_font',
+        message: `${dom.smallFontCount} element(s) use font-size below 12px.`,
+        repair: 'Increase font-size to at least 12px.',
+      });
+    }
+    if (dom.lowContrastCount > 0) {
+      issues.push({
+        severity: 'warning',
+        code: 'low_contrast',
+        message: `${dom.lowContrastCount} element(s) have foreground/background contrast below WCAG AA (4.5:1).`,
+        repair: 'Increase foreground/background contrast to at least 4.5:1.',
+      });
+    }
+
+    // narration/visual agreement: the current cue's keywords should overlap
+    // with the visible text. Catches the common AI-video failure where the
+    // voice and the picture explain two different things.
+    const narrationCues = meta.audio?.narration ?? [];
+    const frameTimeMs = (sourceFrame / fps) * 1000;
+    const currentCue = narrationCues.find(
+      (c) => frameTimeMs >= (c.startMs ?? 0) && frameTimeMs < (c.endMs ?? Infinity)
+    );
+    if (currentCue && dom.bodyText) {
+      const cueWords = currentCue.text
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((w) => w.length > 3 && /[a-z一-龥]/.test(w));
+      const bodyLower = dom.bodyText.toLowerCase();
+      const matched = cueWords.filter((w) => bodyLower.includes(w));
+      if (cueWords.length > 0 && matched.length === 0) {
+        issues.push({
+          severity: 'warning',
+          code: 'narration_visual_mismatch',
+          message: `Narration cue "${currentCue.text.slice(0, 50)}" has no keyword overlap with visible text at frame ${sourceFrame}.`,
+          repair: 'Ensure the narration describes what is visible on screen at this frame.',
+        });
+      }
     }
 
     reports.push({
@@ -292,6 +411,9 @@ async function main(): Promise<void> {
       elementCount: dom.elementCount,
       bodyTextLength: dom.bodyTextLength,
       nonWhiteRatio: imageAnalysis.nonWhiteRatio,
+      textOverflowCount: dom.textOverflowCount,
+      smallFontCount: dom.smallFontCount,
+      lowContrastCount: dom.lowContrastCount,
       issues,
     });
   }

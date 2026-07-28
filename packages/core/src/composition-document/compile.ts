@@ -145,6 +145,13 @@ function compileTerminalScene(scene: Extract<SceneSpec, { type: 'terminal' }>, c
   }));
   const events = JSON.stringify(scene.events?.length ? scene.events : legacyEvents, null, 2);
   const steps = JSON.stringify(scene.steps?.length ? scene.steps : legacySteps, null, 2);
+  const ro = scene.renderOptions;
+  const prop = (name: string, value: unknown, asString = false): string =>
+    value === undefined
+      ? ''
+      : asString
+        ? `${name}=${JSON.stringify(value)}`
+        : `${name}={${JSON.stringify(value)}}`;
 
   return `function ${componentName}() {
   return (
@@ -152,10 +159,54 @@ function compileTerminalScene(scene: Extract<SceneSpec, { type: 'terminal' }>, c
       <AnnotationTarget id=${JSON.stringify(scene.id)} style={{ width: '100%', height: '100%' }}>
         <TerminalDemo
           id=${JSON.stringify(scene.id)}
+          ${prop('title', ro?.title, true)}
           events={${events}}
           steps={${steps}}
           width={W}
           height={H}
+          ${prop('maxLines', scene.maxLines)}
+          ${prop('cols', scene.cols)}
+          ${prop('rows', scene.rows)}
+          ${prop('presentation', ro?.presentation, true)}
+          ${prop('typingCps', ro?.typingCps)}
+          ${prop('zoomOnInput', ro?.zoomOnInput)}
+          ${prop('maxZoom', ro?.maxZoom)}
+          ${prop('zoomTransitionMs', ro?.zoomTransitionMs)}
+          ${prop('zoomHoldMs', ro?.zoomHoldMs)}
+        />
+      </AnnotationTarget>
+    </TechnicalScene>
+  );
+}`;
+}
+
+function compileBrowserScene(
+  scene: Extract<SceneSpec, { type: 'browser' }>,
+  componentName: string
+): string {
+  const annotations = serializeAnnotations(scene.annotations);
+  const recordingWidth = scene.recordingWidth ?? 'W';
+  const recordingHeight = scene.recordingHeight ?? 'H';
+  const maxZoom = scene.maxZoom ?? 2;
+  const cursorPoints = JSON.stringify(scene.cursorPoints ?? [], null, 2);
+  const focusTargets = JSON.stringify(scene.focusTargets ?? [], null, 2);
+  const clicks = JSON.stringify(scene.clicks ?? [], null, 2);
+  return `function ${componentName}() {
+  return (
+    <TechnicalScene width={W} height={H} annotations={${annotations}}>
+      <AnnotationTarget id=${JSON.stringify(scene.id)} style={{ width: '100%', height: '100%' }}>
+        <RecordedBrowserDemo
+          id=${JSON.stringify(scene.id)}
+          src=${JSON.stringify(scene.sourceVideo)}
+          recordingWidth={${recordingWidth}}
+          recordingHeight={${recordingHeight}}
+          width={W}
+          height={H}
+          fps={FPS}
+          maxZoom={${maxZoom}}
+          focusTargets={${focusTargets}}
+          cursorPoints={${cursorPoints}}
+          clicks={${clicks}}
         />
       </AnnotationTarget>
     </TechnicalScene>
@@ -193,6 +244,8 @@ function compileSceneComponent(
       return compileDiagramScene(scene, componentName);
     case 'terminal':
       return compileTerminalScene(scene, componentName);
+    case 'browser':
+      return compileBrowserScene(scene, componentName);
     default:
       return compileGenericPlaceholder(scene, componentName);
   }
@@ -273,6 +326,10 @@ export function compileCompositionDocumentToTsx(
   TerminalDemo,
 } from '@seqvio/technical';`
     : '';
+  const usesProductDemo = doc.scenes.some((scene) => scene.type === 'browser');
+  const productDemoImports = usesProductDemo
+    ? `import { RecordedBrowserDemo } from '@seqvio/product-demo';`
+    : '';
 
   const styleBlock = usesWhiteboard
     ? `const STYLE_ID = ${JSON.stringify(r.styleId)};
@@ -289,6 +346,7 @@ import type { RenderableMeta } from '@seqvio/core';
 import { VideoComposition, Scene, Transition } from '@seqvio/core';
 ${whiteboardImports}
 ${technicalImports}
+${productDemoImports}
 
 const W = ${r.width};
 const H = ${r.height};

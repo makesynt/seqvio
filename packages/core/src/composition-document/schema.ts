@@ -135,6 +135,16 @@ export interface TerminalGridSnapshotSpec {
 }
 
 /** Placeholder scene families compiled to stub components in Phase A. */
+export interface TerminalRenderOptions {
+  title?: string;
+  presentation?: 'minimal' | 'vhs';
+  typingCps?: number;
+  zoomOnInput?: boolean;
+  maxZoom?: number;
+  zoomTransitionMs?: number;
+  zoomHoldMs?: number;
+}
+
 export interface TerminalSceneSpec {
   type: 'terminal';
   id: string;
@@ -164,6 +174,10 @@ export interface TerminalSceneSpec {
     label: string;
     timeMs: number;
   }>;
+  cols?: number;
+  rows?: number;
+  maxLines?: number;
+  renderOptions?: TerminalRenderOptions;
   narration?: string;
   duration?: number;
   annotations?: AnnotationSpec[];
@@ -197,6 +211,36 @@ export interface InfographicSceneSpec {
   annotations?: AnnotationSpec[];
 }
 
+/** Timed point for cursor/click tracking in browser capture scenes. */
+export interface TimedPoint {
+  timeMs: number;
+  x: number;
+  y: number;
+}
+
+/** Focus target for zoom-to-element in browser capture scenes. */
+export interface RecordedFocusTarget extends TimedPoint {
+  width: number;
+  height: number;
+  reset?: boolean;
+}
+
+/** Browser screen-recording scene (from @seqvio/browser-recorder via capture). */
+export interface BrowserSceneSpec {
+  type: 'browser';
+  id: string;
+  sourceVideo: string;
+  cursorPoints?: TimedPoint[];
+  focusTargets?: RecordedFocusTarget[];
+  clicks?: TimedPoint[];
+  recordingWidth?: number;
+  recordingHeight?: number;
+  maxZoom?: number;
+  narration?: string;
+  duration?: number;
+  annotations?: AnnotationSpec[];
+}
+
 export type SceneSpec =
   | WhiteboardSceneSpec
   | CodeSceneSpec
@@ -204,7 +248,8 @@ export type SceneSpec =
   | TerminalSceneSpec
   | ChatSceneSpec
   | DiffSceneSpec
-  | InfographicSceneSpec;
+  | InfographicSceneSpec
+  | BrowserSceneSpec;
 
 export const SCENE_TYPES = [
   'whiteboard',
@@ -214,6 +259,7 @@ export const SCENE_TYPES = [
   'chat',
   'diff',
   'infographic',
+  'browser',
 ] as const;
 
 export type SceneType = (typeof SCENE_TYPES)[number];
