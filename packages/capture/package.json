@@ -1,6 +1,6 @@
 {
   "name": "@seqvio/capture",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Capture-session contract and manifest->CompositionDocument compiler for Seqvio",
   "keywords": [
     "seqvio",
@@ -36,7 +36,7 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@seqvio/core": "0.6.0"
+    "@seqvio/core": "0.7.0"
   },
   "devDependencies": {
     "typescript": "^5.3.0"

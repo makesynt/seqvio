@@ -1,4 +1,4 @@
-# @seqvio/browser-recorder
+# @seqvio/capture
 
 ## 0.2.0
 
@@ -10,14 +10,3 @@
 
 - Updated dependencies [62f5122]
   - @seqvio/core@0.7.0
-  - @seqvio/renderer@0.7.0
-  - @seqvio/capture@0.2.0
-  - @seqvio/product-demo@0.7.0
-
-## 0.1.1
-
-### Patch Changes
-
-- Updated dependencies [ccb7fdf]
-  - @seqvio/renderer@0.6.0
-  - @seqvio/product-demo@0.6.0
