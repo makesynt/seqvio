@@ -56,6 +56,7 @@ export { Hand } from './components/Hand';
 // Hooks
 export { useCurrentFrame, useFPS, setGlobalFrame } from './hooks/useCurrentFrame';
 export { useDrawAnimationProgress } from './hooks/useDrawAnimationProgress';
+export { useNarrationTiming } from './hooks/useNarrationTiming';
 
 // Context
 export { DrawRegistryProvider, useDrawRegistry, useOptionalDrawRegistry } from './context/DrawRegistry';

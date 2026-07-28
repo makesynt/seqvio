@@ -2,6 +2,16 @@ import type { CaptionCue } from './captions';
 
 export type AudioTrackKind = 'narration' | 'music' | 'sfx';
 
+/** A sub-sentence timing chunk produced by TTS synthesis. */
+export interface NarrationChunk {
+  /** The sentence fragment exactly as sent to the TTS engine. */
+  text: string;
+  /** Scene-local frame offset where this chunk begins. */
+  offsetFrame: number;
+  /** Audio duration of this chunk in frames. */
+  durationFrame: number;
+}
+
 export interface NarrationCue {
   id: string;
   sceneId?: string;
@@ -12,6 +22,12 @@ export interface NarrationCue {
   endMs?: number;
   voice?: string;
   silent?: boolean;
+  /**
+   * Per-chunk timing from CosyVoice synthesis (optional).
+   * When present, composition hooks can anchor visual elements to exact
+   * sentence boundaries instead of guessing frame offsets.
+   */
+  chunks?: NarrationChunk[];
 }
 
 export interface VolumeKeyframe {
