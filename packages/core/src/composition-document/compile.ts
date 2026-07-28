@@ -145,6 +145,13 @@ function compileTerminalScene(scene: Extract<SceneSpec, { type: 'terminal' }>, c
   }));
   const events = JSON.stringify(scene.events?.length ? scene.events : legacyEvents, null, 2);
   const steps = JSON.stringify(scene.steps?.length ? scene.steps : legacySteps, null, 2);
+  const ro = scene.renderOptions;
+  const prop = (name: string, value: unknown, asString = false): string =>
+    value === undefined
+      ? ''
+      : asString
+        ? `${name}=${JSON.stringify(value)}`
+        : `${name}={${JSON.stringify(value)}}`;
 
   return `function ${componentName}() {
   return (
@@ -152,10 +159,20 @@ function compileTerminalScene(scene: Extract<SceneSpec, { type: 'terminal' }>, c
       <AnnotationTarget id=${JSON.stringify(scene.id)} style={{ width: '100%', height: '100%' }}>
         <TerminalDemo
           id=${JSON.stringify(scene.id)}
+          ${prop('title', ro?.title, true)}
           events={${events}}
           steps={${steps}}
           width={W}
           height={H}
+          ${prop('maxLines', scene.maxLines)}
+          ${prop('cols', scene.cols)}
+          ${prop('rows', scene.rows)}
+          ${prop('presentation', ro?.presentation, true)}
+          ${prop('typingCps', ro?.typingCps)}
+          ${prop('zoomOnInput', ro?.zoomOnInput)}
+          ${prop('maxZoom', ro?.maxZoom)}
+          ${prop('zoomTransitionMs', ro?.zoomTransitionMs)}
+          ${prop('zoomHoldMs', ro?.zoomHoldMs)}
         />
       </AnnotationTarget>
     </TechnicalScene>

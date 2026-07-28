@@ -43,6 +43,7 @@ export function toBrowserCaptureManifest(
     cursorPoints: recording.cursorPoints,
     focusTargets: recording.focusTargets,
     clicks: recording.clicks,
+    maxZoom: recording.maxZoom,
   };
 }
 

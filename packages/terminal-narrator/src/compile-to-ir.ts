@@ -124,6 +124,10 @@ export async function compileTerminalCapture(
     id: 'terminal',
     events: mapEventsToSchema(timeline.events),
     steps,
+    cols: manifest.cols,
+    rows: manifest.rows,
+    maxLines: manifest.maxLines,
+    renderOptions: manifest.renderOptions,
   };
 
   // 5. CompositionDocument.

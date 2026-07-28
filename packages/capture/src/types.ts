@@ -11,6 +11,7 @@
 
 import type {
   CompositionDocument,
+  TerminalRenderOptions,
   TimedPoint,
   RecordedFocusTarget,
 } from '@seqvio/core';
@@ -76,7 +77,9 @@ export interface TerminalCaptureManifest extends CaptureManifestBase {
   events: TerminalCaptureEvent[];
   cols: number;
   rows: number;
-  /** Asciinema cast path (ground truth for terminal replay verification). */
+  maxLines?: number;
+  renderOptions?: TerminalRenderOptions;
+  /** Asciinema cast path. */
   castPath?: string;
   exitCode?: number;
 }
@@ -90,6 +93,7 @@ export interface BrowserCaptureManifest extends CaptureManifestBase {
   cursorPoints: TimedPoint[];
   focusTargets: RecordedFocusTarget[];
   clicks: TimedPoint[];
+  maxZoom?: number;
 }
 
 export type CaptureManifest =

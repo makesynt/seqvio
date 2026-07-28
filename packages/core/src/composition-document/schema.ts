@@ -135,6 +135,16 @@ export interface TerminalGridSnapshotSpec {
 }
 
 /** Placeholder scene families compiled to stub components in Phase A. */
+export interface TerminalRenderOptions {
+  title?: string;
+  presentation?: 'minimal' | 'vhs';
+  typingCps?: number;
+  zoomOnInput?: boolean;
+  maxZoom?: number;
+  zoomTransitionMs?: number;
+  zoomHoldMs?: number;
+}
+
 export interface TerminalSceneSpec {
   type: 'terminal';
   id: string;
@@ -164,6 +174,10 @@ export interface TerminalSceneSpec {
     label: string;
     timeMs: number;
   }>;
+  cols?: number;
+  rows?: number;
+  maxLines?: number;
+  renderOptions?: TerminalRenderOptions;
   narration?: string;
   duration?: number;
   annotations?: AnnotationSpec[];

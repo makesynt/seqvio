@@ -23,6 +23,7 @@ import { recordPlan } from './record';
  */
 export function toCaptureManifest(
   recording: TerminalRecordingManifest,
+  plan: TerminalNarratorPlan,
   castPath?: string,
 ): TerminalCaptureManifest {
   return {
@@ -56,6 +57,16 @@ export function toCaptureManifest(
     })),
     cols: recording.cols,
     rows: recording.rows,
+    maxLines: recording.maxLines,
+    renderOptions: {
+      title: plan.name,
+      presentation: plan.presentation,
+      typingCps: plan.typingCps,
+      zoomOnInput: plan.zoomOnInput,
+      maxZoom: plan.maxZoom,
+      zoomTransitionMs: plan.zoomTransitionMs,
+      zoomHoldMs: plan.zoomHoldMs,
+    },
     castPath,
     exitCode: recording.exitCode,
   };
@@ -65,6 +76,6 @@ export const terminalCaptureSession: CaptureSession<TerminalNarratorPlan> = {
   kind: 'terminal',
   async record(plan, ctx: CaptureContext) {
     const recording = await recordPlan(plan, ctx.jobDir);
-    return toCaptureManifest(recording.manifest, recording.castPath);
+    return toCaptureManifest(recording.manifest, plan, recording.castPath);
   },
 };

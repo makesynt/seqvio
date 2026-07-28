@@ -36,6 +36,7 @@ export async function compileBrowserCapture(
     clicks: manifest.clicks,
     recordingWidth: manifest.viewport.width,
     recordingHeight: manifest.viewport.height,
+    maxZoom: manifest.maxZoom,
   };
 
   // 2. Per-step narration (AI explain or label fallback).
