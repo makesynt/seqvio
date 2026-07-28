@@ -76,7 +76,10 @@ export async function compileTerminalCapture(
     rows: manifest.rows,
     scrollback: manifest.cols * manifest.rows * 2,
   });
-  const timeline = scheduleTerminalSnapshotEvents(rendered);
+  const timeline = scheduleTerminalSnapshotEvents(rendered, {
+    minimumSnapshotMs: manifest.timingOptions?.minimumSnapshotMs,
+    maximumGapMs: manifest.timingOptions?.maximumGapMs,
+  });
   const durationMs = Math.max(timeline.durationMs, DEFAULT_TRAILING_HOLD_MS);
 
   // 2. Steps mapped onto the scheduled timeline.

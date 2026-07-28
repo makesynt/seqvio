@@ -72,6 +72,11 @@ export interface TerminalCaptureEvent {
   transient?: boolean;
 }
 
+export interface TerminalTimingOptions {
+  minimumSnapshotMs?: number;
+  maximumGapMs?: number;
+}
+
 export interface TerminalCaptureManifest extends CaptureManifestBase {
   kind: 'terminal';
   events: TerminalCaptureEvent[];
@@ -79,6 +84,7 @@ export interface TerminalCaptureManifest extends CaptureManifestBase {
   rows: number;
   maxLines?: number;
   renderOptions?: TerminalRenderOptions;
+  timingOptions?: TerminalTimingOptions;
   /** Asciinema cast path. */
   castPath?: string;
   exitCode?: number;

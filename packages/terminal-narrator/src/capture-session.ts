@@ -67,6 +67,10 @@ export function toCaptureManifest(
       zoomTransitionMs: plan.zoomTransitionMs,
       zoomHoldMs: plan.zoomHoldMs,
     },
+    timingOptions: {
+      minimumSnapshotMs: plan.minSnapshotMs,
+      maximumGapMs: plan.idleTimeLimitMs,
+    },
     castPath,
     exitCode: recording.exitCode,
   };
