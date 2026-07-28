@@ -171,6 +171,7 @@ async function analyzePngWithCanvas(
 async function inspectDom(page: import('puppeteer').Page): Promise<{
   elementCount: number;
   bodyTextLength: number;
+  bodyText: string;
   outOfBoundsCount: number;
   textOverflowCount: number;
   smallFontCount: number;
@@ -251,6 +252,7 @@ async function inspectDom(page: import('puppeteer').Page): Promise<{
     return {
       elementCount: elements.length,
       bodyTextLength: document.body.innerText.trim().length,
+      bodyText: document.body.innerText.trim(),
       outOfBoundsCount,
       textOverflowCount,
       smallFontCount,
@@ -374,6 +376,31 @@ async function main(): Promise<void> {
         message: `${dom.lowContrastCount} element(s) have foreground/background contrast below WCAG AA (4.5:1).`,
         repair: 'Increase foreground/background contrast to at least 4.5:1.',
       });
+    }
+
+    // narration/visual agreement: the current cue's keywords should overlap
+    // with the visible text. Catches the common AI-video failure where the
+    // voice and the picture explain two different things.
+    const narrationCues = meta.audio?.narration ?? [];
+    const frameTimeMs = (sourceFrame / fps) * 1000;
+    const currentCue = narrationCues.find(
+      (c) => frameTimeMs >= (c.startMs ?? 0) && frameTimeMs < (c.endMs ?? Infinity)
+    );
+    if (currentCue && dom.bodyText) {
+      const cueWords = currentCue.text
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((w) => w.length > 3 && /[a-z一-龥]/.test(w));
+      const bodyLower = dom.bodyText.toLowerCase();
+      const matched = cueWords.filter((w) => bodyLower.includes(w));
+      if (cueWords.length > 0 && matched.length === 0) {
+        issues.push({
+          severity: 'warning',
+          code: 'narration_visual_mismatch',
+          message: `Narration cue "${currentCue.text.slice(0, 50)}" has no keyword overlap with visible text at frame ${sourceFrame}.`,
+          repair: 'Ensure the narration describes what is visible on screen at this frame.',
+        });
+      }
     }
 
     reports.push({
