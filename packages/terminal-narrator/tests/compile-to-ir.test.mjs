@@ -3,6 +3,7 @@ import assert from 'node:assert';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { compileTerminalCapture } from '../dist/compile-to-ir.js';
+import { compileCompositionDocumentToTsx } from '@seqvio/core';
 
 test('compileTerminalCapture produces a terminal IR scene from a manifest', async () => {
   const manifest = {
@@ -74,4 +75,43 @@ test('compileTerminalCapture uses NarrationProvider for AI explain', async () =>
     audio.narration[0].text,
     'The agent ran list files and saw the output.'
   );
+});
+
+test('compileCompositionDocumentToTsx emits TerminalDemo with renderOptions', () => {
+  const doc = {
+    version: '2.0',
+    id: 'render-options',
+    width: 1280,
+    height: 720,
+    fps: 30,
+    scenes: [
+      {
+        type: 'terminal',
+        id: 'terminal',
+        events: [{ timeMs: 0, kind: 'stdout', text: 'hello' }],
+        steps: [{ id: 's1', label: 'step', timeMs: 0 }],
+        cols: 80,
+        rows: 24,
+        maxLines: 1000,
+        renderOptions: {
+          title: 'Demo',
+          presentation: 'vhs',
+          typingCps: 30,
+          zoomOnInput: true,
+          maxZoom: 2.5,
+          zoomTransitionMs: 500,
+          zoomHoldMs: 200,
+        },
+      },
+    ],
+  };
+  const { code } = compileCompositionDocumentToTsx(doc);
+  assert.ok(code.includes('TerminalDemo'), 'tsx should include TerminalDemo');
+  assert.ok(code.includes('maxZoom={2.5}'), 'tsx should pass maxZoom');
+  assert.ok(code.includes('zoomOnInput={true}'), 'tsx should pass zoomOnInput');
+  assert.ok(code.includes('presentation="vhs"'), 'tsx should pass presentation');
+  assert.ok(code.includes('typingCps={30}'), 'tsx should pass typingCps');
+  assert.ok(code.includes('cols={80}'), 'tsx should pass cols');
+  assert.ok(code.includes('maxLines={1000}'), 'tsx should pass maxLines');
+  assert.ok(code.includes('title="Demo"'), 'tsx should pass title');
 });
