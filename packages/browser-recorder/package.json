@@ -1,7 +1,6 @@
 {
   "name": "@seqvio/browser-recorder",
   "version": "0.1.1",
-  "private": true,
   "description": "AI-assisted browser walkthrough recording and Seqvio focus rendering",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
