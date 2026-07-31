@@ -21,6 +21,7 @@ describe('agent-contract', () => {
       maxScenes: 6,
     });
     assert.match(prompt, /CompositionDocument v2/);
+    assert.match(prompt, /"pacingProfile": "explainer-v1"/);
     assert.match(prompt, /"version": "2\.0"/);
     assert.match(prompt, /type": "code"/);
     assert.match(prompt, /IR format: composition-v2/);

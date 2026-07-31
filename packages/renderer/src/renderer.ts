@@ -44,7 +44,12 @@ import {
   type WhiteboardOptimizeInput,
   type WhiteboardOptimizeMode,
 } from "./whiteboard-optimization";
-import { captureFrameBuffer } from "./render-capture";
+import {
+  captureFrameBuffer,
+  captureTerminalCanvas,
+  findTerminalElement,
+  type CdpScreenshotInput,
+} from "./render-capture";
 // @ts-ignore
 import ffmpegPath from "@ffmpeg-installer/ffmpeg";
 
@@ -165,6 +170,10 @@ export class VideoRenderer {
    *  When non-null, the main H.264 encode inlines this AAC as a second
    *  input so the video+audio land in one ffmpeg pass — zero extra mux. */
   private inlineAudioPath: string | null = null;
+  /** True when the page contains a terminal canvas (TerminalXtermDemo).
+   *  Enables direct canvas capture + ffmpeg chrome compositing. */
+  private terminalMode = false;
+  private terminalDims: { width: number; height: number } | null = null;
 
   private browserLaunchOptions(): Parameters<typeof puppeteer.launch>[0] {
     return {
@@ -175,6 +184,12 @@ export class VideoRenderer {
         "--disable-setuid-sandbox",
         "--disable-dev-shm-usage",
         "--allow-file-access-from-files",
+        // Required for canvas 2D text rendering in headless Chrome:
+        // fonts need GPU access even in software mode.
+        "--enable-gpu",
+        "--use-gl=angle",
+        "--use-angle=swiftshader",
+        "--disable-font-subpixel-positioning",
       ],
     };
   }
@@ -474,6 +489,19 @@ export class VideoRenderer {
       explicitCaptions,
     );
     this.resolvedAudioTracks = this.resolveAudioTracks();
+
+    // Detect terminal canvas for direct element capture + ffmpeg chrome.
+    // NOTE: element.screenshot() on parent containers does not reliably
+    // capture xterm.js canvas text in headless Chrome. Keep page-level
+    // screenshot until this is resolved.
+    // const termEl = await findTerminalElement(this.page);
+    // if (termEl) {
+    //   const box = await termEl.boundingBox();
+    //   if (box) {
+    //     this.terminalMode = true;
+    //     this.terminalDims = { width: Math.round(box.width), height: Math.round(box.height) };
+    //   }
+    // }
   }
 
   private resolveRenderFrameCount(duration: number): number {
@@ -587,6 +615,58 @@ export class VideoRenderer {
   }
 
   /**
+   * Build ffmpeg filter_complex for VHS-style terminal chrome compositing.
+   * Adds content padding, title bar, and stage background around the raw
+   * terminal canvas capture.
+   */
+  private buildTerminalFilterComplex(): string {
+    const { width: vw, height: vh } = this.options;
+    const ww = this.terminalDims!.width;   // captured window width (title bar + terminal)
+    const wh = this.terminalDims!.height;  // captured window height
+    const ox = Math.round((vw - ww) / 2);
+    const oy = Math.round((vh - wh) / 2);
+
+    // Center the captured window (title bar + terminal) in the video frame
+    // with VHS stage background color.
+    return `[0]pad=${vw}:${vh}:${ox}:${oy}:#1a1a2e[out]`;
+  }
+
+  /** Encode args for terminal canvas capture (uses filter_complex for chrome). */
+  private buildTerminalEncodeArgs(targetPath: string): string[] {
+    const args = [
+      "-y",
+      "-f", "image2pipe",
+      "-framerate", String(this.effectiveFps),
+      "-i", "-",
+    ];
+
+    if (this.inlineAudioPath) {
+      args.push("-i", this.inlineAudioPath);
+    }
+
+    args.push(
+      "-map", "[out]",
+      "-filter_complex", this.buildTerminalFilterComplex(),
+      "-c:v", "libx264",
+      "-pix_fmt", "yuv420p",
+      "-crf", String(this.crfForQuality()),
+      "-preset", "medium",
+    );
+
+    if (this.inlineAudioPath) {
+      args.push("-map", "1:a", "-c:a", "copy");
+    }
+
+    args.push(
+      "-shortest",
+      "-movflags", "+faststart",
+      "-r", String(this.effectiveFps),
+      targetPath,
+    );
+    return args;
+  }
+
+  /**
    * Render a contiguous frame segment on the given page and stream each captured
    * PNG straight into a dedicated FFmpeg process via stdin (image2pipe). No
    * intermediate PNG files touch disk; rendering and encoding overlap.
@@ -601,9 +681,12 @@ export class VideoRenderer {
     targetPath: string,
     onFrame: () => void,
   ): Promise<void> {
-    const ffmpeg = spawn(ffmpegPath.path, this.buildEncodeArgs(targetPath), {
-      windowsHide: true,
-    });
+    const useTerminal = this.terminalMode && this.terminalDims;
+    const ffmpeg = spawn(
+      ffmpegPath.path,
+      useTerminal ? this.buildTerminalEncodeArgs(targetPath) : this.buildEncodeArgs(targetPath),
+      { windowsHide: true },
+    );
 
     let ffmpegStderr = "";
     ffmpeg.stderr.on("data", (chunk) => {
@@ -637,10 +720,12 @@ export class VideoRenderer {
         const sourceFrame = firstSourceFrame + i;
         await setFrameAndWait(page, sourceFrame);
 
-        const signature = this.options.staticFrameDedup
+        const useDedup = !useTerminal && this.options.staticFrameDedup;
+        const signature = useDedup
           ? await this.getStaticFrameSignature(page)
           : null;
         const reusePrevious: boolean =
+          useDedup &&
           previousBuffer !== null &&
           shouldReuseStaticFrame({
             previousOutputIndex,
@@ -649,9 +734,18 @@ export class VideoRenderer {
             signature,
             signatureReusable: this.options.staticFrameDedup,
           });
+        const captureFrame = useTerminal
+          ? async () => {
+              const el = await findTerminalElement(page);
+              if (!el) throw new Error('Terminal element disappeared mid-render');
+              const { buffer } = await captureTerminalCanvas(page, el);
+              return buffer;
+            }
+          : () => this.captureFrameBuffer(page);
+
         const buffer: Buffer = reusePrevious
           ? previousBuffer!
-          : await this.captureFrameBuffer(page);
+          : await captureFrame();
         if (reusePrevious) {
           reusedFrames += 1;
         }

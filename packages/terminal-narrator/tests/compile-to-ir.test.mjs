@@ -77,7 +77,7 @@ test('compileTerminalCapture uses NarrationProvider for AI explain', async () =>
   );
 });
 
-test('compileCompositionDocumentToTsx emits TerminalDemo with renderOptions', () => {
+test('compileCompositionDocumentToTsx emits TerminalXtermDemo with renderOptions', () => {
   const doc = {
     version: '2.0',
     id: 'render-options',
@@ -106,7 +106,7 @@ test('compileCompositionDocumentToTsx emits TerminalDemo with renderOptions', ()
     ],
   };
   const { code } = compileCompositionDocumentToTsx(doc);
-  assert.ok(code.includes('TerminalDemo'), 'tsx should include TerminalDemo');
+  assert.ok(code.includes('TerminalXtermDemo'), 'tsx should include TerminalXtermDemo');
   assert.ok(code.includes('maxZoom={2.5}'), 'tsx should pass maxZoom');
   assert.ok(code.includes('zoomOnInput={true}'), 'tsx should pass zoomOnInput');
   assert.ok(code.includes('presentation="vhs"'), 'tsx should pass presentation');

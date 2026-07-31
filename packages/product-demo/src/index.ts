@@ -6,6 +6,7 @@ export {
   ProductDemoScene,
   ProductTitle,
   RecordedBrowserDemo,
+  resolveRecordedBrowserFrameState,
   ScreenshotPlaceholder,
 } from './components';
 export type {
@@ -16,6 +17,9 @@ export type {
   ProductDemoSceneProps,
   ProductTitleProps,
   RecordedBrowserDemoProps,
+  RecordedBrowserFrameState,
+  ResolveRecordedBrowserFrameStateOptions,
+  CameraState,
   TimedPoint,
   FocusTarget,
   ClickMarker,

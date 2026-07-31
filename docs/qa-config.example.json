@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "pacingProfile": "explainer-v1",
+  "suppressions": [
+    {
+      "code": "highlight_too_short",
+      "path": "pacing.highlights[0]",
+      "reason": "Intentional transient connection pulse"
+    }
+  ]
+}

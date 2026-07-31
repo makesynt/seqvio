@@ -11,6 +11,7 @@ export function samplePlan(): TerminalNarratorPlan {
     maxLines: 220,
     presentation: 'vhs',
     typeDelayMs: 28,
+    startupWaitMs: 5000,
     shell: isWin
       ? {
           command: 'powershell.exe',
@@ -32,20 +33,20 @@ export function samplePlan(): TerminalNarratorPlan {
           {
             id: 'hello',
             label: '打印 Hello',
-            text: "Write-Host 'Hello' -ForegroundColor Green",
-            afterMs: 900,
+            text: 'echo "$([char]27)[32mHello$([char]27)[0m"',
+            afterMs: 1000,
           },
           {
             id: 'world',
             label: '打印 World',
-            text: "Write-Host 'World' -ForegroundColor Cyan",
-            afterMs: 900,
+            text: 'echo "$([char]27)[36mWorld$([char]27)[0m"',
+            afterMs: 1000,
           },
           {
             id: 'done',
             label: '结束会话',
-            text: "Write-Host 'Done' -ForegroundColor Magenta",
-            afterMs: 700,
+            text: 'echo "$([char]27)[35mDone$([char]27)[0m"',
+            afterMs: 800,
           },
         ]
       : [

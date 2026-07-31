@@ -12,6 +12,7 @@ const runtimeKeys = {
   frameReady: runtimeGlobalName('frameReady'),
   setFrame: runtimeGlobalName('setFrame'),
   getMeta: runtimeGlobalName('getMeta'),
+  error: runtimeGlobalName('error'),
 } as const;
 
 export async function loadRenderShell(page: Page, shellPath: string): Promise<void> {
@@ -20,11 +21,21 @@ export async function loadRenderShell(page: Page, shellPath: string): Promise<vo
   await page.waitForFunction(
     (keys) => {
       const runtime = window as unknown as Record<string, unknown>;
-      return runtime[keys.ready] === true;
+      return runtime[keys.ready] === true || typeof runtime[keys.error] === 'string';
     },
     { timeout: 60000 },
     runtimeKeys
   );
+  const runtimeError = await page.evaluate(
+    (keys) => {
+      const runtime = window as unknown as Record<string, unknown>;
+      return typeof runtime[keys.error] === 'string' ? runtime[keys.error] : null;
+    },
+    runtimeKeys,
+  );
+  if (runtimeError) {
+    throw new Error(`Browser runtime failed to initialize: ${runtimeError}`);
+  }
 }
 
 export async function setFrameAndWait(page: Page, frame: number): Promise<void> {
@@ -69,5 +80,6 @@ declare global {
       audio?: CompositionAudioManifest;
       captions?: CaptionCue[];
     };
+    __seqvio_error?: string;
   }
 }

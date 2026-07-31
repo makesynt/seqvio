@@ -9,8 +9,8 @@ import {
   type RenderPlanManifest,
   type SceneSpec,
 } from './schema';
-
-const SCENE_TAIL_PAD = 18;
+import { resolveScenePacing } from '../pacing';
+import { resolvePacingProfile } from '../pacing';
 
 export interface DocumentTimelineScene {
   id: string;
@@ -28,31 +28,7 @@ export interface DocumentTimeline {
 }
 
 export function sceneDurationFrames(scene: SceneSpec, fps: number = COMPOSITION_DOCUMENT_DEFAULTS.fps): number {
-  if (typeof scene.duration === 'number' && scene.duration > 0) {
-    return scene.duration;
-  }
-  if (scene.type === 'whiteboard') {
-    let maxEnd = 0;
-    for (const el of scene.elements) {
-      const end = (el.start ?? 0) + (el.duration ?? 30);
-      if (end > maxEnd) maxEnd = end;
-    }
-    return Math.max(1, maxEnd + SCENE_TAIL_PAD);
-  }
-  if (scene.type === 'code' || scene.type === 'diagram') {
-    const maxAt = scene.steps.reduce((max, step) => Math.max(max, step.at), 0);
-    return Math.max(1, maxAt + 90 + SCENE_TAIL_PAD);
-  }
-  if (scene.type === 'terminal') {
-    const events = scene.events ?? [];
-    const steps = scene.steps ?? [];
-    let maxMs = 0;
-    for (const e of events) if (typeof e.timeMs === 'number') maxMs = Math.max(maxMs, e.timeMs);
-    for (const s of steps) if (typeof s.timeMs === 'number') maxMs = Math.max(maxMs, s.timeMs);
-    const frames = Math.ceil((maxMs / 1000) * fps) + SCENE_TAIL_PAD;
-    return Math.max(1, frames);
-  }
-  return 120;
+  return resolveScenePacing(scene, fps).durationFrames;
 }
 
 export function computeDocumentTimeline(doc: CompositionDocument): DocumentTimeline {
@@ -61,9 +37,10 @@ export function computeDocumentTimeline(doc: CompositionDocument): DocumentTimel
   const fps = doc.fps ?? COMPOSITION_DOCUMENT_DEFAULTS.fps;
   let cursor = 0;
   const scenes: DocumentTimelineScene[] = [];
+  const pacingPolicy = resolvePacingProfile(doc.pacingProfile).policy;
 
   doc.scenes.forEach((scene, index) => {
-    const duration = sceneDurationFrames(scene, fps);
+    const duration = resolveScenePacing(scene, fps, pacingPolicy).durationFrames;
     const startFrame = cursor;
     const endFrame = cursor + duration - 1;
     scenes.push({ id: scene.id, startFrame, endFrame, duration });

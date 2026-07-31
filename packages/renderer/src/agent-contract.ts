@@ -76,11 +76,15 @@ Do not call external APIs or defer planning to another step.
 Rules:
 - Output ONLY valid JSON. No markdown fences, no commentary.
 - Set "version": "2.0".
+- Set "pacingProfile": "explainer-v1" so authoring and release QA use the same versioned thresholds.
 - Prefer 4 to 9 scenes. Mix whiteboard, code, and diagram scenes when useful.
 - Every scene needs a unique ASCII id. Every diagram node/edge/panel needs a unique id across the whole document.
 - Use chapters when the video is longer than ~90 seconds.
 - narration must be full spoken sentences.
 - Timing is in frames at fps 30 unless specified.
+- Budget narration near 3.7 Chinese characters/second or 150 English words/minute; split dense narration instead of accelerating it.
+- Keep consecutive code or diagram focus steps at least 27 frames apart at 30 fps so each highlight remains readable.
+- Let a scene hold after narration when the viewer needs reading time; never shorten a scene below its narration budget.
 - Prefer semantic actions over pixel coordinates for code and diagram scenes.
 - Annotations must use targetId referencing an existing scene/node/edge id.
 
@@ -93,6 +97,7 @@ Minimal example:
 {
   "version": "2.0",
   "id": "api-request-explainer",
+  "pacingProfile": "explainer-v1",
   "width": 1280,
   "height": 720,
   "fps": 30,

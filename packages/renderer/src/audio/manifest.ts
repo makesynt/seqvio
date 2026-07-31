@@ -1,9 +1,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import {
+  isPacingProfileId,
   resolveNarrationCueTimes,
   type CaptionCue,
   type CompositionAudioManifest,
+  type NarrationCue,
   type RenderableMeta,
 } from '../media-contract';
 
@@ -15,7 +17,95 @@ export interface LoadedAudioManifest {
 
 export interface ManifestValidationIssue {
   severity: 'error' | 'warning';
+  code: string;
+  path: string;
   message: string;
+  repair?: string;
+}
+
+export function resolveSynthesizedCueTiming(
+  cue: import('../media-contract').NarrationCue,
+  fps: number,
+  probedDurationMs: number,
+  sequentialOffsetMs: number,
+): { startMs: number; endMs: number } {
+  const authoredTimes = resolveNarrationCueTimes(cue, fps);
+  const startMs = cue.startMs !== undefined || cue.startFrame !== undefined
+    ? authoredTimes.startMs
+    : sequentialOffsetMs;
+  return { startMs, endMs: startMs + Math.max(1, probedDurationMs) };
+}
+
+export function reflowSynthesizedTimeline(
+  manifest: CompositionAudioManifest,
+  synthesizedNarration: NarrationCue[],
+  fps: number,
+  options: { cueGapMs?: number; sceneTailMs?: number } = {},
+): { narration: NarrationCue[]; sceneTimings: CompositionAudioManifest['sceneTimings']; durationFrames?: number } {
+  if (!manifest.sceneTimings?.length) {
+    return { narration: synthesizedNarration, sceneTimings: manifest.sceneTimings, durationFrames: manifest.duration };
+  }
+  const cueGapMs = options.cueGapMs ?? 180;
+  const sceneTailMs = options.sceneTailMs ?? 600;
+  const resolvedById = new Map<string, NarrationCue>();
+  const sceneTimings: NonNullable<CompositionAudioManifest['sceneTimings']> = [];
+  let frameCursor = 0;
+
+  for (const scene of manifest.sceneTimings) {
+    const sourceDurationFrames = Math.max(1, scene.sourceDurationFrames ?? scene.durationFrames);
+    const sceneStartMs = (frameCursor / fps) * 1000;
+    let cueCursorMs = sceneStartMs;
+    const sceneCues = synthesizedNarration.filter((cue) => cue.sceneId === scene.sceneId);
+    for (const [index, cue] of sceneCues.entries()) {
+      const authored = resolveNarrationCueTimes(cue, fps);
+      const durationMs = Math.max(1, authored.endMs - authored.startMs);
+      const resolved = {
+        ...cue,
+        startMs: Math.round(cueCursorMs),
+        endMs: Math.round(cueCursorMs + durationMs),
+        startFrame: Math.round((cueCursorMs / 1000) * fps),
+        endFrame: Math.round(((cueCursorMs + durationMs) / 1000) * fps),
+      };
+      resolvedById.set(cue.id, resolved);
+      cueCursorMs += durationMs + (index < sceneCues.length - 1 ? cueGapMs : 0);
+    }
+    const narrationFrames = Math.ceil((((cueCursorMs - sceneStartMs) + (sceneCues.length ? sceneTailMs : 0)) / 1000) * fps);
+    const durationFrames = Math.max(scene.durationFrames, narrationFrames);
+    const orderedHighlights = [...(scene.highlights ?? [])].sort((a, b) => a.startFrame - b.startFrame);
+    const chunkFrames = sceneCues
+      .flatMap((cue) => cue.chunks ?? [])
+      .map((chunk) => chunk.offsetFrame)
+      .filter((frame) => Number.isFinite(frame) && frame >= 0)
+      .sort((a, b) => a - b);
+    const mappedCount = Math.min(orderedHighlights.length, chunkFrames.length);
+    const timeMap = mappedCount > 0
+      ? [
+          { outputFrame: 0, sourceFrame: 0 },
+          ...Array.from({ length: mappedCount }, (_, index) => ({
+            outputFrame: Math.min(durationFrames, chunkFrames[index]),
+            sourceFrame: Math.min(sourceDurationFrames, orderedHighlights[index].startFrame),
+          })),
+          { outputFrame: durationFrames, sourceFrame: sourceDurationFrames },
+        ].filter((point, index, points) => index === 0 || (
+          point.outputFrame > points[index - 1].outputFrame &&
+          point.sourceFrame >= points[index - 1].sourceFrame
+        ))
+      : undefined;
+    sceneTimings.push({
+      ...scene,
+      startFrame: frameCursor,
+      durationFrames,
+      sourceDurationFrames,
+      timeMap,
+    });
+    frameCursor += durationFrames + Math.max(0, scene.transitionAfterFrames ?? 0);
+  }
+
+  return {
+    narration: synthesizedNarration.map((cue) => resolvedById.get(cue.id) ?? cue),
+    sceneTimings,
+    durationFrames: frameCursor,
+  };
 }
 
 export function buildManifestFromMeta(
@@ -39,6 +129,8 @@ export function buildManifestFromMeta(
     narration: meta.audio?.narration,
     tracks: meta.audio?.tracks,
     captions: meta.captions ?? meta.audio?.captions,
+    sceneTimings: meta.audio?.sceneTimings,
+    pacingProfile: meta.audio?.pacingProfile ?? meta.pacing?.profile,
   };
 
   return manifest;
@@ -68,12 +160,26 @@ export function validateAudioManifest(
   const seenNarrationIds = new Set<string>();
   const seenTrackIds = new Set<string>();
 
-  for (const cue of manifest.narration ?? []) {
+  if (manifest.pacingProfile !== undefined && !isPacingProfileId(manifest.pacingProfile)) {
+    issues.push({
+      severity: 'error',
+      code: 'unsupported_pacing_profile',
+      path: 'pacingProfile',
+      message: `Unsupported pacing profile "${manifest.pacingProfile}".`,
+      repair: 'Regenerate the manifest with a supported versioned pacing profile.',
+    });
+  }
+
+  let previousNarrationEnd = -1;
+  for (const [index, cue] of (manifest.narration ?? []).entries()) {
+    const cuePath = `narration[${index}]`;
     if (!cue.id) {
-      issues.push({ severity: 'error', message: 'Narration cue is missing "id".' });
+      issues.push({ severity: 'error', code: 'missing_narration_id', path: `${cuePath}.id`, message: 'Narration cue is missing "id".' });
     } else if (seenNarrationIds.has(cue.id)) {
       issues.push({
         severity: 'error',
+        code: 'duplicate_narration_id',
+        path: `${cuePath}.id`,
         message: `Duplicate narration cue id "${cue.id}".`,
       });
     } else {
@@ -83,42 +189,120 @@ export function validateAudioManifest(
     if (!cue.text && !cue.silent) {
       issues.push({
         severity: 'error',
+        code: 'missing_narration_text',
+        path: `${cuePath}.text`,
         message: `Narration cue "${cue.id}" is missing text and is not marked silent.`,
       });
     }
 
     const times = resolveNarrationCueTimes(cue, fps);
-    if (times.endMs < times.startMs) {
+    const authoredStart = cue.startMs ?? (cue.startFrame !== undefined ? (cue.startFrame / fps) * 1000 : 0);
+    const authoredEnd = cue.endMs ?? (cue.endFrame !== undefined ? (cue.endFrame / fps) * 1000 : authoredStart);
+    if (authoredStart < 0 || authoredEnd < authoredStart) {
       issues.push({
         severity: 'error',
-        message: `Narration cue "${cue.id}" ends before it starts.`,
+        code: authoredStart < 0 ? 'negative_narration_time' : 'invalid_narration_range',
+        path: cuePath,
+        message:
+          authoredStart < 0
+            ? `Narration cue "${cue.id}" starts before zero.`
+            : `Narration cue "${cue.id}" ends before it starts.`,
       });
     }
+    if (times.startMs < previousNarrationEnd) {
+      issues.push({
+        severity: 'warning',
+        code: 'overlapping_narration',
+        path: cuePath,
+        message: `Narration cue "${cue.id}" overlaps a prior narration cue.`,
+      });
+    }
+    previousNarrationEnd = Math.max(previousNarrationEnd, times.endMs);
   }
 
   let lastCaptionEnd = -1;
-  for (const cue of manifest.captions ?? []) {
-    if (cue.endMs < cue.startMs) {
+  for (const [index, cue] of (manifest.captions ?? []).entries()) {
+    const cuePath = `captions[${index}]`;
+    if (!cue.text || cue.text.trim().length === 0) {
       issues.push({
         severity: 'error',
+        code: 'empty_caption_text',
+        path: `${cuePath}.text`,
+        message: 'Caption text must not be empty.',
+      });
+    }
+    if (cue.startMs < 0 || cue.endMs <= cue.startMs) {
+      issues.push({
+        severity: 'error',
+        code: cue.startMs < 0 ? 'negative_caption_time' : 'invalid_caption_range',
+        path: cuePath,
         message: `Caption "${cue.text}" ends before it starts.`,
       });
     }
     if (cue.startMs < lastCaptionEnd) {
       issues.push({
         severity: 'warning',
+        code: 'overlapping_captions',
+        path: cuePath,
         message: `Caption "${cue.text}" overlaps a prior caption.`,
       });
     }
     lastCaptionEnd = Math.max(lastCaptionEnd, cue.endMs);
   }
 
-  for (const track of manifest.tracks ?? []) {
+  const seenSceneIds = new Set<string>();
+  let previousSceneStart = -1;
+  for (const [index, scene] of (manifest.sceneTimings ?? []).entries()) {
+    const scenePath = `sceneTimings[${index}]`;
+    if (!scene.sceneId || seenSceneIds.has(scene.sceneId)) {
+      issues.push({
+        severity: 'error',
+        code: scene.sceneId ? 'duplicate_audio_scene_timing' : 'missing_audio_scene_id',
+        path: `${scenePath}.sceneId`,
+        message: scene.sceneId ? `Duplicate audio scene timing "${scene.sceneId}".` : 'Audio scene timing is missing sceneId.',
+      });
+    }
+    seenSceneIds.add(scene.sceneId);
+    if (scene.startFrame < previousSceneStart || scene.durationFrames <= 0) {
+      issues.push({
+        severity: 'error',
+        code: scene.durationFrames <= 0 ? 'invalid_audio_scene_duration' : 'non_monotonic_audio_scenes',
+        path: scenePath,
+        message: scene.durationFrames <= 0 ? 'Audio scene duration must be positive.' : 'Audio scene timings must be ordered by startFrame.',
+      });
+    }
+    if (scene.sourceDurationFrames !== undefined && scene.sourceDurationFrames <= 0) {
+      issues.push({
+        severity: 'error',
+        code: 'invalid_audio_scene_source_duration',
+        path: `${scenePath}.sourceDurationFrames`,
+        message: 'Audio scene source duration must be positive.',
+      });
+    }
+    for (let pointIndex = 1; pointIndex < (scene.timeMap?.length ?? 0); pointIndex++) {
+      const previous = scene.timeMap![pointIndex - 1];
+      const current = scene.timeMap![pointIndex];
+      if (current.outputFrame <= previous.outputFrame || current.sourceFrame < previous.sourceFrame) {
+        issues.push({
+          severity: 'error',
+          code: 'non_monotonic_scene_time_map',
+          path: `${scenePath}.timeMap[${pointIndex}]`,
+          message: 'Scene time-map anchors must increase in output time without reversing source time.',
+        });
+      }
+    }
+    previousSceneStart = scene.startFrame;
+  }
+
+  for (const [index, track] of (manifest.tracks ?? []).entries()) {
+    const trackPath = `tracks[${index}]`;
     if (!track.id) {
-      issues.push({ severity: 'error', message: 'Audio track is missing "id".' });
+      issues.push({ severity: 'error', code: 'missing_audio_track_id', path: `${trackPath}.id`, message: 'Audio track is missing "id".' });
     } else if (seenTrackIds.has(track.id)) {
       issues.push({
         severity: 'error',
+        code: 'duplicate_audio_track_id',
+        path: `${trackPath}.id`,
         message: `Duplicate audio track id "${track.id}".`,
       });
     } else {
@@ -128,6 +312,8 @@ export function validateAudioManifest(
     if (!track.src) {
       issues.push({
         severity: 'error',
+        code: 'missing_audio_track_source',
+        path: `${trackPath}.src`,
         message: `Audio track "${track.id}" is missing "src".`,
       });
       continue;
@@ -138,6 +324,8 @@ export function validateAudioManifest(
       if (!fs.existsSync(resolvedTrack)) {
         issues.push({
           severity: 'error',
+          code: 'missing_audio_track_file',
+          path: `${trackPath}.src`,
           message: `Audio track "${track.id}" points to a missing file: ${resolvedTrack}`,
         });
       }

@@ -14,6 +14,7 @@ export type SeqvioRuntimeKey =
   | 'setFrame'
   | 'frame'
   | 'getMeta'
+  | 'error'
   | 'timeline'
   | 'resolvedAudioManifest'
   | 'compositionMeta';

@@ -119,6 +119,14 @@ describe('validateCompositionDocument', () => {
     assert.ok(issues.some((i) => i.code === 'unknown_chapter_scene'));
   });
 
+  it('rejects unknown pacing profiles', () => {
+    const issues = validateCompositionDocument({
+      version: '2.0', id: 'x', pacingProfile: 'future-v9',
+      scenes: [{ type: 'code', id: 'c', language: 'js', source: '', steps: [] }],
+    });
+    assert.ok(issues.some((issue) => issue.code === 'unsupported_pacing_profile'));
+  });
+
   it('rejects a terminal scene with neither events nor commands', () => {
     const issues = validateCompositionDocument({
       version: '2.0',
@@ -141,6 +149,24 @@ describe('validateCompositionDocument', () => {
       ],
     });
     assert.ok(issues.some((i) => i.code === 'invalid_terminal_event_kind'));
+  });
+
+  it('rejects removed chat, diff, and infographic scene types', () => {
+    for (const scene of [
+      { type: 'chat', id: 'conversation', messages: [{ role: 'user', text: 'hello' }] },
+      { type: 'diff', id: 'change', before: 'old', after: 'new' },
+      { type: 'infographic', id: 'summary', panels: [{ id: 'total', label: 'Total' }] },
+    ]) {
+      const issues = validateCompositionDocument({
+        version: '2.0',
+        id: `removed-${scene.type}`,
+        scenes: [scene],
+      });
+      assert.ok(
+        issues.some((issue) => issue.code === 'unsupported_scene_type'),
+        `expected ${scene.type} to be rejected`,
+      );
+    }
   });
 });
 
@@ -166,6 +192,11 @@ describe('compileCompositionDocumentToTsx', () => {
     assert.match(code, /<ArchitectureDiagram/);
     assert.match(code, /<TechnicalScene/);
     assert.match(code, /Welcome to the technical explainer\./);
+    assert.match(code, /startMs:/);
+    assert.match(code, /endMs:/);
+    assert.match(code, /pacing: \{ profile: "explainer-v1", highlights:/);
+    assert.match(code, /sceneTimings:/);
+    assert.match(code, /pacingProfile: "explainer-v1"/);
   });
 
   it('converts legacy terminal commands into visible events and steps', () => {
@@ -203,6 +234,19 @@ describe('compileCompositionDocumentToTsx', () => {
     assert.match(code, /"transient": true/);
     assert.match(code, /"label": "Run echo"/);
     assert.doesNotMatch(code, /shell-command-1/);
+  });
+
+  it('refuses removed scene types when validation is bypassed', () => {
+    for (const type of ['chat', 'diff', 'infographic']) {
+      assert.throws(
+        () => compileCompositionDocumentToTsx({
+          version: '2.0',
+          id: `removed-${type}`,
+          scenes: [{ type, id: 'removed' }],
+        }),
+        new RegExp(`Unsupported CompositionDocument scene type: ${type}`),
+      );
+    }
   });
 });
 

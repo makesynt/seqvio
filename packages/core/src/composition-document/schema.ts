@@ -167,6 +167,8 @@ export interface TerminalSceneSpec {
     transient?: boolean;
     /** Pre-rendered terminal viewport snapshot from a terminal emulator. */
     grid?: TerminalGridSnapshotSpec;
+    /** Raw ANSI escape-sequence bytes that produced this event. */
+    raw?: string;
   }>;
   /** Step boundaries used for highlighting and narration segmentation. */
   steps?: Array<{
@@ -178,34 +180,6 @@ export interface TerminalSceneSpec {
   rows?: number;
   maxLines?: number;
   renderOptions?: TerminalRenderOptions;
-  narration?: string;
-  duration?: number;
-  annotations?: AnnotationSpec[];
-}
-
-export interface ChatSceneSpec {
-  type: 'chat';
-  id: string;
-  messages: Array<{ role: 'user' | 'assistant' | 'tool' | 'system'; text: string }>;
-  narration?: string;
-  duration?: number;
-  annotations?: AnnotationSpec[];
-}
-
-export interface DiffSceneSpec {
-  type: 'diff';
-  id: string;
-  before: string;
-  after: string;
-  narration?: string;
-  duration?: number;
-  annotations?: AnnotationSpec[];
-}
-
-export interface InfographicSceneSpec {
-  type: 'infographic';
-  id: string;
-  panels: Array<{ id: string; label: string; value?: string }>;
   narration?: string;
   duration?: number;
   annotations?: AnnotationSpec[];
@@ -246,9 +220,6 @@ export type SceneSpec =
   | CodeSceneSpec
   | DiagramSceneSpec
   | TerminalSceneSpec
-  | ChatSceneSpec
-  | DiffSceneSpec
-  | InfographicSceneSpec
   | BrowserSceneSpec;
 
 export const SCENE_TYPES = [
@@ -256,9 +227,6 @@ export const SCENE_TYPES = [
   'code',
   'diagram',
   'terminal',
-  'chat',
-  'diff',
-  'infographic',
   'browser',
 ] as const;
 
@@ -280,6 +248,8 @@ export interface CompositionDocument {
   backgroundColor?: string;
   lockToAudio?: boolean;
   transitionDuration?: number;
+  /** Versioned pacing policy used by authoring, timing resolution, and QA. */
+  pacingProfile?: string;
   chapters?: ChapterSpec[];
   scenes: SceneSpec[];
   /** Document-level annotations that may target any scene element id. */
@@ -293,6 +263,7 @@ export const COMPOSITION_DOCUMENT_DEFAULTS = {
   backgroundColor: '#ffffff',
   lockToAudio: true,
   transitionDuration: 12,
+  pacingProfile: 'explainer-v1',
 };
 
 /** Render-plan contracts (Phase A schema; resume implementation follows in renderer). */

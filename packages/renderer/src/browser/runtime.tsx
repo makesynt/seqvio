@@ -6,6 +6,7 @@ import React, { useState } from "react";
 import { createRoot, Root } from "react-dom/client";
 import { flushSync } from "react-dom";
 import {
+  mapSceneSourceFrameToOutput,
   getActiveCaption,
   resolveCompositionDurationFrames,
   type CaptionCue,
@@ -42,11 +43,14 @@ declare global {
     __seqvio_ready?: boolean;
     __seqvio_frameReady?: boolean;
     __seqvio_setFrame?: (frame: number) => Promise<void>;
+    __seqvio_error?: string;
     __seqvio_getMeta?: () => RenderableMeta;
     __seqvio_timeline?: TimelineLike;
     __seqvio_resolvedAudioManifest?: CompositionAudioManifest;
     __seqvio_compositionMeta?: RenderableMeta;
     __seqvio_whiteboardOptimize?: string;
+    __seqvio_terminalReady?: Promise<void>;
+    __seqvio_terminalReadyById?: Map<string, Promise<void>>;
   }
 }
 
@@ -57,6 +61,33 @@ let sceneMeta: Required<Pick<RenderableMeta, "duration" | "fps">> & {
 } = { duration: 300, fps: 30 };
 let setFrameState: ((frame: number) => void) | null = null;
 let lastLayerCacheFrame = -1;
+
+function resolveRuntimePacing(
+  audio: CompositionAudioManifest | undefined,
+  fallback: RenderableMeta['pacing'],
+): RenderableMeta['pacing'] {
+  if (!audio?.sceneTimings?.length) return fallback;
+  return {
+    profile: audio.pacingProfile ?? fallback?.profile,
+    highlights: audio.sceneTimings.flatMap((scene) =>
+      (scene.highlights ?? []).map((highlight) => ({
+        ...highlight,
+        startFrame: scene.startFrame + mapSceneSourceFrameToOutput(
+          highlight.startFrame,
+          scene.sourceDurationFrames ?? scene.durationFrames,
+          scene.durationFrames,
+          scene.timeMap,
+        ),
+        endFrame: scene.startFrame + mapSceneSourceFrameToOutput(
+          highlight.endFrame,
+          scene.sourceDurationFrames ?? scene.durationFrames,
+          scene.durationFrames,
+          scene.timeMap,
+        ),
+      })),
+    ),
+  };
+}
 
 function resetWhiteboardLayerCache(): void {
   for (const scene of Array.from(
@@ -172,21 +203,44 @@ async function waitForPendingImages(): Promise<void> {
 
 async function waitForVideoMetadata(video: HTMLVideoElement): Promise<void> {
   if (video.readyState >= HTMLMediaElement.HAVE_METADATA) return;
-  await new Promise<void>((resolve) => {
+  await new Promise<void>((resolve, reject) => {
     let settled = false;
     let timeout = 0;
-    const done = () => {
+    const cleanup = () => {
+      window.clearTimeout(timeout);
+      video.removeEventListener('loadedmetadata', loaded);
+      video.removeEventListener('error', failed);
+    };
+    const loaded = () => {
       if (settled) return;
       settled = true;
-      window.clearTimeout(timeout);
-      video.removeEventListener('loadedmetadata', done);
-      video.removeEventListener('error', done);
+      cleanup();
       resolve();
     };
-    timeout = window.setTimeout(done, 10000);
-    video.addEventListener('loadedmetadata', done, { once: true });
-    video.addEventListener('error', done, { once: true });
+    const failed = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(new Error(`Unable to load seekable video metadata: ${video.currentSrc || video.src}`));
+    };
+    timeout = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(new Error(`Timed out loading seekable video metadata: ${video.currentSrc || video.src}`));
+    }, 10000);
+    video.addEventListener('loadedmetadata', loaded, { once: true });
+    video.addEventListener('error', failed, { once: true });
   });
+}
+
+async function waitForTerminalRenderers(): Promise<void> {
+  const pending = window.__seqvio_terminalReadyById
+    ? [...window.__seqvio_terminalReadyById.values()]
+    : window.__seqvio_terminalReady
+      ? [window.__seqvio_terminalReady]
+      : [];
+  await Promise.all(pending);
 }
 
 async function syncSeekableVideos(frame: number): Promise<void> {
@@ -196,24 +250,42 @@ async function syncSeekableVideos(frame: number): Promise<void> {
   await Promise.all(videos.map(async (video) => {
     video.pause();
     await waitForVideoMetadata(video);
-    const requested = frame / Math.max(1, sceneMeta.fps);
+    const localFrame = Number(video.dataset.seqvioMediaFrame);
+    const localFps = Number(video.dataset.seqvioMediaFps);
+    const requested = Number.isFinite(localFrame) && Number.isFinite(localFps) && localFps > 0
+      ? localFrame / localFps
+      : frame / Math.max(1, sceneMeta.fps);
     const duration = Number.isFinite(video.duration) ? video.duration : requested;
     const target = Math.max(0, Math.min(requested, Math.max(0, duration - 0.001)));
     if (Math.abs(video.currentTime - target) < 0.001) return;
-    await new Promise<void>((resolve) => {
+    await new Promise<void>((resolve, reject) => {
       let settled = false;
       let timeout = 0;
-      const done = () => {
+      const cleanup = () => {
+        window.clearTimeout(timeout);
+        video.removeEventListener('seeked', seeked);
+        video.removeEventListener('error', failed);
+      };
+      const seeked = () => {
         if (settled) return;
         settled = true;
-        window.clearTimeout(timeout);
-        video.removeEventListener('seeked', done);
-        video.removeEventListener('error', done);
+        cleanup();
         resolve();
       };
-      timeout = window.setTimeout(done, 10000);
-      video.addEventListener('seeked', done, { once: true });
-      video.addEventListener('error', done, { once: true });
+      const failed = () => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        reject(new Error(`Unable to seek video to ${target.toFixed(3)}s: ${video.currentSrc || video.src}`));
+      };
+      timeout = window.setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        reject(new Error(`Timed out seeking video to ${target.toFixed(3)}s: ${video.currentSrc || video.src}`));
+      }, 10000);
+      video.addEventListener('seeked', seeked, { once: true });
+      video.addEventListener('error', failed, { once: true });
       video.currentTime = target;
     });
   }));
@@ -233,6 +305,7 @@ async function waitForInitialResources(): Promise<void> {
     Array.from(document.querySelectorAll<HTMLVideoElement>('video[data-seqvio-seekable-media="true"]'))
       .map((video) => waitForVideoMetadata(video)),
   );
+  await waitForTerminalRenderers();
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 }
 
@@ -245,6 +318,7 @@ async function waitForFrame(): Promise<void> {
   await waitForPendingImages();
   await syncSeekableVideos(readRuntimeGlobal<number>('frame') ?? 0);
   await applyWhiteboardLayerCache(readRuntimeGlobal<number>("frame") ?? 0);
+  await waitForTerminalRenderers();
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 }
 
@@ -380,6 +454,7 @@ export function mountBrowserRuntime(
       height: compositionMeta.height ?? meta?.height,
       audio: compositionMeta.audio ?? sceneMeta.audio,
       captions: compositionMeta.captions ?? sceneMeta.captions,
+      pacing: resolveRuntimePacing(sceneMeta.audio, compositionMeta.pacing ?? meta?.pacing),
     };
   });
 
@@ -394,32 +469,40 @@ export function mountBrowserRuntime(
   });
 
   void (async () => {
-    await preloadPathFonts("./NotoSansSC-Regular.woff", "./DejaVuSans.ttf");
-    await Promise.all([
-      preloadHandwritingFonts({
-        virgilUrl: "./Virgil.woff2",
-        longcangUrl: "./LongCang-Regular.ttf",
-        xiaolaiUrl: "./Xiaolai-Regular.ttf",
-        wenkaiUrl: "./LXGWWenKaiLite-Regular.ttf",
-        yozaiUrl: "./Yozai-Regular.ttf",
-        liuJianMaoCaoUrl: "./LiuJianMaoCao-Regular.ttf",
-        zhiMangXingUrl: "./ZhiMangXing-Regular.ttf",
-      }),
-      // CodeWalkthrough / technical scenes — must be ready before first paint.
-      preloadFontFace(
-        "JetBrains Mono",
-        "./JetBrainsMono-Regular.woff2",
-        "woff2",
-      ),
-    ]);
-    root!.render(
-      React.createElement(FrameRoot, {
-        SceneComponent,
-        burnCaptions: Boolean(options.burnCaptions),
-      }),
-    );
-    await waitForInitialResources();
-    writeRuntimeGlobal("ready", true);
-    writeRuntimeGlobal("frameReady", true);
+    try {
+      await preloadPathFonts("./NotoSansSC-Regular.woff", "./DejaVuSans.ttf");
+      await Promise.all([
+        preloadHandwritingFonts({
+          virgilUrl: "./Virgil.woff2",
+          longcangUrl: "./LongCang-Regular.ttf",
+          xiaolaiUrl: "./Xiaolai-Regular.ttf",
+          wenkaiUrl: "./LXGWWenKaiLite-Regular.ttf",
+          yozaiUrl: "./Yozai-Regular.ttf",
+          liuJianMaoCaoUrl: "./LiuJianMaoCao-Regular.ttf",
+          zhiMangXingUrl: "./ZhiMangXing-Regular.ttf",
+        }),
+        // CodeWalkthrough / technical scenes — must be ready before first paint.
+        preloadFontFace(
+          "JetBrains Mono",
+          "./JetBrainsMono-Regular.woff2",
+          "woff2",
+        ),
+      ]);
+      flushSync(() => {
+        root!.render(
+          React.createElement(FrameRoot, {
+            SceneComponent,
+            burnCaptions: Boolean(options.burnCaptions),
+          }),
+        );
+      });
+      await waitForInitialResources();
+      writeRuntimeGlobal("ready", true);
+      writeRuntimeGlobal("frameReady", true);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      writeRuntimeGlobal("error", message);
+      writeRuntimeGlobal("frameReady", false);
+    }
   })();
 }

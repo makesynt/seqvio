@@ -44,6 +44,24 @@ export interface AudioTrackSpec {
   volumeKeyframes?: VolumeKeyframe[];
 }
 
+export interface AudioSceneTiming {
+  sceneId: string;
+  startFrame: number;
+  durationFrames: number;
+  /** Authored/captured local duration before narration-driven expansion. */
+  sourceDurationFrames?: number;
+  transitionAfterFrames?: number;
+  /** Monotonic output-local -> source-local frame anchors. */
+  timeMap?: Array<{ outputFrame: number; sourceFrame: number }>;
+  highlights?: Array<{
+    id: string;
+    source: 'step' | 'annotation' | 'focus';
+    startFrame: number;
+    endFrame: number;
+    minDurationFrames: number;
+  }>;
+}
+
 export interface CompositionAudioManifest {
   fps?: number;
   duration?: number;
@@ -51,6 +69,9 @@ export interface CompositionAudioManifest {
   narration?: NarrationCue[];
   tracks?: AudioTrackSpec[];
   captions?: CaptionCue[];
+  /** Scene-local timing retained so synthesized narration can reflow visuals. */
+  sceneTimings?: AudioSceneTiming[];
+  pacingProfile?: string;
 }
 
 export interface RenderableMeta {
@@ -60,6 +81,16 @@ export interface RenderableMeta {
   height?: number;
   audio?: CompositionAudioManifest;
   captions?: CaptionCue[];
+  pacing?: {
+    profile?: string;
+    highlights: Array<{
+      id: string;
+      source: 'step' | 'annotation' | 'focus';
+      startFrame: number;
+      endFrame: number;
+      minDurationFrames: number;
+    }>;
+  };
 }
 
 export function resolveCompositionAudioManifest(

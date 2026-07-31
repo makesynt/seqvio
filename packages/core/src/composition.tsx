@@ -234,6 +234,9 @@ export const Scene: React.FC<SceneProps> = ({ id, duration, children }) => {
     <div data-scene-id={id} style={sceneStyle}>
       <SceneLocalFrameProvider
         globalStart={registration.globalStart}
+        sourceDuration={registration.sourceDuration}
+        outputDuration={registration.duration}
+        timeMap={registration.timeMap}
       >
         {children}
       </SceneLocalFrameProvider>

@@ -5,11 +5,37 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { createHash } from 'node:crypto';
 import puppeteer from 'puppeteer';
+import {
+  scanCaptureManifestForSecrets,
+  validateCaptureManifest,
+  type CaptureManifest,
+} from '@seqvio/capture';
 import { runtimeGlobalName } from './brand';
 import { getMetaFromPage, loadRenderShell, setFrameAndWait } from './browser-shell';
 import { bundleScene, resolveComponentPath, writeRenderShell } from './bundle-scene';
-import { resolveCompositionDurationFrames } from './media-contract';
+import {
+  resolveCompositionDurationFrames,
+  resolveNarrationCueTimes,
+  resolvePacingProfile,
+} from './media-contract';
+import { buildManifestFromMeta, loadAudioManifest, validateAudioManifest } from './audio/manifest';
+import { inspectAudioFile } from './audio-health';
+import {
+  classifyQaRuntimeError,
+  diagnosePacing,
+  expectedNarrationTrackDurationMs,
+  promoteQaWarnings,
+  type QaDiagnostic,
+  type QaProfile,
+} from './qa-diagnostics';
+import {
+  applyQaSuppressions,
+  loadQaConfig,
+  QA_CONFIG_VERSION,
+  type QaConfig,
+} from './qa-policy';
 
 interface QaOptions {
   component: string;
@@ -22,6 +48,12 @@ interface QaOptions {
   pixelRatio: number;
   blankThreshold: number;
   ci?: boolean;
+  profile: QaProfile;
+  captureManifest?: string;
+  audioManifest?: string;
+  warningCodes: Set<string>;
+  keepArtifacts: boolean;
+  qaConfig?: string;
 }
 
 interface SnapshotReport {
@@ -35,12 +67,8 @@ interface SnapshotReport {
   textOverflowCount: number;
   smallFontCount: number;
   lowContrastCount: number;
-  issues: Array<{
-    severity: 'error' | 'warning';
-    code: string;
-    message: string;
-    repair?: string;
-  }>;
+  pixelHash: string;
+  issues: QaDiagnostic[];
 }
 
 function printUsage(): void {
@@ -57,6 +85,13 @@ Options:
   --frames <csv>           Frames to inspect, e.g. 0,60,120
   --pixelRatio <n>         Screenshot device scale factor (default: 1)
   --blankThreshold <n>     Minimum non-white pixel ratio (default: 0.01)
+  --profile <name>         QA profile: baseline | capture (default: baseline)
+  --captureManifest <path> CaptureManifest JSON used by the capture profile
+  --audioManifest <path>   Resolved audio manifest used for final timing QA
+  --qaConfig <path>        Versioned QA config with pacing profile and suppressions
+  --warningsAsErrors <csv> Promote selected warning codes to errors
+  --failOnWarning          Promote every warning to an error
+  --keepArtifacts          Keep intermediate browser artifacts
   --ci                     CI mode (exit non-zero on error; machine-readable report)
   --help
 `);
@@ -68,7 +103,7 @@ function parseArgs(argv: string[]): QaOptions {
     const token = argv[i];
     if (!token.startsWith('--')) continue;
     const key = token.slice(2);
-    if (key === 'help' || key === 'ci') {
+    if (key === 'help' || key === 'ci' || key === 'failOnWarning' || key === 'keepArtifacts') {
       args.set(key, true);
       continue;
     }
@@ -100,6 +135,17 @@ function parseArgs(argv: string[]): QaOptions {
           .map((part) => Number(part.trim()))
           .filter((frame) => Number.isFinite(frame) && frame >= 0)
       : undefined;
+  const profileArg = args.get('profile');
+  const profile = profileArg === undefined ? 'baseline' : profileArg;
+  if (profile !== 'baseline' && profile !== 'capture') {
+    throw new Error('--profile must be "baseline" or "capture"');
+  }
+  const captureManifest = args.get('captureManifest');
+  const audioManifest = args.get('audioManifest');
+  const qaConfig = args.get('qaConfig');
+  const warningCodesArg = args.get('warningsAsErrors');
+  const warningCodes = new Set(typeof warningCodesArg === 'string' ? warningCodesArg.split(',').map((code) => code.trim()).filter(Boolean) : []);
+  if (args.get('failOnWarning') === true) warningCodes.add('*');
 
   return {
     component: path.resolve(component),
@@ -112,7 +158,120 @@ function parseArgs(argv: string[]): QaOptions {
     pixelRatio: args.get('pixelRatio') ? Number(args.get('pixelRatio')) : 1,
     blankThreshold: args.get('blankThreshold') ? Number(args.get('blankThreshold')) : 0.01,
     ci: args.get('ci') === true,
+    profile,
+    captureManifest:
+      typeof captureManifest === 'string' ? path.resolve(captureManifest) : undefined,
+    audioManifest: typeof audioManifest === 'string' ? path.resolve(audioManifest) : undefined,
+    warningCodes,
+    keepArtifacts: args.get('keepArtifacts') === true,
+    qaConfig: typeof qaConfig === 'string' ? path.resolve(qaConfig) : undefined,
   };
+}
+
+function writeQaReport(outDir: string, report: Record<string, unknown>): string {
+  fs.mkdirSync(outDir, { recursive: true });
+  const reportPath = path.join(outDir, 'qa-report.json');
+  fs.writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
+  return reportPath;
+}
+
+function loadCapturePreflight(options: QaOptions): QaDiagnostic[] {
+  const diagnostics: QaDiagnostic[] = [];
+  if (!options.captureManifest) {
+    if (options.profile === 'capture') {
+      diagnostics.push({
+        severity: 'error',
+        code: 'missing_capture_manifest',
+        path: 'captureManifest',
+        message: 'The capture QA profile requires --captureManifest.',
+        repair: 'Pass the CaptureManifest JSON produced by the recording adapter.',
+      });
+    }
+    return diagnostics;
+  }
+
+  const manifest = JSON.parse(fs.readFileSync(options.captureManifest, 'utf8')) as CaptureManifest;
+  diagnostics.push(
+    ...validateCaptureManifest(manifest, {
+      requireCapturedState: options.profile === 'capture',
+      checkMediaFiles: true,
+      baseDir: path.dirname(options.captureManifest),
+    }),
+  );
+  diagnostics.push(...scanCaptureManifestForSecrets(manifest));
+  return diagnostics;
+}
+
+function validateMediaForQa(
+  meta: Awaited<ReturnType<typeof getMetaFromPage>>,
+  fps: number,
+  duration: number,
+  profile: QaProfile,
+  componentDir: string,
+): QaDiagnostic[] {
+  const diagnostics: QaDiagnostic[] = [];
+  const manifest = buildManifestFromMeta(meta);
+  if (!manifest) return diagnostics;
+  diagnostics.push(...validateAudioManifest(manifest, { baseDir: componentDir }));
+
+  const durationMs = (duration / Math.max(1, fps)) * 1000;
+  for (const [index, cue] of (manifest.narration ?? []).entries()) {
+    const times = resolveNarrationCueTimes(cue, fps);
+    if (times.endMs > durationMs + 1) {
+      diagnostics.push({
+        severity: 'error',
+        code: 'narration_after_duration',
+        path: `narration[${index}]`,
+        message: `Narration cue "${cue.id}" extends beyond the composition duration.`,
+        repair: 'Extend the scene duration or shorten/reschedule the narration cue.',
+      });
+    }
+  }
+  for (const [index, cue] of (manifest.captions ?? []).entries()) {
+    if (cue.endMs > durationMs + 1) {
+      diagnostics.push({
+        severity: 'error',
+        code: 'caption_after_duration',
+        path: `captions[${index}]`,
+        message: `Caption "${cue.text}" extends beyond the composition duration.`,
+        repair: 'Clamp the caption to the resolved video timeline.',
+      });
+    }
+  }
+  if (
+    profile === 'capture' &&
+    (manifest.narration?.some((cue) => !cue.silent) ?? false) &&
+    !(manifest.tracks?.some((track) => track.kind === 'narration') ?? false)
+  ) {
+    diagnostics.push({
+      severity: 'error',
+      code: 'missing_narration_audio',
+      path: 'audio.tracks',
+      message: 'Capture profile has spoken narration cues but no narration audio track.',
+      repair: 'Synthesize narration and attach the resolved narration track before release QA.',
+    });
+  }
+  return diagnostics;
+}
+
+async function inspectAudioTracksForQa(
+  meta: Awaited<ReturnType<typeof getMetaFromPage>>,
+  componentDir: string,
+): Promise<QaDiagnostic[]> {
+  const manifest = buildManifestFromMeta(meta);
+  if (!manifest?.tracks?.length) return [];
+  const diagnostics: QaDiagnostic[] = [];
+  for (const [index, track] of manifest.tracks.entries()) {
+    if (track.kind !== 'narration' || !track.src) continue;
+    const source = path.isAbsolute(track.src)
+      ? track.src
+      : path.resolve(componentDir, track.src);
+    const expectedDurationMs = expectedNarrationTrackDurationMs(meta, track.id, meta.fps ?? 30);
+    diagnostics.push(
+      ...(await inspectAudioFile(source, `audio.tracks[${index}].src`, expectedDurationMs)),
+    );
+  }
+  return diagnostics;
 }
 
 function defaultFrames(duration: number): number[] {
@@ -263,13 +422,32 @@ async function inspectDom(page: import('puppeteer').Page): Promise<{
 
 async function main(): Promise<void> {
   const options = parseArgs(process.argv.slice(2));
+  const qaConfig: QaConfig = options.qaConfig
+    ? loadQaConfig(options.qaConfig)
+    : { version: QA_CONFIG_VERSION, suppressions: [] };
   fs.mkdirSync(options.outDir, { recursive: true });
+  const preflightIssues = loadCapturePreflight(options);
+  if (preflightIssues.some((issue) => issue.severity === 'error')) {
+    const reportPath = writeQaReport(options.outDir, {
+      ok: false,
+      profile: options.profile,
+      component: options.component,
+      snapshots: [],
+      issues: preflightIssues,
+    });
+    console.error(`seqvio-qa preflight failed. Wrote ${reportPath}`);
+    process.exitCode = 1;
+    return;
+  }
 
   const tempDir = path.join(options.outDir, '.tmp');
   fs.rmSync(tempDir, { recursive: true, force: true });
   fs.mkdirSync(tempDir, { recursive: true });
 
   const resolvedComponent = resolveComponentPath(options.component);
+  const resolvedAudioManifest = options.audioManifest
+    ? loadAudioManifest(options.audioManifest)
+    : undefined;
   const bundle = await bundleScene({
     componentPath: resolvedComponent,
     outDir: tempDir,
@@ -277,6 +455,7 @@ async function main(): Promise<void> {
     height: options.height,
     fps: options.fps,
     duration: options.duration,
+    resolvedAudioManifest: resolvedAudioManifest?.manifest,
   });
 
   const browser = await puppeteer.launch({
@@ -315,6 +494,29 @@ async function main(): Promise<void> {
     fps,
     meta.audio,
     meta.captions
+  );
+  const mediaIssues = validateMediaForQa(
+    meta,
+    fps,
+    duration,
+    options.profile,
+    resolvedAudioManifest?.baseDir ?? path.dirname(resolvedComponent),
+  );
+  const authoredPacingProfile = meta.audio?.pacingProfile ?? meta.pacing?.profile;
+  const resolvedPacingProfile = resolvePacingProfile(qaConfig.pacingProfile ?? authoredPacingProfile).id;
+  const pacingIssues = diagnosePacing(meta, fps, resolvedPacingProfile);
+  if (qaConfig.pacingProfile && authoredPacingProfile && qaConfig.pacingProfile !== authoredPacingProfile) {
+    pacingIssues.push({
+      severity: 'warning',
+      code: 'pacing_profile_override',
+      path: 'pacingProfile',
+      message: `QA profile "${qaConfig.pacingProfile}" overrides authored profile "${authoredPacingProfile}".`,
+      repair: 'Regenerate the composition with the release pacing profile to keep authoring and QA aligned.',
+    });
+  }
+  const audioHealthIssues = await inspectAudioTracksForQa(
+    meta,
+    resolvedAudioManifest?.baseDir ?? path.dirname(resolvedComponent),
   );
   const frames = options.frames?.length ? options.frames : defaultFrames(duration);
 
@@ -414,27 +616,67 @@ async function main(): Promise<void> {
       textOverflowCount: dom.textOverflowCount,
       smallFontCount: dom.smallFontCount,
       lowContrastCount: dom.lowContrastCount,
+      pixelHash: createHash('sha256').update(buffer).digest('hex'),
       issues,
     });
   }
 
   await browser.close();
-  fs.rmSync(tempDir, { recursive: true, force: true });
 
-  const allIssues = reports.flatMap((report) =>
-    report.issues.map((issue) => ({ frame: report.frame, ...issue }))
-  );
+  const temporalIssues: QaDiagnostic[] = [];
+  if (
+    options.profile === 'capture' &&
+    reports.length > 1 &&
+    new Set(reports.map((report) => report.pixelHash)).size === 1
+  ) {
+    temporalIssues.push({
+      severity: 'warning',
+      code: 'no_visual_change',
+      message: 'All sampled capture frames are pixel-identical.',
+      repair: 'Verify capture timestamps and ensure recorded actions produce visible state changes.',
+    });
+  }
+  const rawIssues: QaDiagnostic[] = [
+    ...preflightIssues,
+    ...mediaIssues,
+    ...pacingIssues,
+    ...audioHealthIssues,
+    ...temporalIssues,
+    ...reports.flatMap((report) =>
+      report.issues.map((issue) => ({
+        frame: report.frame,
+        ...issue,
+        path: issue.path ?? `snapshots[${report.frame}]`,
+      }))
+    ),
+  ];
+  const suppressionResult = applyQaSuppressions(rawIssues, qaConfig.suppressions ?? []);
+  const allIssues = promoteQaWarnings(suppressionResult.active, options.warningCodes);
   const ok = !allIssues.some((issue) => issue.severity === 'error');
   const report = {
     ok,
+    profile: options.profile,
+    qaConfigVersion: qaConfig.version,
+    pacingProfile: resolvedPacingProfile,
     component: resolvedComponent,
     fps,
     duration,
     snapshots: reports,
     issues: allIssues,
+    suppressedIssues: suppressionResult.suppressed,
+    unusedSuppressions: suppressionResult.unused,
+    promotedWarnings: [...options.warningCodes],
   };
-  const reportPath = path.join(options.outDir, 'qa-report.json');
-  fs.writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
+  const reportPath = writeQaReport(options.outDir, report);
+  if (!ok || options.keepArtifacts) {
+    const retainedDir = path.join(options.outDir, 'qa-artifacts');
+    fs.rmSync(retainedDir, { recursive: true, force: true });
+    if (fs.existsSync(tempDir)) fs.renameSync(tempDir, retainedDir);
+    fs.mkdirSync(retainedDir, { recursive: true });
+    fs.writeFileSync(path.join(retainedDir, 'retention.json'), `${JSON.stringify({ reason: ok ? 'explicit' : 'qa_failure', reportPath }, null, 2)}\n`, 'utf8');
+  } else {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
 
   console.log(`Wrote QA snapshots to ${options.outDir}`);
   console.log(`Wrote QA report to ${reportPath}`);
@@ -447,6 +689,23 @@ async function main(): Promise<void> {
 
 main().catch((error) => {
   const message = error instanceof Error ? error.message : String(error);
+  const argv = process.argv.slice(2);
+  const outDirIndex = argv.indexOf('--outDir');
+  const outDir = outDirIndex >= 0 ? argv[outDirIndex + 1] : undefined;
+  if (outDir) {
+    const resolvedOutDir = path.resolve(outDir);
+    const reportPath = writeQaReport(resolvedOutDir, {
+      ok: false,
+      profile: argv.includes('capture') ? 'capture' : 'baseline',
+      snapshots: [],
+      issues: [{
+        severity: 'error',
+        code: classifyQaRuntimeError(message),
+        message,
+      }],
+    });
+    console.error(`Wrote QA failure report to ${reportPath}`);
+  }
   console.error(`seqvio-qa failed: ${message}`);
-  process.exit(1);
+  process.exitCode = 1;
 });

@@ -37,6 +37,7 @@ function mapEventsToSchema(events: TerminalEvent[]): TerminalSceneSpec['events']
     text: event.text,
     transient: event.transient,
     snapshot: event.snapshot,
+    raw: event.raw,
     grid: event.grid
       ? {
           cols: event.grid.cols,

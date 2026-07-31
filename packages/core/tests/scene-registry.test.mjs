@@ -23,4 +23,24 @@ describe('scene-registry', () => {
     assert.strictEqual(layout.transitions[0].afterSceneId, 'a');
     assert.strictEqual(layout.transitions[0].beforeSceneId, 'b');
   });
+
+  it('extends authored scenes from resolved audio timing', () => {
+    const layout = buildCompositionLayout([
+      React.createElement(Scene, { id: 'a', duration: 60 }, 'A'),
+      React.createElement(Transition, { type: 'fade', duration: 12 }),
+      React.createElement(Scene, { id: 'b', duration: 60 }, 'B'),
+    ], undefined, {
+      fps: 30,
+      audioManifest: {
+        sceneTimings: [
+          { sceneId: 'a', startFrame: 0, durationFrames: 108 },
+          { sceneId: 'b', startFrame: 120, durationFrames: 60 },
+        ],
+      },
+    });
+    assert.equal(layout.scenes[0].duration, 108);
+    assert.equal(layout.scenes[0].sourceDuration, 60);
+    assert.equal(layout.scenes[1].globalStart, 120);
+    assert.equal(layout.totalDuration, 180);
+  });
 });

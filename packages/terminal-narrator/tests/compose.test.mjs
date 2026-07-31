@@ -6,7 +6,7 @@ import test from 'node:test';
 
 import { writeComposition } from '../dist/compose.js';
 
-test('writeComposition emits TerminalDemo with audio metadata', async () => {
+test('writeComposition emits TerminalXtermDemo with audio metadata', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'seqvio-terminal-narrator-'));
   const manifest = {
     version: '1.0',
@@ -39,7 +39,7 @@ test('writeComposition emits TerminalDemo with audio metadata', async () => {
   );
 
   const source = fs.readFileSync(result.componentPath, 'utf8');
-  assert.match(source, /TerminalDemo/);
+  assert.match(source, /TerminalXtermDemo/);
   assert.match(source, /zoomOnInput=\{true\}/);
   assert.match(source, /maxZoom=\{2\.2\}/);
   assert.match(source, /audio=\{meta\.audio\}/);

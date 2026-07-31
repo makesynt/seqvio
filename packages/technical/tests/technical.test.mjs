@@ -79,6 +79,18 @@ describe('applyCodeSteps', () => {
       1
     );
   });
+
+  it('produces identical line identities across repeated and reverse seeks', () => {
+    const source = 'alpha\nbeta\n';
+    const steps = [
+      { at: 10, action: 'insert', line: 2, text: 'inserted' },
+      { at: 20, action: 'replace', range: { startLine: 1, endLine: 1 }, text: 'replaced' },
+    ];
+    const later = applyCodeSteps(source, steps, 30);
+    applyCodeSteps(source, steps, 5);
+    const repeated = applyCodeSteps(source, steps, 30);
+    assert.deepStrictEqual(repeated.records, later.records);
+  });
 });
 
 describe('layoutDiagram', () => {

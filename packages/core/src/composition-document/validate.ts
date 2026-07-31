@@ -14,6 +14,7 @@ import {
   type SceneSpec,
   type WhiteboardSceneSpec,
 } from './schema';
+import { isPacingProfileId } from '../pacing';
 
 export type CompositionIssue = StoryboardIssue;
 
@@ -423,36 +424,6 @@ function validatePlaceholderScene(
         }
       });
     }
-  } else if (scene.type === 'chat') {
-    if (!Array.isArray(scene.messages) || scene.messages.length === 0) {
-      issue(issues, {
-        severity: 'error',
-        path: `${scenePath}.messages`,
-        code: 'missing_chat_messages',
-        message: `${scenePath}.messages must be a non-empty array`,
-        repairable: true,
-      });
-    }
-  } else if (scene.type === 'diff') {
-    if (typeof scene.before !== 'string' || typeof scene.after !== 'string') {
-      issue(issues, {
-        severity: 'error',
-        path: scenePath,
-        code: 'missing_diff_content',
-        message: `${scenePath}.before and .after must be strings`,
-        repairable: true,
-      });
-    }
-  } else if (scene.type === 'infographic') {
-    if (!Array.isArray(scene.panels) || scene.panels.length === 0) {
-      issue(issues, {
-        severity: 'error',
-        path: `${scenePath}.panels`,
-        code: 'missing_infographic_panels',
-        message: `${scenePath}.panels must be a non-empty array`,
-        repairable: true,
-      });
-    }
   }
 }
 
@@ -526,8 +497,6 @@ function collectAddressableIds(scene: SceneSpec): string[] {
   if (scene.type === 'diagram') {
     for (const node of scene.nodes) ids.push(node.id);
     for (const edge of scene.edges) ids.push(edge.id);
-  } else if (scene.type === 'infographic') {
-    for (const panel of scene.panels) ids.push(panel.id);
   } else if (scene.type === 'whiteboard') {
     for (const element of scene.elements) {
       if (typeof element.id === 'string' && element.id.length > 0) {
@@ -648,6 +617,19 @@ export function validateCompositionDocument(input: unknown): CompositionIssue[] 
       code: 'missing_composition_id',
       message: 'id must be a non-empty string',
       repairable: true,
+    });
+  }
+
+  if (doc.pacingProfile !== undefined && !isPacingProfileId(doc.pacingProfile)) {
+    issue(issues, {
+      severity: 'error',
+      path: 'pacingProfile',
+      code: 'unsupported_pacing_profile',
+      message: `Unsupported pacing profile "${String(doc.pacingProfile)}"`,
+      expected: 'explainer-v1',
+      received: doc.pacingProfile,
+      repairable: true,
+      suggestion: 'Use the versioned "explainer-v1" pacing profile.',
     });
   }
 
@@ -800,7 +782,7 @@ export function validateCompositionDocument(input: unknown): CompositionIssue[] 
         code: 'unknown_annotation_target',
         message: `Annotation targetId "${targetId}" does not match any addressable id`,
         repairable: true,
-        suggestion: 'Use an existing scene, node, edge, or panel id as targetId.',
+        suggestion: 'Use an existing scene, node, or edge id as targetId.',
       });
     }
   }

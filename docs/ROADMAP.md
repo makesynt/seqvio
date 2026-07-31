@@ -5,8 +5,8 @@
 > milestones. For positioning and scope, read [`VISION.md`](./VISION.md) - when
 > the two disagree, `VISION.md` wins.
 >
-> Last revised: 2026-07-27 (reordered against HyperFrames' closed-layer coverage;
-> see below).
+> Last revised: 2026-07-30 (implementation status aligned with the current
+> terminal/browser IR pipelines).
 
 ## What Changed in This Revision
 
@@ -96,13 +96,15 @@ sitting behind is gone.
 
 Promote `browser-recorder` and `terminal-narrator` from "experimental" to a
 single capture-adapter contract: `CaptureSession -> CaptureManifest ->
-CompositionDocument`. Both already produce compositions (they hand-string tsx
-via `writeComposition`); the work is routing them through the IR instead, so
-they pick up narration and CI-diffability. `terminal-narrator`
+CompositionDocument`. Both production pipelines now route through the IR before
+generating TSX. The remaining consolidation work is to invoke adapter compilers
+through the shared capture dispatcher, persist the same intermediate artifacts,
+retire legacy `writeComposition` compatibility paths, and stabilize their CLIs.
+`terminal-narrator`
 (~2.4k lines: `record.ts`, `cast.ts`, `timing.ts`, `redact.ts`, `validate.ts`)
-maps to the existing `TerminalSceneSpec`; `browser-recorder` (~0.7k lines) needs
-a new `BrowserSceneSpec` (peer to terminal: sourceVideo + cursor + focus +
-actions + narration), compiled to `RecordedBrowserDemo`.
+maps to the existing `TerminalSceneSpec`; `browser-recorder` (~0.7k lines) uses
+`BrowserSceneSpec` (peer to terminal: sourceVideo + cursor + focus + actions +
+narration), compiled to `RecordedBrowserDemo`.
 
 Capture is agent-driven, not passive recording: the agent controls the session
 (runs the commands, clicks the UI) and explains it - an **AI explain** step

@@ -67,11 +67,19 @@ export function writeRenderShell(
   width: number,
   height: number,
 ): string {
+  // Try to inline xterm.css if available (copied by copyBundledAssets).
+  let xtermCss = '';
+  const xtermCssPath = path.join(outDir, 'xterm.css');
+  if (fs.existsSync(xtermCssPath)) {
+    xtermCss = fs.readFileSync(xtermCssPath, 'utf-8');
+  }
+
   const shellPath = path.join(outDir, "render-shell.html");
   const html = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
+  <style>${xtermCss}</style>
   <style>
     @font-face {
       font-family: 'JetBrains Mono';
@@ -111,6 +119,7 @@ export function writeRenderShell(
 </head>
 <body>
   <div id="root"></div>
+  <script src="./xterm.js"></script>
   <script src="./scene-bundle.js"></script>
 </body>
 </html>`;
@@ -254,6 +263,25 @@ function copyBundledAssets(outDir: string): void {
     const source = findFirstExisting(candidates);
     if (source) fs.copyFileSync(source, path.join(outDir, outputName));
   }
+
+  // xterm.js — copy the pre-built UMD bundle to the render temp dir.
+  // Loaded via <script> in the shell so window.Terminal is ready before
+  // the composition bundle mounts.
+  const xtermJsCandidates = roots.map((root) =>
+    path.join(root, 'xterm', 'lib', 'xterm.js'),
+  );
+  const xtermJs = findFirstExisting(xtermJsCandidates);
+  if (xtermJs) {
+    fs.copyFileSync(xtermJs, path.join(outDir, 'xterm.js'));
+  }
+
+  const xtermCssCandidates = roots.map((root) =>
+    path.join(root, 'xterm', 'css', 'xterm.css'),
+  );
+  const xtermCss = findFirstExisting(xtermCssCandidates);
+  if (xtermCss) {
+    fs.copyFileSync(xtermCss, path.join(outDir, 'xterm.css'));
+  }
 }
 
 export async function bundleScene(
@@ -285,6 +313,11 @@ export async function bundleScene(
   const alias: Record<string, string> = {
     "@seqvio/whiteboard": whiteboardEntry,
     "@seqvio/core": coreEntry,
+    // Keep the browser-only sub-path available to generated compositions that
+    // import TerminalXtermDemo directly instead of through the package index.
+    "@seqvio/technical/TerminalXtermDemo": resolvePackageModuleEntry(
+      "@seqvio/technical",
+    ).replace(/\/index\.js$/, "/TerminalXtermDemo.js"),
   };
 
   // Optional style packages — alias only if installed/resolvable, so the

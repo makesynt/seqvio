@@ -8,6 +8,7 @@ export * from './audio';
 export * from './captions';
 export * from './timeline';
 export * from './time';
+export * from './pacing';
 export * from './composition';
 export * from './scene-registry';
 export * from './transitions';

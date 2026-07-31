@@ -330,7 +330,7 @@ export async function writeComposition(
   const source = `import React from 'react';
 import type { RenderableMeta } from '@seqvio/core';
 import { VideoComposition, Scene } from '@seqvio/core';
-import { TerminalDemo } from '@seqvio/technical';
+import { TerminalXtermDemo } from '@seqvio/technical';
 ${eventsImport}
 
 const WIDTH = ${width};
@@ -356,7 +356,7 @@ export default function TerminalRecording() {
       audio={meta.audio}
     >
       <Scene id="terminal" duration={DURATION}>
-        <TerminalDemo
+        <TerminalXtermDemo
           id="terminal-demo"
           title=${JSON.stringify(title)}
           events={EVENTS}

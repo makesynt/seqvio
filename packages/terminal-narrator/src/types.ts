@@ -35,6 +35,8 @@ export interface TerminalEvent {
   /** Complete terminal viewport produced by a terminal emulator. */
   snapshot?: boolean;
   grid?: TerminalGridSnapshot;
+  /** Raw ANSI escape-sequence input that produced this snapshot. */
+  raw?: string;
 }
 
 export interface TerminalInputStep {

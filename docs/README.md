@@ -33,6 +33,7 @@ These docs describe the repository as it exists today:
 | --- | --- |
 | [`VISION.md`](./VISION.md) | Product positioning, target users, scope, and design principles (slow-changing source of truth) |
 | [`ROADMAP.md`](./ROADMAP.md) | Directional bet and phase ordering; what to build next and why. Subordinate to `VISION.md` |
+| [`EXPLAINER-FRAMEWORK-IMPROVEMENT-PLAN.md`](./EXPLAINER-FRAMEWORK-IMPROVEMENT-PLAN.md) | Active execution proposal for consolidating capture, IR, deterministic playback, QA, and release readiness |
 
 Active, time-boxed work items live in GitHub issues and milestones, not in a docs file.
 

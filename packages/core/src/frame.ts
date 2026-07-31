@@ -22,6 +22,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import type { AudioSceneTiming } from './audio';
 
 /* ------------------------------------------------------------------ */
 /* Global frame                                                        */
@@ -54,25 +55,37 @@ export function subscribeGlobalFrame(listener: (frame: number) => void): () => v
 
 type SceneLocalFrameContextValue =
   | { type: 'frame'; frame: number }
-  | { type: 'global-start'; globalStart: number };
+  | {
+      type: 'global-start';
+      globalStart: number;
+      sourceDuration?: number;
+      outputDuration?: number;
+      timeMap?: AudioSceneTiming['timeMap'];
+    };
 
 const SceneLocalFrameContext = createContext<SceneLocalFrameContextValue | null>(null);
 
 export function SceneLocalFrameProvider({
   value,
   globalStart,
+  sourceDuration,
+  outputDuration,
+  timeMap,
   children,
 }: {
   value?: number;
   globalStart?: number;
+  sourceDuration?: number;
+  outputDuration?: number;
+  timeMap?: AudioSceneTiming['timeMap'];
   children: ReactNode;
 }) {
   const contextValue = useMemo<SceneLocalFrameContextValue>(
     () =>
       typeof globalStart === 'number'
-        ? { type: 'global-start', globalStart }
+        ? { type: 'global-start', globalStart, sourceDuration, outputDuration, timeMap }
         : { type: 'frame', frame: value ?? 0 },
-    [globalStart, value]
+    [globalStart, outputDuration, sourceDuration, timeMap, value]
   );
   return createElement(
     SceneLocalFrameContext.Provider,
@@ -85,9 +98,56 @@ export function useSceneLocalFrame(): number | null {
   const sceneFrame = useContext(SceneLocalFrameContext);
   if (!sceneFrame) return null;
   if (sceneFrame.type === 'global-start') {
-    return Math.max(0, globalFrame - sceneFrame.globalStart);
+    return mapSceneOutputFrameToSource(
+      Math.max(0, globalFrame - sceneFrame.globalStart),
+      sceneFrame.sourceDuration,
+      sceneFrame.outputDuration,
+      sceneFrame.timeMap,
+    );
   }
   return sceneFrame.frame;
+}
+
+function interpolateFrame(
+  value: number,
+  points: Array<{ input: number; output: number }>,
+): number {
+  if (points.length < 2) return Math.max(0, value);
+  if (value <= points[0].input) return points[0].output;
+  for (let index = 1; index < points.length; index++) {
+    const left = points[index - 1];
+    const right = points[index];
+    if (value > right.input) continue;
+    const span = Math.max(1, right.input - left.input);
+    return left.output + ((value - left.input) / span) * (right.output - left.output);
+  }
+  return points[points.length - 1].output;
+}
+
+export function mapSceneOutputFrameToSource(
+  outputFrame: number,
+  sourceDuration?: number,
+  outputDuration?: number,
+  timeMap?: AudioSceneTiming['timeMap'],
+): number {
+  const source = Math.max(1, sourceDuration ?? outputDuration ?? 1);
+  const output = Math.max(1, outputDuration ?? sourceDuration ?? 1);
+  const anchors = timeMap?.length
+    ? timeMap.map((point) => ({ input: point.outputFrame, output: point.sourceFrame }))
+    : [{ input: 0, output: 0 }, { input: output, output: source }];
+  return Math.max(0, Math.min(source - 1, Math.floor(interpolateFrame(outputFrame, anchors))));
+}
+
+export function mapSceneSourceFrameToOutput(
+  sourceFrame: number,
+  sourceDuration: number,
+  outputDuration: number,
+  timeMap?: AudioSceneTiming['timeMap'],
+): number {
+  const anchors = timeMap?.length
+    ? timeMap.map((point) => ({ input: point.sourceFrame, output: point.outputFrame }))
+    : [{ input: 0, output: 0 }, { input: sourceDuration, output: outputDuration }];
+  return Math.max(0, Math.min(outputDuration, Math.round(interpolateFrame(sourceFrame, anchors))));
 }
 
 /**
@@ -100,6 +160,21 @@ export function useSceneLocalFrame(): number | null {
 export function useSceneGlobalStart(): number {
   const sceneFrame = useContext(SceneLocalFrameContext);
   return sceneFrame?.type === 'global-start' ? sceneFrame.globalStart : 0;
+}
+
+/** Map a composition-global frame onto the active scene's authored local clock. */
+export function useSceneFrameMapper(): (frame: number) => number {
+  const sceneFrame = useContext(SceneLocalFrameContext);
+  return useMemo(() => (frame: number) => {
+    if (!sceneFrame) return Math.max(0, frame);
+    if (sceneFrame.type === 'frame') return sceneFrame.frame;
+    return mapSceneOutputFrameToSource(
+      Math.max(0, frame - sceneFrame.globalStart),
+      sceneFrame.sourceDuration,
+      sceneFrame.outputDuration,
+      sceneFrame.timeMap,
+    );
+  }, [sceneFrame]);
 }
 
 /* ------------------------------------------------------------------ */
@@ -161,7 +236,12 @@ export function useFrameValue<T>(
   const getFrame = () => {
     if (!sceneFrame) return globalFrame;
     if (sceneFrame.type === 'global-start') {
-      return Math.max(0, globalFrame - sceneFrame.globalStart);
+      return mapSceneOutputFrameToSource(
+        Math.max(0, globalFrame - sceneFrame.globalStart),
+        sceneFrame.sourceDuration,
+        sceneFrame.outputDuration,
+        sceneFrame.timeMap,
+      );
     }
     return sceneFrame.frame;
   };
