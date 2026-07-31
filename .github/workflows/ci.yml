@@ -33,3 +33,7 @@ jobs:
 
       - name: Test
         run: npm test
+
+      - name: Release pipeline smoke (terminal + browser)
+        timeout-minutes: 15
+        run: npm run smoke:release-pipeline
