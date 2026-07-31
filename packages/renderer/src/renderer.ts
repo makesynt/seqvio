@@ -126,6 +126,25 @@ interface ResolvedAudioTrack {
   offsetMs: number;
 }
 
+export function buildStreamCopyMuxArgs(
+  videoPath: string,
+  audioPath: string,
+  outputPath: string,
+): string[] {
+  return [
+    "-y",
+    "-i",
+    videoPath,
+    "-i",
+    audioPath,
+    "-c",
+    "copy",
+    "-movflags",
+    "+faststart",
+    outputPath,
+  ];
+}
+
 interface ResolvedRenderOptions {
   component: string;
   output: string;
@@ -1182,19 +1201,7 @@ export class VideoRenderer {
       return new Promise((resolve, reject) => {
         execFile(
           ffmpegPath.path,
-          [
-            "-y",
-            "-i",
-            videoPath,
-            "-i",
-            track.path,
-            "-c",
-            "copy",
-            "-shortest",
-            "-movflags",
-            "+faststart",
-            this.options.output,
-          ],
+          buildStreamCopyMuxArgs(videoPath, track.path, this.options.output),
           { windowsHide: true },
           (error, _stdout, stderr) => {
             if (error) {
