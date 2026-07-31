@@ -263,7 +263,9 @@ Progress as of 2026-07-30:
   -> full FFmpeg decode. The browser fixture additionally exercises local media
   validation and time-mapped video seeking. CI and the npm release workflow run
   `npm run smoke:release-pipeline`; it has no provider/network dependency and
-  cleans each repository-local temporary job after completion.
+  cleans each repository-local temporary job after completion. Passing
+  `--outDir output/release-pipeline-preview` retains both MP4s and their QA/audio
+  sidecars for human inspection.
 
 Deliverables:
 

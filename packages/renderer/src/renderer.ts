@@ -604,7 +604,6 @@ export class VideoRenderer {
     }
 
     args.push(
-      "-shortest",
       "-movflags",
       "+faststart",
       "-r",
@@ -658,7 +657,6 @@ export class VideoRenderer {
     }
 
     args.push(
-      "-shortest",
       "-movflags", "+faststart",
       "-r", String(this.effectiveFps),
       targetPath,
