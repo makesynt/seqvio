@@ -118,9 +118,11 @@ clipping risk, and sampled visual change. Missing/corrupt/truncated browser medi
   removes each repository-local temporary job directory after completion. CI and
   the npm release workflow run this combined gate; adapter-specific commands are
   available as `smoke:release-pipeline:terminal` and
-  `smoke:release-pipeline:browser`. For human review, pass
-  `--outDir output/release-pipeline-preview` to retain the MP4s and QA sidecars;
-  the smoke gate also checks decoded video frame count, not only container validity.
+  `smoke:release-pipeline:browser`. CI keeps the default 640x360 render for a
+  low-cost gate. For human review, run
+  `node scripts/release-pipeline-smoke.mjs --width 1280 --height 720 --outDir output/release-pipeline-preview`
+  to retain 720p MP4s and QA sidecars; the smoke gate also checks decoded video
+  frame count, not only container validity.
   The release contract now records `explainer-v1` end to end and accepts a
   versioned `--qaConfig`; suppressions require an exact code/path and documented
   reason, never apply to errors, and remain auditable in `qa-report.json`.

@@ -25,8 +25,17 @@ import {
 const execFileAsync = promisify(execFile);
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const fps = 30;
-const width = 640;
-const height = 360;
+
+function numericArgument(name, fallback) {
+  const index = process.argv.indexOf(`--${name}`);
+  if (index < 0) return fallback;
+  const value = Number(process.argv[index + 1]);
+  if (!Number.isFinite(value) || value <= 0) throw new Error(`--${name} requires a positive number.`);
+  return Math.round(value);
+}
+
+const width = numericArgument('width', 640);
+const height = numericArgument('height', 360);
 
 function requestedKinds() {
   const kindIndex = process.argv.indexOf('--kind');
@@ -81,13 +90,17 @@ async function createBrowserFixtureVideo(workDir) {
   const pagePath = path.join(workDir, 'browser-source.html');
   const screenshotPath = path.join(workDir, 'browser-source.png');
   const videoPath = path.join(workDir, 'browser-source.mp4');
+  const large = width >= 1000;
+  const headerHeight = large ? 64 : 54;
+  const sidebarWidth = large ? 220 : 146;
+  const mainPadding = large ? 32 : 18;
   await writeFile(pagePath, `<!doctype html>
 <html><head><meta charset="utf-8"><style>
-*{box-sizing:border-box}body{margin:0;width:${width}px;height:${height}px;overflow:hidden;background:#f4f6f8;color:#17202a;font-family:Arial,sans-serif;letter-spacing:0}
-header{height:54px;background:#17202a;color:#fff;display:flex;align-items:center;padding:0 22px;gap:14px}header b{font-size:18px}.live{margin-left:auto;color:#7ee2a8;font-size:13px}
-.shell{display:grid;grid-template-columns:146px 1fr;height:306px}aside{background:#fff;border-right:1px solid #dfe4e8;padding:18px 12px}.nav{padding:9px 11px;margin-bottom:5px;font-size:13px;color:#52606d}.nav.active{background:#e8f1ff;color:#1557b0;border-left:3px solid #2f80ed}
-main{padding:18px 22px}.eyebrow{font-size:12px;color:#68737d;margin-bottom:5px}h1{font-size:22px;margin:0 0 14px}.status{border:1px solid #cfd8df;background:#fff;padding:14px 16px;display:flex;align-items:center;gap:12px}.check{width:26px;height:26px;border-radius:50%;background:#168a4b;color:white;display:grid;place-items:center;font-weight:bold}.status b{font-size:15px}.status span{display:block;color:#66727d;font-size:12px;margin-top:3px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}.panel{background:#fff;border:1px solid #dfe4e8;padding:12px 14px}.panel h2{font-size:12px;margin:0 0 10px;color:#66727d}.metric{font-size:23px;font-weight:bold}.metric small{font-size:12px;color:#168a4b}.row{display:flex;justify-content:space-between;border-top:1px solid #edf0f2;padding:7px 0;font-size:12px}.passed{color:#168a4b;font-weight:bold}
+*{box-sizing:border-box}body{margin:0;width:${width}px;height:${height}px;overflow:hidden;background:#f4f6f8;color:#17202a;font-family:Arial,sans-serif;letter-spacing:0;display:flex;flex-direction:column}
+header{height:${headerHeight}px;flex:0 0 ${headerHeight}px;background:#17202a;color:#fff;display:flex;align-items:center;padding:0 ${large ? 34 : 22}px;gap:${large ? 22 : 14}px}header b{font-size:${large ? 24 : 18}px}.live{margin-left:auto;color:#7ee2a8;font-size:${large ? 16 : 13}px}
+.shell{display:grid;grid-template-columns:${sidebarWidth}px 1fr;flex:1;min-height:0}aside{background:#fff;border-right:1px solid #dfe4e8;padding:${large ? 28 : 18}px ${large ? 18 : 12}px}.nav{padding:${large ? 14 : 9}px ${large ? 16 : 11}px;margin-bottom:${large ? 8 : 5}px;font-size:${large ? 17 : 13}px;color:#52606d}.nav.active{background:#e8f1ff;color:#1557b0;border-left:3px solid #2f80ed}
+main{padding:${mainPadding}px ${large ? 40 : 22}px}.eyebrow{font-size:${large ? 15 : 12}px;color:#68737d;margin-bottom:${large ? 8 : 5}px}h1{font-size:${large ? 34 : 22}px;margin:0 0 ${large ? 24 : 14}px}.status{border:1px solid #cfd8df;background:#fff;padding:${large ? 24 : 14}px ${large ? 26 : 16}px;display:flex;align-items:center;gap:${large ? 18 : 12}px}.check{width:${large ? 38 : 26}px;height:${large ? 38 : 26}px;border-radius:50%;background:#168a4b;color:white;display:grid;place-items:center;font-weight:bold;font-size:${large ? 22 : 15}px}.status b{font-size:${large ? 21 : 15}px}.status span{display:block;color:#66727d;font-size:${large ? 16 : 12}px;margin-top:5px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:${large ? 20 : 12}px;margin-top:${large ? 20 : 12}px}.panel{background:#fff;border:1px solid #dfe4e8;padding:${large ? 22 : 12}px ${large ? 24 : 14}px}.panel h2{font-size:${large ? 15 : 12}px;margin:0 0 ${large ? 18 : 10}px;color:#66727d}.metric{font-size:${large ? 38 : 23}px;font-weight:bold}.metric small{font-size:${large ? 16 : 12}px;color:#168a4b}.row{display:flex;justify-content:space-between;border-top:1px solid #edf0f2;padding:${large ? 12 : 7}px 0;font-size:${large ? 16 : 12}px}.passed{color:#168a4b;font-weight:bold}
 </style></head><body><header><b>Release Console</b><span>Pipeline #1842</span><span class="live">All systems operational</span></header><div class="shell"><aside><div class="nav active">Overview</div><div class="nav">Builds</div><div class="nav">Quality gates</div><div class="nav">Artifacts</div></aside><main><div class="eyebrow">DEPLOYMENT / MAIN</div><h1>Release validation</h1><div class="status"><div class="check">&#10003;</div><div><b>All checks passed</b><span>Terminal and browser capture pipelines are ready.</span></div></div><div class="grid"><div class="panel"><h2>TEST COVERAGE</h2><div class="metric">216 <small>passed</small></div></div><div class="panel"><h2>PIPELINE STEPS</h2><div class="row"><span>Capture QA</span><span class="passed">Passed</span></div><div class="row"><span>Frame decode</span><span class="passed">Passed</span></div></div></div></main></div></body></html>`);
 
   const browser = await puppeteer.launch({
@@ -112,6 +125,8 @@ main{padding:18px 22px}.eyebrow{font-size:12px;color:#68737d;margin-bottom:5px}h
 
 async function createCapture(kind, workDir) {
   if (kind === 'terminal') {
+    const terminalCols = width >= 1000 ? 80 : 40;
+    const terminalRows = height >= 700 ? 20 : 10;
     return {
       compiler: compileTerminalCapture,
       manifest: {
@@ -120,8 +135,9 @@ async function createCapture(kind, workDir) {
         durationMs: 1200,
         viewport: { width, height },
         renderFps: fps,
-        cols: 40,
-        rows: 10,
+        cols: terminalCols,
+        rows: terminalRows,
+        renderOptions: { title: 'Release checks' },
         events: [
           { timeMs: 0, kind: 'stdout', text: '$ ', transient: false },
           { timeMs: 180, kind: 'stdin', text: 'printf release-ok', transient: true },
@@ -166,14 +182,22 @@ async function createCapture(kind, workDir) {
       renderFps: fps,
       sourceVideo: pathToFileURL(sourceVideoPath).href,
       cursorPoints: [
-        { timeMs: 0, x: 60, y: 80 },
-        { timeMs: 800, x: 500, y: 260 },
+        { timeMs: 0, x: width * 0.12, y: height * 0.22 },
+        { timeMs: 800, x: width * 0.72, y: height * 0.64 },
       ],
       focusTargets: [
-        { timeMs: 300, x: 180, y: 90, width: 220, height: 120 },
+        {
+          timeMs: 300,
+          x: width * 0.26,
+          y: height * 0.18,
+          width: width * 0.52,
+          height: height * 0.34,
+          zoom: 1.6,
+        },
         { timeMs: 1000, x: 0, y: 0, width: 0, height: 0, reset: true },
       ],
-      clicks: [{ timeMs: 650, x: 420, y: 210 }],
+      clicks: [{ timeMs: 650, x: width * 0.64, y: height * 0.54 }],
+      maxZoom: 1.8,
       steps: [
         {
           id: 'focus',

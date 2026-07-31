@@ -710,15 +710,27 @@ export const RecordedBrowserDemo: React.FC<RecordedBrowserDemoProps> = ({
             position: 'absolute',
             left: renderedCursor.x,
             top: renderedCursor.y,
-            width: 23,
-            height: 30,
-            background: '#FFFFFF',
+            width: 25,
+            height: 32,
+            background: '#111827',
             clipPath: 'polygon(0 0, 0 83%, 24% 64%, 40% 100%, 58% 91%, 42% 58%, 75% 58%)',
-            filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.65))',
+            filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.4))',
             transform: 'translate(-2px, -2px)',
             pointerEvents: 'none',
           }}
-        />
+        >
+          <div
+            style={{
+              position: 'absolute',
+              left: 2,
+              top: 2,
+              width: 19,
+              height: 25,
+              background: '#FFFFFF',
+              clipPath: 'polygon(0 0, 0 83%, 24% 64%, 40% 100%, 58% 91%, 42% 58%, 75% 58%)',
+            }}
+          />
+        </div>
       ) : null}
     </div>
   );
