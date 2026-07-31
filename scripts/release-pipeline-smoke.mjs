@@ -34,8 +34,8 @@ function numericArgument(name, fallback) {
   return Math.round(value);
 }
 
-const width = numericArgument('width', 640);
-const height = numericArgument('height', 360);
+const width = numericArgument('width', 1280);
+const height = numericArgument('height', 720);
 
 function requestedKinds() {
   const kindIndex = process.argv.indexOf('--kind');
@@ -348,7 +348,9 @@ async function runPipeline(kind, smokeTempRoot, artifactDir) {
     const qaReportPath = path.join(qaDir, 'qa-report.json');
     const report = JSON.parse(await readFile(qaReportPath, 'utf8'));
     if (report.ok !== true) throw new Error(`${kind} release smoke QA report is not ok.`);
-    console.log(`${kind} release pipeline smoke passed (${outputStat.size} bytes, ${resolvedManifest.duration} frames)`);
+    console.log(
+      `${kind} release pipeline smoke passed (${width}x${height}, ${outputStat.size} bytes, ${resolvedManifest.duration} frames)`,
+    );
     if (artifactDir) {
       await mkdir(artifactDir, { recursive: true });
       await Promise.all([
