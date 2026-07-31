@@ -97,6 +97,7 @@ test('compileCompositionDocumentToTsx emits TerminalXtermDemo with renderOptions
           title: 'Demo',
           presentation: 'vhs',
           typingCps: 30,
+          cursorBlink: true,
           zoomOnInput: true,
           maxZoom: 2.5,
           zoomTransitionMs: 500,
@@ -111,6 +112,7 @@ test('compileCompositionDocumentToTsx emits TerminalXtermDemo with renderOptions
   assert.ok(code.includes('zoomOnInput={true}'), 'tsx should pass zoomOnInput');
   assert.ok(code.includes('presentation="vhs"'), 'tsx should pass presentation');
   assert.ok(code.includes('typingCps={30}'), 'tsx should pass typingCps');
+  assert.ok(code.includes('cursorBlink={true}'), 'tsx should pass cursorBlink');
   assert.ok(code.includes('cols={80}'), 'tsx should pass cols');
   assert.ok(code.includes('maxLines={1000}'), 'tsx should pass maxLines');
   assert.ok(code.includes('title="Demo"'), 'tsx should pass title');

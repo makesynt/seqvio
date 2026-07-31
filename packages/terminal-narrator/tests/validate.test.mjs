@@ -140,6 +140,21 @@ test('validatePlan rejects maxZoom not greater than 1', () => {
   );
 });
 
+test('validatePlan rejects non-boolean cursorBlink', () => {
+  assert.throws(
+    () =>
+      validatePlan({
+        version: '1.0',
+        name: 'Bad',
+        viewport: { width: 1280, height: 720 },
+        shell: { command: 'cmd.exe' },
+        inputs: [{ id: 'x', label: 'X', text: 'echo X' }],
+        cursorBlink: 'yes',
+      }),
+    /cursorBlink must be a boolean/
+  );
+});
+
 test('validatePlan accepts valid zoom fields and returns them', () => {
   const plan = validatePlan({
     version: '1.0',
@@ -147,14 +162,15 @@ test('validatePlan accepts valid zoom fields and returns them', () => {
     viewport: { width: 1280, height: 720 },
     shell: { command: 'cmd.exe' },
     inputs: [{ id: 'x', label: 'X', text: 'echo X' }],
+    cursorBlink: false,
     zoomOnInput: false,
     maxZoom: 3,
     zoomTransitionMs: 600,
     zoomHoldMs: 300,
   });
+  assert.equal(plan.cursorBlink, false);
   assert.equal(plan.zoomOnInput, false);
   assert.equal(plan.maxZoom, 3);
   assert.equal(plan.zoomTransitionMs, 600);
   assert.equal(plan.zoomHoldMs, 300);
 });
-

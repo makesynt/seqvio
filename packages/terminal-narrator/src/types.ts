@@ -115,6 +115,8 @@ export interface TerminalNarratorPlan {
    * Characters per second for the native typewriter replay.
    */
   typingCps?: number;
+  /** Frame-time-driven block cursor blink. Defaults to true. */
+  cursorBlink?: boolean;
   /**
    * Hold time after the last captured event so the final terminal state is visible.
    */

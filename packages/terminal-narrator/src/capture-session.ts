@@ -62,6 +62,7 @@ export function toCaptureManifest(
       title: plan.name,
       presentation: plan.presentation,
       typingCps: plan.typingCps,
+      cursorBlink: plan.cursorBlink,
       zoomOnInput: plan.zoomOnInput,
       maxZoom: plan.maxZoom,
       zoomTransitionMs: plan.zoomTransitionMs,

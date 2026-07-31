@@ -139,6 +139,7 @@ export interface TerminalRenderOptions {
   title?: string;
   presentation?: 'minimal' | 'vhs';
   typingCps?: number;
+  cursorBlink?: boolean;
   zoomOnInput?: boolean;
   maxZoom?: number;
   zoomTransitionMs?: number;

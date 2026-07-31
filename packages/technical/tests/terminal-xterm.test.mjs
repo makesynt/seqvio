@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  resolveTerminalCursorVisible,
   resolveTerminalFitScale,
   resolveTerminalFrameState,
 } from '../dist/TerminalXtermDemo.js';
@@ -117,4 +118,13 @@ test('terminal fit scale keeps the default 120x36 terminal inside 1920x1080', ()
   assert.ok(scale < 1);
   assert.ok(naturalWidth * scale <= 1920 * 0.94 + 0.001);
   assert.ok(naturalHeight * scale <= 1080 * 0.9 + 0.001);
+});
+
+test('terminal cursor blink is deterministic from video time', () => {
+  assert.equal(resolveTerminalCursorVisible(0, true), true);
+  assert.equal(resolveTerminalCursorVisible(499, true), true);
+  assert.equal(resolveTerminalCursorVisible(500, true), false);
+  assert.equal(resolveTerminalCursorVisible(999, true), false);
+  assert.equal(resolveTerminalCursorVisible(1000, true), true);
+  assert.equal(resolveTerminalCursorVisible(750, false), true);
 });

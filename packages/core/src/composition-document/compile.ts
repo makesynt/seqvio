@@ -173,6 +173,7 @@ function compileTerminalScene(scene: Extract<SceneSpec, { type: 'terminal' }>, c
       ${prop('rows', scene.rows)}
       ${prop('presentation', ro?.presentation, true)}
       ${prop('typingCps', ro?.typingCps)}
+      ${prop('cursorBlink', ro?.cursorBlink)}
       ${prop('zoomOnInput', ro?.zoomOnInput)}
       ${prop('maxZoom', ro?.maxZoom)}
       ${prop('zoomTransitionMs', ro?.zoomTransitionMs)}

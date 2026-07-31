@@ -30,6 +30,7 @@ export interface TerminalXtermDemoProps {
   presentation?: 'minimal' | 'vhs';
   windowChrome?: boolean;
   typingCps?: number;
+  cursorBlink?: boolean;
   zoomOnInput?: boolean;
   maxZoom?: number;
   zoomTransitionMs?: number;
@@ -50,6 +51,9 @@ const BASE_FONT_SIZE = 22;
 const CHAR_WIDTH = Math.round(BASE_FONT_SIZE * 0.6);
 const LINE_HEIGHT = Math.round(BASE_FONT_SIZE * 1.25);
 const RESET_TERMINAL = '\x1bc\x1b[2J\x1b[H';
+const SHOW_CURSOR = '\x1b[?25h';
+const HIDE_CURSOR = '\x1b[?25l';
+const CURSOR_BLINK_PERIOD_MS = 1000;
 
 function terminalReadyRegistry(): Map<string, Promise<void>> {
   window.__seqvio_terminalReadyById ??= new Map<string, Promise<void>>();
@@ -71,6 +75,16 @@ export function resolveTerminalFitScale(
       (viewportHeight * (withChrome ? 0.9 : 1)) / Math.max(1, contentHeight)
     )
   );
+}
+
+export function resolveTerminalCursorVisible(
+  currentMs: number,
+  cursorBlink: boolean
+): boolean {
+  if (!cursorBlink) return true;
+  const phase = ((currentMs % CURSOR_BLINK_PERIOD_MS) + CURSOR_BLINK_PERIOD_MS)
+    % CURSOR_BLINK_PERIOD_MS;
+  return phase < CURSOR_BLINK_PERIOD_MS / 2;
 }
 
 function codePoints(text: string): string[] {
@@ -202,6 +216,7 @@ export const TerminalXtermDemo: React.FC<TerminalXtermDemoProps> = ({
   presentation = 'vhs',
   windowChrome = true,
   typingCps = 52,
+  cursorBlink = true,
   zoomOnInput = false,
   maxZoom = 2.2,
   zoomTransitionMs = 480,
@@ -217,6 +232,9 @@ export const TerminalXtermDemo: React.FC<TerminalXtermDemoProps> = ({
     () => resolveTerminalFrameState(events, currentMs, typingCps),
     [events, currentMs, typingCps]
   );
+  const renderedAnsi = `${frameState.ansi}${
+    resolveTerminalCursorVisible(currentMs, cursorBlink) ? SHOW_CURSOR : HIDE_CURSOR
+  }`;
 
   const termWidth = cols * CHAR_WIDTH + 20;
   const termHeight = rows * LINE_HEIGHT + 5;
@@ -302,19 +320,19 @@ export const TerminalXtermDemo: React.FC<TerminalXtermDemoProps> = ({
 
   useLayoutEffect(() => {
     const terminal = termRef.current;
-    if (!terminal || lastAnsiRef.current === frameState.ansi) {
+    if (!terminal || lastAnsiRef.current === renderedAnsi) {
       const ready = Promise.resolve();
       terminalReadyRegistry().set(id, ready);
       window.__seqvio_terminalReady = ready;
       return;
     }
-    lastAnsiRef.current = frameState.ansi;
+    lastAnsiRef.current = renderedAnsi;
     const ready = new Promise<void>((resolve) => {
-      terminal.write(frameState.ansi, resolve);
+      terminal.write(renderedAnsi, resolve);
     });
     terminalReadyRegistry().set(id, ready);
     window.__seqvio_terminalReady = ready;
-  }, [id, frameState.ansi, cols, rows, maxLines]);
+  }, [id, renderedAnsi, cols, rows, maxLines]);
 
   const terminal = (
     <div

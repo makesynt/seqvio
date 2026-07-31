@@ -126,6 +126,9 @@ export function validatePlan(value: unknown): TerminalNarratorPlan {
   if (plan.zoomOnInput !== undefined) {
     assert(typeof plan.zoomOnInput === 'boolean', 'plan.zoomOnInput must be a boolean');
   }
+  if (plan.cursorBlink !== undefined) {
+    assert(typeof plan.cursorBlink === 'boolean', 'plan.cursorBlink must be a boolean');
+  }
   if (plan.maxZoom !== undefined) {
     assert(typeof plan.maxZoom === 'number' && plan.maxZoom > 1, 'plan.maxZoom must be a number > 1');
   }
@@ -182,4 +185,3 @@ export function validatePlan(value: unknown): TerminalNarratorPlan {
     },
   };
 }
-
