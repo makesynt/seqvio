@@ -1,0 +1,29 @@
+name: Render benchmark
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 3 * * 1'
+
+jobs:
+  render-benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Run three-sample render benchmark
+        run: npm run benchmark:render:check
+      - name: Upload benchmark report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-benchmark-${{ runner.os }}-${{ runner.arch }}
+          path: output/benchmarks/latest.json
+          if-no-files-found: warn
+          retention-days: 30

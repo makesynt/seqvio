@@ -20,6 +20,8 @@
 | terminal-narrator | `node-pty` + asciinema/xterm state; compiler emits capture-backed cues/Beats and audio scene timing | Production pipeline uses shared dispatcher -> IR -> TSX; legacy writer removed |
 | browser-recorder | Records exact action clocks; compiler emits BrowserSceneSpec plus capture-backed cues/Beats | Production pipeline uses shared dispatcher -> IR -> TSX; legacy writer removed |
 | technical components | `CodeWalkthrough{source,steps}`, `ArchitectureDiagram`, `TerminalDemo`, `ansi.ts`, `code-utils.ts` | Reuse |
+| render performance | Four generated 1280x720 workloads, three-sample environment baseline, structured cache metrics, and scheduled reports | Baseline built; optimize Browser first |
+| environment diagnostics | `seqvio-doctor` checks Node, Chromium launch, FFmpeg probe, bundled fonts, `node-pty`, and writable paths | Built |
 
 ## Architectural Decisions
 
@@ -163,6 +165,28 @@ recording, so verification is self-consistent), and hand-written IR either has
 no ground truth (whiteboard) or was dropped (code/diagram char-level checks
 conflate simplification with fabrication). See git history for the reverted
 work.
+
+## Phase 4 - Performance and Host Readiness
+
+### 4.1 Reproducible render baseline - DONE (local reference)
+
+`scripts/render-benchmark.mjs` generates network-free Code, Terminal, Browser,
+and mixed CompositionDocument workloads at 1280x720/30 fps. Three-run medians
+record render factor, setup time, process-tree peak RSS, output size, renderer
+throughput, and static-frame cache hit rate. The stored Windows reference is
+enforced only on a matching platform/architecture/CPU; other hosts emit a
+report without treating hardware differences as a regression. A weekly/manual
+CI workflow retains the Linux report. The first reference identifies Browser
+capture as the highest-cost path, followed by Terminal; optimize in that order.
+
+### 4.2 Unified environment diagnostic - DONE (local verification)
+
+`seqvio-doctor` and `npm run doctor` emit human-readable or `--json` results and
+exit non-zero on blocking failures. The command probes Node >=18, loads the
+`node-pty` native binding, resolves bundled technical fonts, executes an FFmpeg
+media filter, launches Chromium and evaluates a page, and verifies writable
+`temp/` and `output/` paths. All checks pass on the current Windows host;
+Linux/macOS confirmation remains owned by the configured host CI runs.
 
 ## Dependencies
 

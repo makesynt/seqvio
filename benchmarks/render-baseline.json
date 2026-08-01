@@ -1,0 +1,346 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-01T15:26:34.394Z",
+  "profile": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "quality": "low",
+    "pixelRatio": 1,
+    "frameFormat": "png",
+    "workers": 1
+  },
+  "environment": {
+    "platform": "win32",
+    "release": "10.0.26200",
+    "arch": "x64",
+    "node": "v24.15.0",
+    "cpuModel": "Intel(R) Core(TM) i5-10400 CPU @ 2.90GHz",
+    "logicalCpus": 12,
+    "totalMemoryMb": 16165,
+    "puppeteer": "25.1.0",
+    "chromium": "Chrome/127.0.6533.88",
+    "ffmpeg": "ffmpeg version N-92722-gf22fcd4483 Copyright (c) 2000-2018 the FFmpeg developers"
+  },
+  "cases": [
+    {
+      "name": "code-720p",
+      "width": 1280,
+      "height": 720,
+      "fps": 30,
+      "frames": 90,
+      "sampleCount": 3,
+      "median": {
+        "totalMs": 4954,
+        "renderFactor": 1.651,
+        "renderedFps": 38.494,
+        "preparationMs": 2416,
+        "peakProcessTreeRssMb": 1385.4,
+        "outputBytes": 18368,
+        "reusedFrames": 87,
+        "cacheHitRate": 0.9667
+      },
+      "p90": {
+        "totalMs": 5172,
+        "peakProcessTreeRssMb": 1456.9
+      },
+      "samples": [
+        {
+          "totalFrames": 90,
+          "videoDurationMs": 3000,
+          "totalMs": 5172,
+          "renderFactor": 1.724,
+          "renderedFps": 38.75968992248062,
+          "preparationMs": 2658,
+          "phaseMs": {
+            "setup": 2658,
+            "rendering": 2322,
+            "muxing": 0,
+            "cleanup": 192
+          },
+          "peakProcessTreeRssMb": 1206.83984375,
+          "outputBytes": 18368,
+          "reusedFrames": 87,
+          "cacheHitRate": 0.9666666666666667
+        },
+        {
+          "totalFrames": 90,
+          "videoDurationMs": 3000,
+          "totalMs": 4920,
+          "renderFactor": 1.64,
+          "renderedFps": 38.49443969204448,
+          "preparationMs": 2416,
+          "phaseMs": {
+            "setup": 2416,
+            "rendering": 2338,
+            "muxing": 0,
+            "cleanup": 166
+          },
+          "peakProcessTreeRssMb": 1385.35546875,
+          "outputBytes": 18368,
+          "reusedFrames": 87,
+          "cacheHitRate": 0.9666666666666667
+        },
+        {
+          "totalFrames": 90,
+          "videoDurationMs": 3000,
+          "totalMs": 4954,
+          "renderFactor": 1.6513333333333333,
+          "renderedFps": 37.08281829419035,
+          "preparationMs": 2358,
+          "phaseMs": {
+            "setup": 2358,
+            "rendering": 2427,
+            "muxing": 0,
+            "cleanup": 169
+          },
+          "peakProcessTreeRssMb": 1456.921875,
+          "outputBytes": 18368,
+          "reusedFrames": 87,
+          "cacheHitRate": 0.9666666666666667
+        }
+      ]
+    },
+    {
+      "name": "terminal-720p",
+      "width": 1280,
+      "height": 720,
+      "fps": 30,
+      "frames": 90,
+      "sampleCount": 3,
+      "median": {
+        "totalMs": 12476,
+        "renderFactor": 4.159,
+        "renderedFps": 9.108,
+        "preparationMs": 2402,
+        "peakProcessTreeRssMb": 1253.5,
+        "outputBytes": 16404,
+        "reusedFrames": 5,
+        "cacheHitRate": 0.0556
+      },
+      "p90": {
+        "totalMs": 12505,
+        "peakProcessTreeRssMb": 1255.9
+      },
+      "samples": [
+        {
+          "totalFrames": 90,
+          "videoDurationMs": 3000,
+          "totalMs": 12476,
+          "renderFactor": 4.158666666666667,
+          "renderedFps": 9.027081243731194,
+          "preparationMs": 2329,
+          "phaseMs": {
+            "setup": 2329,
+            "rendering": 9970,
+            "muxing": 0,
+            "cleanup": 177
+          },
+          "peakProcessTreeRssMb": 1236.8828125,
+          "outputBytes": 16404,
+          "reusedFrames": 5,
+          "cacheHitRate": 0.05555555555555555
+        },
+        {
+          "totalFrames": 90,
+          "videoDurationMs": 3000,
+          "totalMs": 12375,
+          "renderFactor": 4.125,
+          "renderedFps": 9.185548071034905,
+          "preparationMs": 2402,
+          "phaseMs": {
+            "setup": 2402,
+            "rendering": 9798,
+            "muxing": 0,
+            "cleanup": 175
+          },
+          "peakProcessTreeRssMb": 1253.49609375,
+          "outputBytes": 16404,
+          "reusedFrames": 5,
+          "cacheHitRate": 0.05555555555555555
+        },
+        {
+          "totalFrames": 90,
+          "videoDurationMs": 3000,
+          "totalMs": 12505,
+          "renderFactor": 4.168333333333333,
+          "renderedFps": 9.108389839085113,
+          "preparationMs": 2428,
+          "phaseMs": {
+            "setup": 2428,
+            "rendering": 9881,
+            "muxing": 0,
+            "cleanup": 196
+          },
+          "peakProcessTreeRssMb": 1255.87890625,
+          "outputBytes": 16404,
+          "reusedFrames": 5,
+          "cacheHitRate": 0.05555555555555555
+        }
+      ]
+    },
+    {
+      "name": "browser-720p",
+      "width": 1280,
+      "height": 720,
+      "fps": 30,
+      "frames": 90,
+      "sampleCount": 3,
+      "median": {
+        "totalMs": 16142,
+        "renderFactor": 5.381,
+        "renderedFps": 6.4,
+        "preparationMs": 1964,
+        "peakProcessTreeRssMb": 1641.9,
+        "outputBytes": 340568,
+        "reusedFrames": 0,
+        "cacheHitRate": 0
+      },
+      "p90": {
+        "totalMs": 16575,
+        "peakProcessTreeRssMb": 1657.9
+      },
+      "samples": [
+        {
+          "totalFrames": 90,
+          "videoDurationMs": 3000,
+          "totalMs": 16138,
+          "renderFactor": 5.379333333333333,
+          "renderedFps": 6.400227563646707,
+          "preparationMs": 1896,
+          "phaseMs": {
+            "setup": 1896,
+            "rendering": 14062,
+            "muxing": 0,
+            "cleanup": 180
+          },
+          "peakProcessTreeRssMb": 1629.70703125,
+          "outputBytes": 340568,
+          "reusedFrames": 0,
+          "cacheHitRate": 0
+        },
+        {
+          "totalFrames": 90,
+          "videoDurationMs": 3000,
+          "totalMs": 16142,
+          "renderFactor": 5.3806666666666665,
+          "renderedFps": 6.430408688196628,
+          "preparationMs": 1964,
+          "phaseMs": {
+            "setup": 1964,
+            "rendering": 13996,
+            "muxing": 0,
+            "cleanup": 182
+          },
+          "peakProcessTreeRssMb": 1657.859375,
+          "outputBytes": 340568,
+          "reusedFrames": 0,
+          "cacheHitRate": 0
+        },
+        {
+          "totalFrames": 90,
+          "videoDurationMs": 3000,
+          "totalMs": 16575,
+          "renderFactor": 5.525,
+          "renderedFps": 6.325110689437065,
+          "preparationMs": 2165,
+          "phaseMs": {
+            "setup": 2165,
+            "rendering": 14229,
+            "muxing": 0,
+            "cleanup": 181
+          },
+          "peakProcessTreeRssMb": 1641.94921875,
+          "outputBytes": 340568,
+          "reusedFrames": 0,
+          "cacheHitRate": 0
+        }
+      ]
+    },
+    {
+      "name": "mixed-720p",
+      "width": 1280,
+      "height": 720,
+      "fps": 30,
+      "frames": 252,
+      "sampleCount": 3,
+      "median": {
+        "totalMs": 25996,
+        "renderFactor": 3.095,
+        "renderedFps": 10.705,
+        "preparationMs": 2256,
+        "peakProcessTreeRssMb": 1831.6,
+        "outputBytes": 306837,
+        "reusedFrames": 84,
+        "cacheHitRate": 0.3333
+      },
+      "p90": {
+        "totalMs": 26442,
+        "peakProcessTreeRssMb": 1846.9
+      },
+      "samples": [
+        {
+          "totalFrames": 252,
+          "videoDurationMs": 8400,
+          "totalMs": 25556,
+          "renderFactor": 3.0423809523809524,
+          "renderedFps": 10.847107438016529,
+          "preparationMs": 2128,
+          "phaseMs": {
+            "setup": 2128,
+            "rendering": 23232,
+            "muxing": 0,
+            "cleanup": 196
+          },
+          "peakProcessTreeRssMb": 1790.390625,
+          "outputBytes": 306837,
+          "reusedFrames": 84,
+          "cacheHitRate": 0.3333333333333333
+        },
+        {
+          "totalFrames": 252,
+          "videoDurationMs": 8400,
+          "totalMs": 25996,
+          "renderFactor": 3.0947619047619046,
+          "renderedFps": 10.70472792149866,
+          "preparationMs": 2256,
+          "phaseMs": {
+            "setup": 2256,
+            "rendering": 23541,
+            "muxing": 0,
+            "cleanup": 199
+          },
+          "peakProcessTreeRssMb": 1831.57421875,
+          "outputBytes": 306837,
+          "reusedFrames": 84,
+          "cacheHitRate": 0.3333333333333333
+        },
+        {
+          "totalFrames": 252,
+          "videoDurationMs": 8400,
+          "totalMs": 26442,
+          "renderFactor": 3.1478571428571427,
+          "renderedFps": 10.701091341458236,
+          "preparationMs": 2709,
+          "phaseMs": {
+            "setup": 2709,
+            "rendering": 23549,
+            "muxing": 0,
+            "cleanup": 184
+          },
+          "peakProcessTreeRssMb": 1846.88671875,
+          "outputBytes": 306837,
+          "reusedFrames": 84,
+          "cacheHitRate": 0.3333333333333333
+        }
+      ]
+    }
+  ],
+  "tolerance": {
+    "renderFactorRatio": 0.4,
+    "preparationRatio": 0.3,
+    "peakMemoryRatio": 0.35,
+    "outputSizeRatio": 0.5,
+    "cacheHitRateAbsoluteDrop": 0.05
+  }
+}

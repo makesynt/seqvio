@@ -128,7 +128,7 @@ node packages/browser-recorder/dist/cli.js record --plan plan.json --jobId demo 
 
 [`@seqvio/terminal-narrator`](./packages/terminal-narrator) 使用 `node-pty` 与 xterm 快照保留终端状态和真实步骤时间，并把每个观察步骤编译成 Terminal 场景、旁白 cue 与基于捕获证据的 ExplanationBeat。`--withAudio` 只负责合成并混入旁白；仅当同时显式添加 `--burnCaptions` 时才烧录字幕。
 
-**环境要求：** Node.js `>=18`、Chromium（Puppeteer）、FFmpeg（`@seqvio/renderer` 已内置）。本地仓库开发使用 npm workspaces 和 `package-lock.json`。
+**环境要求：** Node.js `>=18`、Chromium（Puppeteer）、FFmpeg（`@seqvio/renderer` 已内置）。本地仓库开发使用 npm workspaces 和 `package-lock.json`。可运行 `seqvio-doctor`，或在仓库中运行 `npm run doctor`，一次校验完整本地工具链。
 
 ## 可以做什么
 
@@ -223,6 +223,7 @@ Seqvio 是 coding agent 用来解释想法的视觉语言，而不只是一个�
 - `seqvio-render`：TSX 到 MP4
 - `seqvio-audio`：manifest 提取与 TTS 合成
 - `seqvio-qa`：baseline/capture profile、稳定音频/时序/媒体诊断、警告升级和关键帧视觉检查
+- `seqvio-doctor`：检查 Node、Chromium、FFmpeg、内置字体、`node-pty` 和工作路径，并支持 `--json`
 - TTS provider：ElevenLabs、OpenAI、MiniMax、edge-tts
 
 ## 手动安装
@@ -235,7 +236,7 @@ Seqvio 是 coding agent 用来解释想法的视觉语言，而不只是一个�
 npm install -g @seqvio/renderer
 ```
 
-会全局安装 `seqvio-render`、`seqvio-audio`、`seqvio-generate`、`seqvio-preview`、`seqvio-add` 和 `seqvio-qa`，并自动拉取 `@seqvio/core`、`@seqvio/whiteboard`。如果 composition 在 monorepo 外直接 import `@seqvio/product-demo`、`@seqvio/scatterbrain` 或 `@seqvio/technical`，需要额外安装对应包。
+会全局安装 `seqvio-render`、`seqvio-audio`、`seqvio-generate`、`seqvio-preview`、`seqvio-add`、`seqvio-qa` 和 `seqvio-doctor`，并自动拉取 `@seqvio/core`、`@seqvio/whiteboard`。如果 composition 在 monorepo 外直接 import `@seqvio/product-demo`、`@seqvio/scatterbrain` 或 `@seqvio/technical`，需要额外安装对应包。
 
 ### Clone 并 build 仓库
 

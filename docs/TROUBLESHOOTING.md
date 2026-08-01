@@ -16,6 +16,19 @@ npm run build
 
 Use `npm ci` (not `npm install`) for a clean, lockfile-exact install.
 
+Run the unified environment diagnostic before investigating a composition:
+
+```bash
+npm run doctor
+# Installed CLI:
+seqvio-doctor --json
+```
+
+It checks the supported Node version, the `node-pty` native module, bundled
+technical fonts, an actual FFmpeg media probe, a real headless Chromium launch,
+and write access to `temp/` and `output/`. A failing check includes a repair
+hint and exits non-zero.
+
 ### Build succeeds in one package but not the repo
 
 Run the workspace build from repo root:
@@ -81,6 +94,11 @@ npm run render:composition-smoke -w @seqvio/renderer
 
 You can also enable `--workers auto` (parallel capture) or `--preset preview`
 (fast jpeg pass) for large compositions.
+
+For repeatable performance evidence, run `npm run benchmark:render`. The report
+is written to `output/benchmarks/latest.json`; `benchmark:render:check` compares
+three-sample medians only when the current platform, architecture, and CPU match
+the stored reference environment.
 
 ### Video duration looks wrong
 

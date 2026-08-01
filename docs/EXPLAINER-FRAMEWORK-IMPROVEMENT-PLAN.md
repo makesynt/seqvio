@@ -336,23 +336,25 @@ use without expanding Seqvio into a general video platform.
 
 Deliverables:
 
-- Create representative terminal, browser, code, and mixed-scene benchmark
-  compositions at supported resolutions and durations.
-- Record render factor, peak memory, preparation time, cache hit rate, and output
-  size in CI or scheduled benchmark runs.
+- **Done:** create generated terminal, browser, code, and mixed-scene benchmark
+  compositions at 1280x720/30 fps with no network dependency.
+- **Done:** record render factor, process-tree peak RSS, preparation time, cache
+  hit rate, throughput, and output size in three-sample local baselines and a
+  scheduled CI artifact.
 - Profile before optimizing. Prioritize static-layer reuse, decoded media reuse,
   chapter caching, and avoiding redundant browser work where determinism is
   preserved.
-- Define an initial performance budget for the reference environment after the
-  first benchmark run; reject statistically significant regressions rather than
-  selecting an unsupported target in advance.
+- **Done:** define an initial compatible-host performance budget from the first
+  three-sample Windows reference. Different hardware reports metrics without
+  producing a false hard failure.
 - Validate installation and smoke rendering on supported Windows, macOS, and
   Linux environments, including Chromium, FFmpeg, fonts, and `node-pty`.
   A three-host CI matrix now performs clean install/build/tests/package checks
   and real Terminal plus Browser direct-CLI capture/QA runtime smokes. Windows
   package/CLI verification also passes locally; matrix confirmation is pending.
-- Provide one diagnostic command that reports missing dependencies, incompatible
-  versions, writable paths, media probes, and font availability.
+- **Done:** provide `seqvio-doctor` / `npm run doctor` for missing dependencies,
+  incompatible Node versions, writable paths, an FFmpeg media probe, a real
+  Chromium launch, `node-pty`, and bundled-font availability.
 - Promote terminal and browser capture out of pre-stable only after their Phase
   1-3 gates pass on every supported platform.
 

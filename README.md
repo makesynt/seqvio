@@ -125,7 +125,7 @@ node packages/browser-recorder/dist/cli.js record --plan plan.json --jobId demo 
 
 Open `http://127.0.0.1:4175`. The built-in sample runs without an AI provider; configure a planner webhook only when AI-generated action plans are required. See the [browser recorder README](./packages/browser-recorder/README.md) for the plan contract and pre-stable CLI boundaries.
 
-**Requirements:** Node.js `>=18`, Chromium (via Puppeteer), FFmpeg (bundled in `@seqvio/renderer`). Local repo development uses npm workspaces and `package-lock.json`.
+**Requirements:** Node.js `>=18`, Chromium (via Puppeteer), FFmpeg (bundled in `@seqvio/renderer`). Local repo development uses npm workspaces and `package-lock.json`. Verify the complete local toolchain with `seqvio-doctor` or `npm run doctor` in a repository checkout.
 
 ### Terminal capture adapter
 
@@ -225,6 +225,7 @@ Seqvio is the visual language for coding agents that need to explain, not merely
 - `seqvio-render` CLI for TSX-to-MP4 rendering
 - `seqvio-audio` CLI for audio/caption manifest extraction and TTS synthesis
 - `seqvio-qa` CLI with baseline/capture profiles, stable audio/temporal/media diagnostics, configurable warning promotion, and key-frame visual checks
+- `seqvio-doctor` CLI for Node, Chromium, FFmpeg, bundled-font, `node-pty`, and writable-path diagnostics (`--json` is available for automation)
 - ElevenLabs, OpenAI, MiniMax, and edge-tts narration providers
 
 ## Manual setup
@@ -237,7 +238,7 @@ Use this section when working from a local repository checkout or when you need 
 npm install -g @seqvio/renderer
 ```
 
-This installs `seqvio-render`, `seqvio-audio`, `seqvio-generate`, `seqvio-preview`, `seqvio-add`, and `seqvio-qa` globally. Dependencies `@seqvio/core` and `@seqvio/whiteboard` are pulled in automatically. Install `@seqvio/product-demo`, `@seqvio/scatterbrain`, or `@seqvio/technical` separately when your composition imports those packages outside the monorepo.
+This installs `seqvio-render`, `seqvio-audio`, `seqvio-generate`, `seqvio-preview`, `seqvio-add`, `seqvio-qa`, and `seqvio-doctor` globally. Dependencies `@seqvio/core` and `@seqvio/whiteboard` are pulled in automatically. Install `@seqvio/product-demo`, `@seqvio/scatterbrain`, or `@seqvio/technical` separately when your composition imports those packages outside the monorepo.
 
 ### Clone and build the repository
 

@@ -156,6 +156,16 @@ faithful (same-source as the real recording, so verification is self-consistent)
 and hand-written IR either has no ground truth (whiteboard) or was dropped
 (code/diagram char-level checks conflate simplification with fabrication).
 
+## Operational Stabilization
+
+This is supporting infrastructure, not a new product layer. Seqvio now carries
+four generated 1280x720 render benchmarks (Code, Terminal, Browser, and mixed),
+a three-sample local reference with compatible-host budgets, and a scheduled CI
+report. The baseline makes Browser capture the first optimization target and
+Terminal the second. `seqvio-doctor` provides one deterministic preflight for
+Node, Chromium, FFmpeg, technical fonts, `node-pty`, and writable render paths.
+Cross-host confirmation remains part of the lifecycle-promotion gate.
+
 ## Deprioritized
 
 Restating what is *not* getting first dollars, and why:

@@ -114,6 +114,10 @@ export interface RenderResult {
     cleanup: number;
   };
   outputBytes: number;
+  /** Screenshots avoided by adjacent static-frame reuse. */
+  reusedFrames: number;
+  /** Reused screenshots divided by total encoded frames. */
+  cacheHitRate: number;
   workers: number;
   frameFormat: "png" | "jpeg";
   pixelRatio: number;
@@ -194,6 +198,7 @@ export class VideoRenderer {
    *  Enables direct canvas capture + ffmpeg chrome compositing. */
   private terminalMode = false;
   private terminalDims: { width: number; height: number } | null = null;
+  private reusedFrames = 0;
 
   private browserLaunchOptions(): Parameters<typeof puppeteer.launch>[0] {
     return {
@@ -401,6 +406,8 @@ export class VideoRenderer {
           cleanup: tCleanup - tMux,
         },
         outputBytes,
+        reusedFrames: this.reusedFrames,
+        cacheHitRate: totalFrames > 0 ? this.reusedFrames / totalFrames : 0,
         workers: this.options.workers,
         frameFormat: this.options.frameFormat,
         pixelRatio: this.options.pixelRatio,
@@ -767,6 +774,7 @@ export class VideoRenderer {
           : await captureFrame();
         if (reusePrevious) {
           reusedFrames += 1;
+          this.reusedFrames += 1;
         }
 
         await writeFrame(buffer);

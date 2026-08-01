@@ -39,6 +39,11 @@ This project follows a simple keep-a-changelog style:
   frame pixel checks, and environment-tagged Windows/Linux/macOS CI artifacts.
 - Added authored Whiteboard/Code/Diagram timeline conformance across narration
   expansion, transitions, captions, annotations, and reverse frame access.
+- Added reproducible 1280x720 Code, Terminal, Browser, and mixed-scene render
+  benchmarks with three-sample baselines, environment metadata, scheduled CI
+  artifacts, and compatible-host regression budgets.
+- Added `seqvio-doctor` with human and JSON output for Node, Chromium, FFmpeg,
+  bundled fonts, `node-pty`, and writable render paths.
 
 ### Changed
 
@@ -61,6 +66,8 @@ This project follows a simple keep-a-changelog style:
   artifacts have been flushed.
 - Made Annotation overlays measure after the requested frame commits and join
   the browser readiness barrier, preventing stale bounds after reverse seeks.
+- Exposed static screenshot reuse and cache-hit rate in structured render
+  results so performance reports do not parse progress text.
 
 ### Documentation
 
