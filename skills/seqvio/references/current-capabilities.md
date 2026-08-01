@@ -5,17 +5,25 @@ This reference describes what Seqvio supports today in this repository. Treat pl
 ## Production loop
 
 ```text
-content -> host agent -> IR (Storyboard v1 or CompositionDocument v2) -> TSX -> audio manifest -> TTS -> seqvio-render -> MP4
+content or CaptureManifest
+  -> CompositionDocument v2 (cues + ExplanationBeats + capture evidence)
+  -> TSX with logical source timing
+  -> audio manifest -> TTS
+  -> resolved Beats + semantic scene timeMap
+  -> seqvio-qa -> seqvio-render -> MP4
 ```
 
-For new topics:
+For new technical explainers, jointly author narration cues and visual actions in
+CompositionDocument v2. Do not assign the final video clock independently: TTS
+resolves phrase anchors to output frames, and the scene `timeMap` keeps recorded
+or authored visual actions in semantic order.
 
-```text
-seqvio-generate plan-agent -> host agent returns IR -> validate -> compile -> seqvio-render
-```
+The retained alternatives are narrower:
 
-- history / science (default): Storyboard v1 whiteboard IR
-- programming / ai / devops: CompositionDocument v2 (`version: "2.0"`)
+- Storyboard v1 remains a supported input for whiteboard-only work.
+- Hand-authored TSX remains valid for silent output, small edits, and deliberate
+  low-level control. `meta.audio.narration` alone does not provide semantic Beat
+  alignment.
 
 Seqvio does not call AI or planner APIs. The host agent creates the IR; Seqvio validates and compiles it deterministically.
 
@@ -65,6 +73,8 @@ From `@seqvio/core`:
 - `Scene`
 - `Transition`
 - CompositionDocument v2 schema, validate, compile, migrate, render-plan helpers
+- ExplanationBeat cues, exact phrase anchors, visual actions, capture evidence,
+  logical source timing, and post-TTS semantic time maps
 
 Implemented transitions: `fade`, `slide`, `wipe`
 
@@ -83,6 +93,22 @@ From `@seqvio/renderer`:
 - `seqvio-render --renderPlan --chapterDir [--ir] [--onlyChapters] [--resume]` — chapter render / resume / stitch
 - `seqvio-audio extract` — narration manifest extraction
 - `seqvio-audio synthesize` — TTS synthesis and resolved manifest generation
+- `seqvio-qa` — visual, pacing, media, capture, and resolved timing checks
+
+Capture adapters are available but pre-stable:
+
+- `@seqvio/terminal-narrator` converts xterm recordings into terminal scenes,
+  capture-backed ExplanationBeats, and optional synthesized narration.
+- `@seqvio/browser-recorder` records browser actions and preserves exact action
+  start times when compiling Browser scenes and Beats.
+
+Their shared-dispatcher data path is implemented, legacy writers are removed,
+and release smoke is tested at `1280x720`. CLI contract `1.0` provides direct
+commands, JSON results, stable exit codes, monotonic progress, safe job ids, and
+portable `artifacts.json` paths. Windows package and real runtime verification
+passes locally; the configured Windows/Linux/macOS matrix must pass before
+lifecycle promotion. Screenshot privacy work is intentionally deferred and must
+not be assumed.
 
 ## Narration providers
 
@@ -100,10 +126,18 @@ Credentials come from environment variables. The CLI does not auto-load `.env`.
 Supported today:
 
 - `meta.audio.narration` cue lists
+- CompositionDocument `explanation.cues` + `explanation.beats` joint authoring
+- phrase resolution from TTS chunk timing or whole-cue character fallback
+- resolved `explanationBeats` and `sceneTimings[].timeMap`
+- QA errors for unresolved/reversed Beats and warnings for low-confidence timing
 - per-cue `sceneId`
 - `lockToAudio: true`
 - resolved manifest driven scene timing
 - optional caption burn-in via `--burnCaptions` (off by default; see audio-workflow.md)
+- Terminal and Browser direct capture CLIs support the same optional
+  `--withAudio`, provider/voice, and `--burnCaptions` controls
+- Terminal and Browser jobs run capture QA and publish `qa-report.json` in the
+  job artifact manifest
 - chapter stitch can mux narration/music after video concat
 
 ## Example compositions / IR
@@ -120,6 +154,7 @@ Preferred starting points:
 | `examples/compositions/technical-explainer-v2.tsx` | ~4.5 min technical reference composition (`lockToAudio`) |
 | `examples/ir/technical-demo-v2.json` | Short CompositionDocument v2 IR |
 | `examples/ir/technical-explainer-v2.json` | Full CompositionDocument v2 IR + chapters |
+| `packages/whiteboard/examples/` | Single-scene whiteboard samples |
 
 Narrated technical reference loop:
 
@@ -127,7 +162,6 @@ Narrated technical reference loop:
 npm run audio:technical-explainer -- --smoke          # extract + TTS + short muxed clip
 npm run audio:technical-explainer                     # full extract + TTS + preview render
 ```
-| `packages/whiteboard/examples/` | Single-scene whiteboard samples |
 
 Tracked README demo videos:
 
@@ -146,6 +180,9 @@ Local render intermediates belong in `output/` / `.media/` and are gitignored.
 | `packages/core` | Scene, transition, and IR runtime |
 | `packages/renderer` | Bundler and CLIs |
 | `packages/product-demo` | Product walkthrough components |
+| `packages/capture` | Shared capture manifest and evidence contracts |
+| `packages/terminal-narrator` | Pre-stable terminal capture adapter |
+| `packages/browser-recorder` | Pre-stable browser capture adapter |
 | `examples/compositions/` | Renderable compositions |
 | `examples/ir/` | Storyboard / CompositionDocument JSON examples |
 | `skills/seqvio/` | Agent skill and references |
@@ -160,7 +197,8 @@ Do not assume these exist just because they appear in roadmap or proposal docs:
 - Seqvio-side AI planning or planner API calls
 - OpenMontage adapter inside Seqvio core
 - `@seqvio/education` / full LessonPlan package
-- TerminalDemo / ChatTranscript / DiffReview scene families
+- ChatTranscript, DiffReview, or infographic scene families
+- automatic screenshot privacy or redaction guarantees
 - formal VISION.md promise for 10-minute videos
 - transitions beyond `fade`, `slide`, and `wipe`
 

@@ -249,7 +249,7 @@ async function createResolvedAudio(sourceManifest, workDir) {
       endMs: cursorMs + durationMs,
       chunks: [{
         text: cue.text,
-        offsetFrame: Math.round((cursorMs / 1000) * fps),
+        offsetFrame: 0,
         durationFrame: Math.round((durationMs / 1000) * fps),
       }],
     });

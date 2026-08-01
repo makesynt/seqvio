@@ -8,11 +8,14 @@ description: Create or edit Seqvio explainer video compositions in TSX and rende
 Seqvio turns structured content into narrated explainer videos. Preferred production loop for **new topics**:
 
 1. write a host-agent task with `seqvio-generate plan-agent`
-2. let the host agent produce one IR JSON (Storyboard v1 or CompositionDocument v2)
-3. validate + compile IR to TSX with `seqvio-generate`
+2. let the host agent produce CompositionDocument v2 with narration cues and ExplanationBeats authored together
+3. validate + compile the IR to TSX with logical source timing
 4. for long technical videos, optionally `seqvio-generate render-plan` then chapter-render with `--resume`
-5. render with `seqvio-render`
-6. optionally extract/synthesize narration with `seqvio-audio`
+5. extract and synthesize with `seqvio-audio`, which resolves phrase anchors and semantic scene time maps
+6. run `seqvio-qa` with the resolved audio manifest, then render with `seqvio-render`
+
+Storyboard v1 remains supported for whiteboard-only input. It is not the default
+contract for new captured or technical explainers.
 
 Seqvio itself does not call AI or planner APIs. Creative planning happens in the host agent; Seqvio validates, compiles, and renders deterministically.
 
@@ -24,15 +27,29 @@ Manual TSX authoring is still valid for polish:
 4. extract and synthesize narration with `seqvio-audio` when needed
 5. render with `seqvio-render`
 
-When narration and visuals must align, use the **resolved-audio workflow**:
+When CompositionDocument narration and visuals must align, author them together:
 
-1. author `meta.audio.narration` with one cue per scene or beat
-2. set `sceneId` on each cue
-3. set `lockToAudio: true` when final composition length should follow resolved narration
-4. run `seqvio-audio extract` then `seqvio-audio synthesize`
-5. render with `--audioManifest .../audio-manifest.resolved.json`
+1. add `scene.explanation.cues` with the spoken text
+2. add `scene.explanation.beats` with exact phrase anchors and visual target ids
+3. give every targeted element or Code/Diagram step a stable id
+4. use `evidence.captureStepId` for Terminal/Browser capture steps
+
+Then use the **resolved-audio workflow**:
+
+1. compile the CompositionDocument; Seqvio emits narration, Beats, highlights, and logical source frames together
+2. run `seqvio-audio extract` then `seqvio-audio synthesize`
+3. verify every Beat has `outputFrame` and no `resolutionError`
+4. render with `--audioManifest .../audio-manifest.resolved.json`
+
+For hand-authored TSX, continue to declare `meta.audio.narration` directly. It
+does not gain semantic Beat alignment unless `meta.audio.explanationBeats` and
+scene timing metadata are also authored.
 
 Do **not** add `--burnCaptions` by default. Voiceover is muxed from the manifest; burned captions are an optional hard-subtitle overlay. Only use `--burnCaptions` for short on-screen lines with bottom safe area — not for full narration paragraphs or YouTube/Bilibili delivery. See [references/audio-workflow.md](references/audio-workflow.md#caption-burn-in-optional).
+
+Terminal and Browser capture CLIs follow the same rule: `--withAudio` synthesizes
+and muxes narration, while `--burnCaptions` must be explicit. Every capture job
+runs capture QA and writes `qa-report.json` before it is marked complete.
 
 The resolved manifest contains actual cue timings from synthesized audio. The framework can derive scene durations from those timings automatically.
 
@@ -140,7 +157,8 @@ Each scene usually wraps its own `WhiteboardScene`. Scene-local draw timings sta
   - a default React component
   - `meta` with at least `duration` and `fps`
 - All timing is in **frames**, not seconds.
-- For audio-aligned work, prefer one narration cue per scene or beat and set `sceneId` on each cue.
+- For CompositionDocument audio alignment, use `explanation.cues` and phrase-anchored `explanation.beats`; do not independently tune narration and visual timestamps.
+- For hand-authored TSX, prefer one narration cue per scene or beat and set `sceneId` on each cue.
 - For narrated videos, **voice is the clock**: do not pad scenes with silence to hit a target duration. If the video must be longer, expand the script and synthesize more narration.
 - After synthesis or audio editing, check for long silent spans before handoff. Use FFmpeg `silencedetect` or an equivalent audio QA step; visual timing must adapt to the final audio, not the other way around.
 - For render validation clips, **do not use `--duration` to mean "render N frames"** on narrated or captioned compositions. `meta.audio` / captions can extend the resolved duration beyond the CLI value. Use `--startFrame` and `--endFrame` for exact frame ranges, and verify the CLI log says `Rendering N frames`.

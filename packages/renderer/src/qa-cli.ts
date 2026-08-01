@@ -13,7 +13,7 @@ import {
   type CaptureManifest,
 } from '@seqvio/capture';
 import { runtimeGlobalName } from './brand';
-import { getMetaFromPage, loadRenderShell, setFrameAndWait } from './browser-shell';
+import { disposeRenderShell, getMetaFromPage, loadRenderShell, setFrameAndWait } from './browser-shell';
 import { bundleScene, resolveComponentPath, writeRenderShell } from './bundle-scene';
 import {
   resolveCompositionDurationFrames,
@@ -53,6 +53,7 @@ interface QaOptions {
   audioManifest?: string;
   warningCodes: Set<string>;
   keepArtifacts: boolean;
+  allowSilentNarration: boolean;
   qaConfig?: string;
 }
 
@@ -92,6 +93,7 @@ Options:
   --warningsAsErrors <csv> Promote selected warning codes to errors
   --failOnWarning          Promote every warning to an error
   --keepArtifacts          Keep intermediate browser artifacts
+  --allowSilentNarration   Permit an explicitly silent capture job without a narration track
   --ci                     CI mode (exit non-zero on error; machine-readable report)
   --help
 `);
@@ -103,7 +105,7 @@ function parseArgs(argv: string[]): QaOptions {
     const token = argv[i];
     if (!token.startsWith('--')) continue;
     const key = token.slice(2);
-    if (key === 'help' || key === 'ci' || key === 'failOnWarning' || key === 'keepArtifacts') {
+    if (key === 'help' || key === 'ci' || key === 'failOnWarning' || key === 'keepArtifacts' || key === 'allowSilentNarration') {
       args.set(key, true);
       continue;
     }
@@ -164,6 +166,7 @@ function parseArgs(argv: string[]): QaOptions {
     audioManifest: typeof audioManifest === 'string' ? path.resolve(audioManifest) : undefined,
     warningCodes,
     keepArtifacts: args.get('keepArtifacts') === true,
+    allowSilentNarration: args.get('allowSilentNarration') === true,
     qaConfig: typeof qaConfig === 'string' ? path.resolve(qaConfig) : undefined,
   };
 }
@@ -208,6 +211,7 @@ function validateMediaForQa(
   duration: number,
   profile: QaProfile,
   componentDir: string,
+  requireNarrationAudio: boolean,
 ): QaDiagnostic[] {
   const diagnostics: QaDiagnostic[] = [];
   const manifest = buildManifestFromMeta(meta);
@@ -239,7 +243,7 @@ function validateMediaForQa(
     }
   }
   if (
-    profile === 'capture' &&
+    profile === 'capture' && requireNarrationAudio &&
     (manifest.narration?.some((cue) => !cue.silent) ?? false) &&
     !(manifest.tracks?.some((track) => track.kind === 'narration') ?? false)
   ) {
@@ -480,6 +484,7 @@ async function main(): Promise<void> {
   const width = meta.width ?? options.width;
   const height = meta.height ?? options.height;
   if (width !== options.width || height !== options.height) {
+    await disposeRenderShell(page);
     await page.setViewport({
       width,
       height,
@@ -501,6 +506,7 @@ async function main(): Promise<void> {
     duration,
     options.profile,
     resolvedAudioManifest?.baseDir ?? path.dirname(resolvedComponent),
+    !options.allowSilentNarration,
   );
   const authoredPacingProfile = meta.audio?.pacingProfile ?? meta.pacing?.profile;
   const resolvedPacingProfile = resolvePacingProfile(qaConfig.pacingProfile ?? authoredPacingProfile).id;
@@ -621,6 +627,7 @@ async function main(): Promise<void> {
     });
   }
 
+  await disposeRenderShell(page);
   await browser.close();
 
   const temporalIssues: QaDiagnostic[] = [];

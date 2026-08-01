@@ -1,6 +1,10 @@
 # TSX Compositions
 
-Handwritten video compositions for `seqvio-render`. Each file exports a default React component and `export const meta` with `duration` and `fps`.
+Handwritten or compiled video compositions for `seqvio-render`. Each file exports
+a default React component and `export const meta` with `duration` and `fps`.
+For new technical explainers, author `CompositionDocument v2` under
+`examples/ir/` and compile it here so narration and visual ExplanationBeats are
+designed together.
 
 ## Render
 
@@ -20,6 +24,10 @@ node packages/renderer/dist/cli.js \
 - **Style demos**: use `getSeqvioStylePreset` / `listSeqvioStylePresets` from `@seqvio/whiteboard`.
 - **Product demos**: use `@seqvio/product-demo` for browser frames, screenshot slots, cursor paths, titles, and callouts.
 - **Timing**: all `start` and `duration` values are in **frames**, not seconds.
+- **Narrated IR**: use `explanation.cues` + phrase-anchored
+  `explanation.beats`; post-TTS timing is resolved into a semantic scene time map.
+- **Manual TSX audio**: direct `meta.audio.narration` remains supported but is a
+  lower-level contract without automatic phrase-level visual alignment.
 - **No templates**: layout and copy are explicit in TSX (Remotion-style).
 
 ## Examples
@@ -40,3 +48,6 @@ node packages/renderer/dist/cli.js \
 | `generated/style-layout-demo.tsx` | Storyboard IR compiled TSX demo |
 
 More single-scene samples: `packages/whiteboard/examples/`.
+
+CompositionDocument examples: `examples/ir/`. Timing details:
+[`docs/EXPLANATION-BEAT-TIMING.md`](../../docs/EXPLANATION-BEAT-TIMING.md).

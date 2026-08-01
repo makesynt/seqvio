@@ -24,6 +24,7 @@ import {
   writeRenderShell,
 } from "./bundle-scene";
 import {
+  disposeRenderShell,
   getMetaFromPage,
   loadRenderShell,
   setFrameAndWait,
@@ -207,7 +208,7 @@ export class VideoRenderer {
         // fonts need GPU access even in software mode.
         "--enable-gpu",
         "--use-gl=angle",
-        "--use-angle=swiftshader",
+        "--use-angle=d3d11",
         "--disable-font-subpixel-positioning",
       ],
     };
@@ -470,6 +471,7 @@ export class VideoRenderer {
       this.options.width !== this.page.viewport()!.width ||
       this.options.height !== this.page.viewport()!.height
     ) {
+      await disposeRenderShell(this.page);
       this.shellPath = writeRenderShell(
         this.options.tempDir,
         this.options.width,
@@ -997,6 +999,7 @@ export class VideoRenderer {
           }
         } finally {
           if (assignment.workerIndex !== 0) {
+            await disposeRenderShell(page).catch(() => undefined);
             await browser.close().catch(() => undefined);
           }
         }
@@ -1350,6 +1353,7 @@ export class VideoRenderer {
 
   private async cleanup(): Promise<void> {
     if (this.browser) {
+      if (this.page) await disposeRenderShell(this.page);
       await this.browser.close();
     }
 

@@ -14,6 +14,7 @@ export type {
   AudioTrackKind,
   AudioTrackSpec,
   AudioSceneTiming,
+  ExplanationBeatTiming,
   CompositionAudioManifest,
   RenderableMeta,
 } from '@seqvio/core';
@@ -27,4 +28,5 @@ export {
   isPacingProfileId,
   resolvePacingProfile,
   mapSceneSourceFrameToOutput,
+  resolveNarrationAnchor,
 } from '@seqvio/core';

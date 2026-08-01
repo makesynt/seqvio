@@ -14,7 +14,7 @@ import {
   type NarrationCue,
 } from './media-contract';
 import { bundleScene, resolveComponentPath } from './bundle-scene';
-import { getMetaFromPage, loadRenderShell } from './browser-shell';
+import { disposeRenderShell, getMetaFromPage, loadRenderShell } from './browser-shell';
 import {
   buildManifestFromMeta,
   loadAudioManifest,
@@ -149,6 +149,7 @@ async function runExtract(args: Map<string, string | boolean>): Promise<void> {
     fs.mkdirSync(path.dirname(outPath), { recursive: true });
     fs.writeFileSync(outPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
     console.log(`Wrote audio manifest to ${outPath}`);
+    await disposeRenderShell(page);
   } finally {
     await browser.close();
     fs.rmSync(tempDir, { recursive: true, force: true });
@@ -594,6 +595,7 @@ async function runSynthesize(args: Map<string, string | boolean>): Promise<void>
     tracks: [...(manifest.tracks ?? []), ...resolvedTracks],
     captions: resolvedCaptions,
     sceneTimings: reflowedTimeline.sceneTimings,
+    explanationBeats: reflowedTimeline.explanationBeats,
     duration:
       reflowedTimeline.durationFrames ?? (resolvedNarration.length > 0
         ? msToFrames(

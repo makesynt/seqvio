@@ -184,8 +184,10 @@ export type TtsProvider = 'elevenlabs' | 'minimax' | 'edge-tts' | 'openai';
 
 export interface PipelineOptions {
   withAudio?: boolean;
+  burnCaptions?: boolean;
   audioProvider?: TtsProvider;
   audioVoice?: string;
+  qaConfig?: string;
 }
 
 export interface PipelineProgress {
@@ -196,6 +198,7 @@ export interface PipelineProgress {
     | 'composing'
     | 'synthesizing'
     | 'rendering'
+    | 'qa'
     | 'done'
     | 'failed';
   percent: number;
@@ -210,9 +213,13 @@ export interface PipelineResult {
   /** Asciinema cast exported from the native recording. */
   castPath: string;
   componentPath?: string;
+  captureManifestPath?: string;
+  compositionDocumentPath?: string;
   audioManifestPath?: string;
   resolvedAudioManifestPath?: string;
+  qaReportPath?: string;
   outputVideoPath: string;
+  artifactManifestPath: string;
 }
 
 export interface RecorderJob extends PipelineProgress {

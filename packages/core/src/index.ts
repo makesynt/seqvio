@@ -9,6 +9,7 @@ export * from './captions';
 export * from './timeline';
 export * from './time';
 export * from './pacing';
+export * from './narration-anchor';
 export * from './composition';
 export * from './scene-registry';
 export * from './transitions';

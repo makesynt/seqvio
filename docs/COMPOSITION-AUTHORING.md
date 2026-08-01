@@ -2,7 +2,57 @@
 
 Seqvio renders **React/TSX** compositions to MP4 by mounting them in headless Chromium and capturing one screenshot per frame.
 
-TSX is the production source: it is what gets bundled, rendered, reviewed, and hand-edited. For agent-assisted generation, a host agent may first produce Storyboard IR JSON, then `seqvio-generate` validates and compiles that IR into TSX. Seqvio does not call AI or planner APIs itself.
+TSX is the final production source: it is what gets bundled, rendered, reviewed, and hand-edited. For new agent-authored technical explainers, the recommended source contract is `CompositionDocument v2`; `seqvio-generate` validates and compiles it into TSX. Storyboard v1 remains a whiteboard-oriented input. Seqvio does not call AI or planner APIs itself.
+
+## Recommended CompositionDocument path
+
+For narrated CompositionDocument scenes, design speech and visuals together in
+`explanation`. Do not independently author a scene-level `narration` string and
+visual timestamps for the same scene.
+
+```json
+{
+  "type": "code",
+  "id": "request",
+  "language": "ts",
+  "source": "return api.get('/users');",
+  "steps": [
+    {
+      "id": "request-line",
+      "at": 0,
+      "action": "focus",
+      "range": { "startLine": 1, "endLine": 1 }
+    }
+  ],
+  "explanation": {
+    "cues": [
+      { "id": "voice", "text": "Now the client sends the request." }
+    ],
+    "beats": [
+      {
+        "id": "send-request",
+        "cueId": "voice",
+        "anchor": { "text": "sends the request" },
+        "visuals": [
+          { "targetId": "request-line", "action": "focus" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+The compiler first assigns deterministic logical source frames. After TTS,
+Seqvio resolves each exact phrase anchor to an `outputFrame` and builds a
+scene-local semantic `timeMap`. Whiteboard elements, Code/Diagram steps, and
+Terminal/Browser capture evidence all use this contract. See
+[`EXPLANATION-BEAT-TIMING.md`](./EXPLANATION-BEAT-TIMING.md) for validation,
+scene behavior, confidence, and repair rules.
+
+Hand-authored TSX remains supported below. Direct `meta.audio.narration` is a
+lower-level contract and does not automatically provide phrase-level visual
+alignment unless the corresponding ExplanationBeat and scene timing metadata
+are also present.
 
 ## Quick start
 
@@ -31,6 +81,9 @@ Imports resolve via esbuild aliases:
 
 - `@seqvio/whiteboard`
 - `@seqvio/core`
+- `@seqvio/technical`
+- `@seqvio/product-demo`
+- `@seqvio/scatterbrain`
 
 ## Single-scene layout
 
@@ -126,7 +179,7 @@ seqvio-render --component <path.tsx> --output <path.mp4> [options]
 
 Options: `--width`, `--height`, `--fps`, `--quality low|medium|high|4k`, `--pixelRatio 1|2` (default **2** for sharper strokes), `--duration`, `--startFrame`, `--endFrame`, `--keepFrames`.
 
-Storyboard IR helper:
+IR helpers:
 
 ```bash
 seqvio-generate plan-agent --input article.md --write-prompt task.md
@@ -134,11 +187,26 @@ seqvio-generate validate --ir storyboard.json --json
 seqvio-generate compile --ir storyboard.json --out examples/compositions/generated/storyboard.tsx
 ```
 
+For `programming`, `ai`, and `devops`, `plan-agent` defaults to
+CompositionDocument v2 and asks the host agent to emit ExplanationBeats. Run
+audio extraction and synthesis after compilation, then render with the resolved
+manifest:
+
+```bash
+seqvio-audio extract --component generated.tsx --out output/audio-manifest.json
+seqvio-audio synthesize --manifest output/audio-manifest.json --outDir output/audio
+seqvio-qa --component generated.tsx --audioManifest output/audio/audio-manifest.resolved.json --profile baseline --ci
+seqvio-render --component generated.tsx --audioManifest output/audio/audio-manifest.resolved.json --output output/final.mp4
+```
+
 ## Rendering pipeline
 
 ```mermaid
 flowchart LR
-  TSX[TSX file] --> Bundle[esbuild bundle]
+  IR[CompositionDocument cues + Beats] --> TSX[generated/editable TSX]
+  TSX --> Audio[TTS + semantic time map]
+  Audio --> QA[QA]
+  QA --> Bundle[esbuild bundle]
   Bundle --> Browser[Puppeteer + React runtime]
   Browser --> Frames[PNG frames per frame index]
   Frames --> FFmpeg[FFmpeg encode]

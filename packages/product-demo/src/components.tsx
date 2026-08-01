@@ -659,6 +659,13 @@ export const RecordedBrowserDemo: React.FC<RecordedBrowserDemoProps> = ({
 
   return (
     <div
+      data-seqvio-browser-demo="true"
+      data-seqvio-browser-time-ms={Math.round((frame / Math.max(1, fps)) * 1000)}
+      data-seqvio-browser-scale={camera.scale.toFixed(6)}
+      data-seqvio-browser-center-x={camera.centerX.toFixed(3)}
+      data-seqvio-browser-center-y={camera.centerY.toFixed(3)}
+      data-seqvio-browser-translate-x={translateX.toFixed(3)}
+      data-seqvio-browser-translate-y={translateY.toFixed(3)}
       style={{
         position: 'relative',
         width,
@@ -690,6 +697,7 @@ export const RecordedBrowserDemo: React.FC<RecordedBrowserDemoProps> = ({
       />
       {showFocusRing && renderedClick ? (
         <div
+          data-seqvio-browser-click="true"
           style={{
             position: 'absolute',
             left: renderedClick.x,
@@ -706,6 +714,9 @@ export const RecordedBrowserDemo: React.FC<RecordedBrowserDemoProps> = ({
       ) : null}
       {showCursor && renderedCursor ? (
         <div
+          data-seqvio-browser-cursor="true"
+          data-seqvio-browser-cursor-x={renderedCursor.x.toFixed(3)}
+          data-seqvio-browser-cursor-y={renderedCursor.y.toFixed(3)}
           style={{
             position: 'absolute',
             left: renderedCursor.x,

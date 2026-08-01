@@ -56,6 +56,7 @@ export async function recordPlan(
   const cursorPoints: TimedPoint[] = [{ timeMs: 0, x: 48, y: 48 }];
   const focusTargets: RecordedFocusTarget[] = [];
   const clicks: TimedPoint[] = [];
+  const actionTimings: Array<{ id: string; timeMs: number }> = [];
   let cursor = { x: 48, y: 48 };
   let frameCount = 0;
   let stopCapture = false;
@@ -112,14 +113,15 @@ export async function recordPlan(
     }
     if (box.width <= 0 || box.height <= 0) throw new Error(`Element is not visible: ${action.selector}`);
     if (action.focus !== false) {
-      focusTargets.push({ timeMs: now(), x: box.x, y: box.y, width: box.width, height: box.height });
+      focusTargets.push({ id: `focus-${action.id}`, timeMs: now(), x: box.x, y: box.y, width: box.width, height: box.height });
     }
     await moveCursor(box.x + box.width / 2, box.y + box.height / 2);
     return box;
   };
 
-  const resetFocus = () => {
+  const resetFocus = (id?: string) => {
     focusTargets.push({
+      id: id ? `focus-${id}` : undefined,
       timeMs: now(),
       x: 0,
       y: 0,
@@ -133,6 +135,7 @@ export async function recordPlan(
     onProgress?.({ phase: 'recording', percent: 3, message: 'Browser ready' });
     for (let index = 0; index < plan.actions.length; index += 1) {
       const action = plan.actions[index];
+      actionTimings.push({ id: action.id, timeMs: now() });
       onProgress?.({
         phase: 'recording',
         percent: 5 + Math.round((index / plan.actions.length) * 60),
@@ -151,16 +154,16 @@ export async function recordPlan(
         await page.keyboard.press('Backspace');
         await page.keyboard.type(action.value ?? '', { delay: 42 });
       } else if (action.type === 'scroll') {
-        resetFocus();
+        resetFocus(action.id);
         const x = action.x ?? 0;
         const y = action.y ?? 520;
         await page.evaluate(({ dx, dy }) => window.scrollBy({ left: dx, top: dy, behavior: 'smooth' }), { dx: x, dy: y });
         await delay(action.durationMs ?? 700);
       } else if (action.type === 'navigate') {
-        resetFocus();
+        resetFocus(action.id);
         await page.goto(action.value!, { waitUntil: 'networkidle2', timeout: 60000 });
       } else if (action.type === 'press') {
-        resetFocus();
+        resetFocus(action.id);
         await page.keyboard.press(action.key! as KeyInput);
       } else if (action.type === 'wait') {
         await delay(action.durationMs ?? 1000);
@@ -195,6 +198,7 @@ export async function recordPlan(
     cursorPoints,
     focusTargets,
     clicks,
+    actionTimings,
   };
   const manifestPath = path.join(jobDir, 'recording-manifest.json');
   fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');

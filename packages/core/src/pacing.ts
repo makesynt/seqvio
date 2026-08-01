@@ -1,4 +1,5 @@
 import type { CompositionDocument, SceneSpec } from './composition-document/schema';
+import type { ExplanationBeatTiming } from './audio';
 
 export interface PacingPolicy {
   chineseCharsPerSecond: number;
@@ -104,10 +105,115 @@ export function estimateNarrationDurationMs(
 
 export interface ResolvedHighlightWindow {
   id: string;
-  source: 'step' | 'annotation' | 'focus';
+  source: 'beat' | 'step' | 'annotation' | 'focus';
   startFrame: number;
   endFrame: number;
   minDurationFrames: number;
+}
+
+function explanationNarrationDurationMs(
+  scene: SceneSpec,
+  policy: PacingPolicy,
+): number {
+  const cues = scene.explanation?.cues ?? [];
+  if (cues.length === 0) return 0;
+  return cues.reduce((total, cue) => total + estimateNarrationDurationMs(cue.text, policy), 0)
+    + Math.max(0, cues.length - 1) * 180;
+}
+
+function applyExplanationTiming(
+  scene: SceneSpec,
+  fps: number,
+  policy: PacingPolicy,
+): { scene: SceneSpec; beats: ExplanationBeatTiming[]; highlights: ResolvedHighlightWindow[] } {
+  const explanation = scene.explanation;
+  if (!explanation?.beats.length) return { scene, beats: [], highlights: [] };
+  const minFrames = minimumFrames(fps, policy);
+  const captureStepFrames = new Map(
+    scene.type === 'terminal' || scene.type === 'browser'
+      ? (scene.steps ?? []).map((step) => [step.id, Math.round((step.timeMs / 1000) * fps)] as const)
+      : [],
+  );
+  let cursor = 0;
+  const beats: ExplanationBeatTiming[] = explanation.beats.map((beat) => {
+    const evidenceFrame = beat.evidence?.captureStepId
+      ? captureStepFrames.get(beat.evidence.captureStepId)
+      : undefined;
+    const sourceFrame = evidenceFrame ?? cursor;
+    const holdFrames = Math.max(
+      minFrames,
+      ...beat.visuals.map((visual) =>
+        Math.ceil(((visual.minHoldMs ?? policy.minHighlightMs) / 1000) * fps)
+      ),
+    );
+    cursor = Math.max(cursor, sourceFrame) + holdFrames;
+    return {
+      id: `${scene.id}.${beat.id}`,
+      sceneId: scene.id,
+      cueId: `${scene.id}.${beat.cueId}`,
+      anchor: beat.anchor,
+      sourceFrame,
+      visuals: beat.visuals,
+    };
+  });
+  const startByTarget = new Map<string, number>();
+  for (const beat of beats) {
+    for (const visual of beat.visuals) {
+      const offsetFrames = Math.round(((visual.offsetMs ?? 0) / 1000) * fps);
+      const start = Math.max(0, beat.sourceFrame + offsetFrames);
+      const prior = startByTarget.get(visual.targetId);
+      if (prior === undefined || start < prior) startByTarget.set(visual.targetId, start);
+    }
+  }
+  let timedScene = scene;
+  if (scene.type === 'whiteboard') {
+    timedScene = {
+      ...scene,
+      elements: scene.elements.map((element) => {
+        if (!element.id || !startByTarget.has(element.id)) return element;
+        return { ...element, start: startByTarget.get(element.id)! };
+      }),
+      annotations: scene.annotations?.map((annotation) =>
+        startByTarget.has(annotation.id)
+          ? { ...annotation, start: startByTarget.get(annotation.id)! }
+          : annotation
+      ),
+    };
+  } else if (scene.type === 'code' || scene.type === 'diagram') {
+    timedScene = {
+      ...scene,
+      steps: scene.steps.map((step) => {
+        let target = step.id;
+        if (!target && scene.type === 'diagram') {
+          target = 'targetId' in step
+            ? step.targetId
+            : 'edgeId' in step
+              ? step.edgeId
+              : undefined;
+        }
+        return target && startByTarget.has(target)
+          ? { ...step, at: startByTarget.get(target)! }
+          : step;
+      }),
+    } as SceneSpec;
+  } else if (scene.type === 'browser') {
+    timedScene = {
+      ...scene,
+      focusTargets: scene.focusTargets?.map((target) =>
+        target.id && startByTarget.has(target.id)
+          ? { ...target, timeMs: (startByTarget.get(target.id)! / fps) * 1000 }
+          : target
+      ),
+    };
+  }
+  const highlights = beats.map((beat, index) => ({
+    id: beat.id,
+    source: 'beat' as const,
+    startFrame: beat.sourceFrame,
+    endFrame: index + 1 < beats.length ? beats[index + 1].sourceFrame : cursor,
+    minDurationFrames: minFrames,
+  }));
+  return { scene: timedScene, beats, highlights };
 }
 
 function minimumFrames(fps: number, policy: PacingPolicy): number {
@@ -161,8 +267,15 @@ export function resolveScenePacing(
   scene: SceneSpec,
   fps: number,
   policy: PacingPolicy = DEFAULT_PACING_POLICY,
-): { scene: SceneSpec; durationFrames: number; highlights: ResolvedHighlightWindow[] } {
-  const pacedScene = retimeAuthoredSteps(scene, fps, policy);
+): {
+  scene: SceneSpec;
+  durationFrames: number;
+  highlights: ResolvedHighlightWindow[];
+  explanationBeats: ExplanationBeatTiming[];
+} {
+  const authoredScene = retimeAuthoredSteps(scene, fps, policy);
+  const explanationTiming = applyExplanationTiming(authoredScene, fps, policy);
+  const pacedScene = explanationTiming.scene;
   const minFrames = minimumFrames(fps, policy);
   let durationFrames = baseSceneDurationFrames(pacedScene, fps, policy);
   if (pacedScene.narration?.trim()) {
@@ -171,13 +284,22 @@ export function resolveScenePacing(
       Math.ceil(((estimateNarrationDurationMs(pacedScene.narration, policy) + policy.sceneTailMs) / 1000) * fps),
     );
   }
+  const explanationMs = explanationNarrationDurationMs(pacedScene, policy);
+  if (explanationMs > 0) {
+    durationFrames = Math.max(
+      durationFrames,
+      Math.ceil(((explanationMs + policy.sceneTailMs) / 1000) * fps),
+    );
+  }
   const stepStarts = pacedScene.type === 'code' || pacedScene.type === 'diagram'
     ? pacedScene.steps.map((step) => step.at)
     : pacedScene.type === 'terminal'
       ? (pacedScene.steps ?? []).map((step) => Math.round((step.timeMs / 1000) * fps))
       : [];
   durationFrames = Math.max(durationFrames, ...stepStarts.map((start) => start + minFrames));
-  const highlights: ResolvedHighlightWindow[] = stepStarts.map((startFrame, index) => ({
+  const highlights: ResolvedHighlightWindow[] = pacedScene.explanation
+    ? [...explanationTiming.highlights]
+    : stepStarts.map((startFrame, index) => ({
     id: `${pacedScene.id}.steps[${index}]`,
     source: 'step',
     startFrame,
@@ -204,7 +326,12 @@ export function resolveScenePacing(
     }));
   }
   durationFrames = Math.max(durationFrames, ...highlights.map((highlight) => highlight.endFrame));
-  return { scene: { ...pacedScene, duration: durationFrames }, durationFrames, highlights };
+  return {
+    scene: { ...pacedScene, duration: durationFrames },
+    durationFrames,
+    highlights,
+    explanationBeats: explanationTiming.beats,
+  };
 }
 
 export function resolveCompositionPacing(

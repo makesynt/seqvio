@@ -1,6 +1,7 @@
 {
   "name": "@seqvio/renderer",
   "version": "0.6.0",
+  "seqvio": { "lifecycle": "public", "releaseTrain": "0.6" },
   "description": "Renderer and audio CLI for Seqvio, a visual language for coding agents",
   "keywords": [
     "seqvio",

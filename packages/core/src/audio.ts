@@ -1,4 +1,8 @@
 import type { CaptionCue } from './captions';
+import type {
+  ExplanationBeatAnchorSpec,
+  VisualBeatAction,
+} from './composition-document/schema';
 
 export type AudioTrackKind = 'narration' | 'music' | 'sfx';
 
@@ -6,7 +10,7 @@ export type AudioTrackKind = 'narration' | 'music' | 'sfx';
 export interface NarrationChunk {
   /** The sentence fragment exactly as sent to the TTS engine. */
   text: string;
-  /** Scene-local frame offset where this chunk begins. */
+  /** Cue-local frame offset where this chunk begins. */
   offsetFrame: number;
   /** Audio duration of this chunk in frames. */
   durationFrame: number;
@@ -55,11 +59,28 @@ export interface AudioSceneTiming {
   timeMap?: Array<{ outputFrame: number; sourceFrame: number }>;
   highlights?: Array<{
     id: string;
-    source: 'step' | 'annotation' | 'focus';
+    source: 'beat' | 'step' | 'annotation' | 'focus';
     startFrame: number;
     endFrame: number;
     minDurationFrames: number;
   }>;
+}
+
+export interface ExplanationBeatTiming {
+  /** Composition-unique id, normally `${sceneId}.${localBeatId}`. */
+  id: string;
+  sceneId: string;
+  cueId: string;
+  anchor: ExplanationBeatAnchorSpec;
+  /** Authored/captured scene-local visual frame. */
+  sourceFrame: number;
+  /** Resolved scene-local speech frame, populated after TTS. */
+  outputFrame?: number;
+  method?: 'chunk-character' | 'cue-character';
+  confidence?: number;
+  /** Populated after synthesis when the phrase cannot be placed on audio. */
+  resolutionError?: 'anchor_not_found' | 'anchor_ambiguous';
+  visuals: VisualBeatAction[];
 }
 
 export interface CompositionAudioManifest {
@@ -71,6 +92,7 @@ export interface CompositionAudioManifest {
   captions?: CaptionCue[];
   /** Scene-local timing retained so synthesized narration can reflow visuals. */
   sceneTimings?: AudioSceneTiming[];
+  explanationBeats?: ExplanationBeatTiming[];
   pacingProfile?: string;
 }
 
@@ -85,7 +107,7 @@ export interface RenderableMeta {
     profile?: string;
     highlights: Array<{
       id: string;
-      source: 'step' | 'annotation' | 'focus';
+      source: 'beat' | 'step' | 'annotation' | 'focus';
       startFrame: number;
       endFrame: number;
       minDurationFrames: number;

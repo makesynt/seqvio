@@ -1,6 +1,7 @@
 {
   "name": "@seqvio/capture",
   "version": "0.1.0",
+  "seqvio": { "lifecycle": "experimental", "versionPolicy": "independent" },
   "description": "Capture-session contract and manifest->CompositionDocument compiler for Seqvio",
   "keywords": [
     "seqvio",

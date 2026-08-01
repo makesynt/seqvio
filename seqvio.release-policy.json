@@ -1,0 +1,24 @@
+{
+  "version": "1.0",
+  "releaseTrain": {
+    "line": "0.6",
+    "packages": [
+      "@seqvio/core",
+      "@seqvio/whiteboard",
+      "@seqvio/renderer",
+      "@seqvio/scatterbrain",
+      "@seqvio/product-demo",
+      "@seqvio/technical"
+    ]
+  },
+  "independentPackages": [
+    "@seqvio/capture",
+    "@seqvio/browser-recorder",
+    "@seqvio/terminal-narrator"
+  ],
+  "adapterPackages": [
+    "@seqvio/browser-recorder",
+    "@seqvio/terminal-narrator"
+  ],
+  "lifecycles": ["public", "experimental", "internal", "deprecated", "removed"]
+}

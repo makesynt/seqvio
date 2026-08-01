@@ -210,6 +210,8 @@ export const Scene: React.FC<SceneProps> = ({ id, duration, children }) => {
     width: '100%',
     height: '100%',
   };
+  let transitionRole: 'outgoing' | 'incoming' | undefined;
+  let transitionProgress: number | undefined;
 
   if (activeTransition && (isOutgoing || isIncoming)) {
     const progress = getTransitionProgress(
@@ -217,12 +219,15 @@ export const Scene: React.FC<SceneProps> = ({ id, duration, children }) => {
       activeTransition.globalStart,
       activeTransition.duration
     );
+    transitionProgress = progress;
     const style = getTransitionStyle(activeTransition.type, progress);
     if (isOutgoing) {
+      transitionRole = 'outgoing';
       sceneStyle.opacity = style.outgoingOpacity;
       sceneStyle.zIndex = 1;
     }
     if (isIncoming) {
+      transitionRole = 'incoming';
       sceneStyle.opacity = style.incomingOpacity;
       sceneStyle.transform = style.incomingTransform;
       sceneStyle.clipPath = style.overlayClipPath;
@@ -231,7 +236,12 @@ export const Scene: React.FC<SceneProps> = ({ id, duration, children }) => {
   }
 
   return (
-    <div data-scene-id={id} style={sceneStyle}>
+    <div
+      data-scene-id={id}
+      data-seqvio-transition-role={transitionRole}
+      data-seqvio-transition-progress={transitionProgress?.toFixed(6)}
+      style={sceneStyle}
+    >
       <SceneLocalFrameProvider
         globalStart={registration.globalStart}
         sourceDuration={registration.sourceDuration}

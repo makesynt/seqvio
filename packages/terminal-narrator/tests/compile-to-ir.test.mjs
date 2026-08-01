@@ -3,7 +3,7 @@ import assert from 'node:assert';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { compileTerminalCapture } from '../dist/compile-to-ir.js';
-import { compileCompositionDocumentToTsx } from '@seqvio/core';
+import { compileCompositionDocumentToTsx, validateCompositionDocument } from '@seqvio/core';
 
 test('compileTerminalCapture produces a terminal IR scene from a manifest', async () => {
   const manifest = {
@@ -42,6 +42,9 @@ test('compileTerminalCapture produces a terminal IR scene from a manifest', asyn
   assert.ok(scene.events.length > 0, 'events should be scheduled');
   assert.equal(scene.steps.length, 1);
   assert.equal(scene.steps[0].id, 's1');
+  assert.equal(scene.explanation.cues[0].id, 's1');
+  assert.equal(scene.explanation.beats[0].evidence.captureStepId, 's1');
+  assert.deepEqual(validateCompositionDocument(seed.document), []);
 
   // audio manifest written
   assert.ok(seed.audioManifestPath);
@@ -49,7 +52,11 @@ test('compileTerminalCapture produces a terminal IR scene from a manifest', asyn
   const audio = JSON.parse(fs.readFileSync(seed.audioManifestPath, 'utf8'));
   assert.equal(audio.narration.length, 1);
   assert.equal(audio.narration[0].text, 'run echo'); // label fallback (no NarrationProvider)
+  assert.equal(audio.narration[0].id, 'terminal.s1');
   assert.equal(audio.captions.length, 1);
+  assert.equal(audio.explanationBeats[0].cueId, 'terminal.s1');
+  assert.equal(audio.explanationBeats[0].sourceFrame, 0);
+  assert.equal(audio.sceneTimings[0].highlights[0].source, 'beat');
 });
 
 test('compileTerminalCapture uses NarrationProvider for AI explain', async () => {

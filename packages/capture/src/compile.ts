@@ -20,12 +20,16 @@ import type {
   CompositionDocumentSeed,
 } from './types';
 
-export type CaptureCompiler<M extends CaptureManifest = CaptureManifest> = (
-  manifest: M,
+type CaptureManifestFor<K extends CaptureKind> = Extract<CaptureManifest, { kind: K }>;
+
+export type CaptureCompiler<K extends CaptureKind> = (
+  manifest: CaptureManifestFor<K>,
   options?: CompileOptions
 ) => Promise<CompositionDocumentSeed>;
 
-export type CompilerMap = Partial<Record<CaptureKind, CaptureCompiler>>;
+export type CompilerMap = {
+  [K in CaptureKind]?: CaptureCompiler<K>;
+};
 
 export interface CompileCaptureOptions extends CompileOptions {
   /** Per-kind compilers, injected by the caller (adapters provide them). */
@@ -36,12 +40,20 @@ export async function compileCaptureManifestToCompositionDocument(
   manifest: CaptureManifest,
   options?: CompileCaptureOptions
 ): Promise<CompositionDocumentSeed> {
-  const compiler = options?.compilers?.[manifest.kind];
-  if (!compiler) {
+  const missingCompiler = (): never => {
     throw new Error(
       `No compiler registered for capture kind "${manifest.kind}". ` +
         'Pass it via options.compilers (adapter packages provide per-kind compilers).'
     );
+  };
+
+  if (manifest.kind === 'terminal') {
+    const compiler = options?.compilers?.terminal;
+    if (!compiler) return missingCompiler();
+    return compiler(manifest, options);
   }
+
+  const compiler = options?.compilers?.browser;
+  if (!compiler) return missingCompiler();
   return compiler(manifest, options);
 }

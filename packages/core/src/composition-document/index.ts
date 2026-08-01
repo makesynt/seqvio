@@ -5,6 +5,7 @@
  */
 
 export * from './schema';
+export * from './capabilities';
 export * from './detect';
 export * from './migrate';
 export * from './validate';

@@ -1,6 +1,7 @@
 {
   "name": "@seqvio/technical",
   "version": "0.6.0",
+  "seqvio": { "lifecycle": "public", "releaseTrain": "0.6" },
   "description": "Technical explainer components for Seqvio (code, diagrams, annotations)",
   "keywords": [
     "seqvio",

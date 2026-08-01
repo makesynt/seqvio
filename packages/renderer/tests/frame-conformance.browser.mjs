@@ -19,6 +19,11 @@ const execFileAsync = promisify(execFile);
 const WIDTH = 640;
 const HEIGHT = 360;
 const FPS = 30;
+const GOLDEN_PATH = new URL('./fixtures/frame-conformance.golden.json', import.meta.url);
+const GOLDEN = JSON.parse(readFileSync(GOLDEN_PATH, 'utf8'));
+const ARTIFACT_DIR = process.env.SEQVIO_CONFORMANCE_ARTIFACT_DIR
+  ? path.resolve(process.env.SEQVIO_CONFORMANCE_ARTIFACT_DIR)
+  : null;
 
 function hash(buffer) {
   return createHash('sha256').update(buffer).digest('hex');
@@ -225,6 +230,39 @@ async function captureHashes(page, frame) {
   };
 }
 
+async function captureSemanticState(page) {
+  return page.evaluate(() => {
+    const terminal = document.querySelector('[data-terminal-demo-id]');
+    const browser = document.querySelector('[data-seqvio-browser-demo="true"]');
+    const cursor = document.querySelector('[data-seqvio-browser-cursor="true"]');
+    const video = document.querySelector('video[data-seqvio-seekable-media="true"]');
+    if (!terminal || !browser || !cursor || !(video instanceof HTMLVideoElement)) {
+      throw new Error('Conformance fixture is missing semantic state markers');
+    }
+    const number = (value) => Math.round(Number(value) * 1000) / 1000;
+    return {
+      terminal: {
+        timeMs: Number(terminal.getAttribute('data-seqvio-terminal-time-ms')),
+        activeInput: terminal.getAttribute('data-seqvio-terminal-active-input') ?? '',
+        cursorX: Number(terminal.getAttribute('data-seqvio-terminal-cursor-x')),
+        cursorY: Number(terminal.getAttribute('data-seqvio-terminal-cursor-y')),
+      },
+      browser: {
+        timeMs: Number(browser.getAttribute('data-seqvio-browser-time-ms')),
+        scale: number(browser.getAttribute('data-seqvio-browser-scale')),
+        centerX: number(browser.getAttribute('data-seqvio-browser-center-x')),
+        centerY: number(browser.getAttribute('data-seqvio-browser-center-y')),
+        translateX: number(browser.getAttribute('data-seqvio-browser-translate-x')),
+        translateY: number(browser.getAttribute('data-seqvio-browser-translate-y')),
+        cursorX: number(cursor.getAttribute('data-seqvio-browser-cursor-x')),
+        cursorY: number(cursor.getAttribute('data-seqvio-browser-cursor-y')),
+        clickVisible: Boolean(document.querySelector('[data-seqvio-browser-click="true"]')),
+        mediaTime: number(video.currentTime),
+      },
+    };
+  });
+}
+
 async function comparePngPixels(page, expected, actual) {
   return page.evaluate(async ({ expectedBase64, actualBase64 }) => {
     const decode = async (base64) => {
@@ -295,10 +333,38 @@ test('Chromium output is seek-order deterministic and reports missing media', { 
       '--disable-font-subpixel-positioning',
     ],
   });
+  const report = {
+    schemaVersion: 1,
+    fixture: GOLDEN.fixture,
+    environment: {
+      platform: process.platform,
+      arch: process.arch,
+      node: process.version,
+      browser: await browser.version(),
+      viewport: { width: WIDTH, height: HEIGHT, deviceScaleFactor: 1 },
+    },
+    samples: [],
+    status: 'running',
+  };
   t.after(async () => {
     await browser.close();
     rmSync(jobDir, { recursive: true, force: true });
+    if (ARTIFACT_DIR) {
+      mkdirSync(ARTIFACT_DIR, { recursive: true });
+      if (report.status === 'running') report.status = 'failed';
+      writeFileSync(
+        path.join(ARTIFACT_DIR, 'conformance-report.json'),
+        `${JSON.stringify(report, null, 2)}\n`,
+        'utf8',
+      );
+    }
   });
+
+  assert.deepEqual(
+    { width: WIDTH, height: HEIGHT, fps: FPS, frames: [0, 9, 18, 30, 45] },
+    { width: GOLDEN.width, height: GOLDEN.height, fps: GOLDEN.fps, frames: GOLDEN.frames },
+    'fixture constants must match the committed golden contract',
+  );
 
   const videoPath = path.join(jobDir, 'fixture.mp4');
   await generateVideo(videoPath);
@@ -312,11 +378,36 @@ test('Chromium output is seek-order deterministic and reports missing media', { 
   const mixedScenePath = path.join(jobDir, 'mixed-scene.tsx');
   writeMixedScene(mixedScenePath, pathToFileURL(videoPath).href);
   const page = await bundleAndOpen(browser, mixedScenePath, path.join(jobDir, 'mixed-bundle'));
+  report.environment.fonts = await page.evaluate(() => ({
+    documentStatus: document.fonts.status,
+    jetBrainsMono: document.fonts.check('16px "JetBrains Mono"'),
+    terminalFamily: getComputedStyle(document.querySelector('[data-terminal-demo-id]')).fontFamily,
+  }));
 
   const frames = [0, 9, 18, 30, 45];
   const baseline = new Map();
   for (const frame of frames) {
-    baseline.set(frame, await captureHashes(page, frame));
+    const captured = await captureHashes(page, frame);
+    const semantic = await captureSemanticState(page);
+    baseline.set(frame, captured);
+    report.samples.push({
+      frame,
+      semantic,
+      hashes: {
+        full: captured.full.hash,
+        terminal: captured.terminal.hash,
+        browser: captured.browser.hash,
+      },
+    });
+    if (ARTIFACT_DIR) {
+      mkdirSync(ARTIFACT_DIR, { recursive: true });
+      writeFileSync(path.join(ARTIFACT_DIR, `mixed-frame-${String(frame).padStart(3, '0')}.png`), captured.full.buffer);
+    }
+    assert.deepEqual(
+      semantic,
+      GOLDEN.samples[String(frame)],
+      `semantic golden changed at frame ${frame}`,
+    );
   }
   assert.ok(
     new Set([...baseline.values()].map((sample) => sample.full.hash)).size >= 4,
@@ -362,7 +453,7 @@ test('Chromium output is seek-order deterministic and reports missing media', { 
   );
   await assert.rejects(
     () => bundleAndOpen(browser, missingScenePath, path.join(jobDir, 'missing-bundle')),
-    /Browser runtime failed to initialize: Unable to load seekable video metadata/,
+    /render_runtime_failed: operation=initialize.*Unable to load seekable video metadata/,
   );
 
   const videoBytes = readFileSync(videoPath);
@@ -372,7 +463,7 @@ test('Chromium output is seek-order deterministic and reports missing media', { 
   writeMissingMediaScene(corruptScenePath, pathToFileURL(corruptVideoPath).href);
   await assert.rejects(
     () => bundleAndOpen(browser, corruptScenePath, path.join(jobDir, 'corrupt-bundle')),
-    /Browser runtime failed to initialize: Unable to load seekable video metadata/,
+    /render_runtime_failed: operation=initialize.*Unable to load seekable video metadata/,
   );
 
   const interruptedVideoPath = path.join(jobDir, 'interrupted.mp4');
@@ -392,4 +483,5 @@ test('Chromium output is seek-order deterministic and reports missing media', { 
     /Unable to seek video|Timed out seeking video/,
   );
   await interruptedPage.close();
+  report.status = 'passed';
 });

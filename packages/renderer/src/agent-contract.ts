@@ -5,6 +5,8 @@
  * returned JSON deterministically. This file does not call AI or the network.
  */
 
+import { listAgentAuthorableSceneCapabilities } from '@seqvio/core';
+
 export type AgentLanguage = 'zh' | 'en' | 'auto';
 export type AgentDomain =
   | 'history'
@@ -21,6 +23,12 @@ export interface AgentPlanningOptions {
   domain?: AgentDomain;
   /** IR format. auto: technical domains → composition-v2, else storyboard-v1. */
   irFormat?: AgentIrFormat;
+}
+
+export function formatAgentSceneCapabilities(): string {
+  return listAgentAuthorableSceneCapabilities()
+    .map((capability) => `- ${capability.type}: ${capability.authoringSummary}`)
+    .join('\n');
 }
 
 export const STORYBOARD_AGENT_SYSTEM_PROMPT = `You are a Seqvio storyboard agent.
@@ -80,7 +88,10 @@ Rules:
 - Prefer 4 to 9 scenes. Mix whiteboard, code, and diagram scenes when useful.
 - Every scene needs a unique ASCII id. Every diagram node/edge/panel needs a unique id across the whole document.
 - Use chapters when the video is longer than ~90 seconds.
-- narration must be full spoken sentences.
+- Design spoken explanation and visual changes together in each scene's "explanation" object; do not add legacy "narration" to the same scene.
+- explanation.cues contain full spoken sentences. explanation.beats anchor exact phrases in those cues to visual actions.
+- Every beat needs id, cueId, anchor.text, and at least one visual action. Use anchor.occurrence when a phrase repeats.
+- Every visual target must have a stable id. Give code steps ids; diagram beats may target step, node, or edge ids.
 - Timing is in frames at fps 30 unless specified.
 - Budget narration near 3.7 Chinese characters/second or 150 English words/minute; split dense narration instead of accelerating it.
 - Keep consecutive code or diagram focus steps at least 27 frames apart at 30 fps so each highlight remains readable.
@@ -88,10 +99,11 @@ Rules:
 - Prefer semantic actions over pixel coordinates for code and diagram scenes.
 - Annotations must use targetId referencing an existing scene/node/edge id.
 
-Scene types:
-- whiteboard: elements = text | shape | image | icon (same as Storyboard v1)
-- code: language, source, steps (type | focus | insert | replace | delete | annotate)
-- diagram: nodes, edges, steps (reveal | connect | trace | emphasize)
+Public agent-authorable scene types:
+${formatAgentSceneCapabilities()}
+
+Terminal and browser scenes are capture-derived capabilities. Do not invent
+their event streams or media in a hand-authored plan.
 
 Minimal example:
 {
@@ -112,9 +124,9 @@ Minimal example:
       "type": "whiteboard",
       "id": "hook",
       "duration": 180,
-      "narration": "Today we trace one request through the system.",
       "elements": [
         {
+          "id": "request-title",
           "type": "text",
           "text": "Request trace",
           "position": { "x": 640, "y": 280 },
@@ -123,7 +135,16 @@ Minimal example:
           "start": 0,
           "duration": 30
         }
-      ]
+      ],
+      "explanation": {
+        "cues": [{ "id": "voice", "text": "Today we trace one request through the system." }],
+        "beats": [{
+          "id": "show-title",
+          "cueId": "voice",
+          "anchor": { "text": "trace one request" },
+          "visuals": [{ "targetId": "request-title", "action": "reveal" }]
+        }]
+      }
     },
     {
       "type": "code",
@@ -132,10 +153,16 @@ Minimal example:
       "language": "typescript",
       "source": "async function fetchUser(id: string) {\\n  return api.get(\`/users/\${id}\`);\\n}\\n",
       "steps": [
-        { "at": 0, "action": "focus", "range": { "startLine": 1, "endLine": 3 } },
-        { "at": 30, "action": "type", "range": { "startLine": 2, "endLine": 2 } }
+        { "id": "function", "at": 0, "action": "focus", "range": { "startLine": 1, "endLine": 3 } },
+        { "id": "request", "at": 30, "action": "type", "range": { "startLine": 2, "endLine": 2 } }
       ],
-      "narration": "The client uses one typed helper for the request."
+      "explanation": {
+        "cues": [{ "id": "voice", "text": "The client uses one typed helper for the request." }],
+        "beats": [{
+          "id": "focus-helper", "cueId": "voice", "anchor": { "text": "typed helper" },
+          "visuals": [{ "targetId": "function", "action": "focus" }]
+        }]
+      }
     },
     {
       "type": "diagram",
@@ -147,11 +174,17 @@ Minimal example:
       ],
       "edges": [{ "id": "req", "from": "client", "to": "api", "label": "HTTPS" }],
       "steps": [
-        { "at": 0, "action": "reveal", "targetId": "client" },
-        { "at": 24, "action": "reveal", "targetId": "api" },
-        { "at": 48, "action": "connect", "edgeId": "req" }
+        { "id": "show-client", "at": 0, "action": "reveal", "targetId": "client" },
+        { "id": "show-api", "at": 24, "action": "reveal", "targetId": "api" },
+        { "id": "show-request", "at": 48, "action": "connect", "edgeId": "req" }
       ],
-      "narration": "The request crosses the API boundary."
+      "explanation": {
+        "cues": [{ "id": "voice", "text": "The request crosses the API boundary." }],
+        "beats": [{
+          "id": "connect-request", "cueId": "voice", "anchor": { "text": "crosses" },
+          "visuals": [{ "targetId": "req", "action": "reveal" }]
+        }]
+      }
     }
   ]
 }`;

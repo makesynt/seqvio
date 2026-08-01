@@ -20,7 +20,12 @@ import {
   preloadPathFonts,
 } from "@seqvio/whiteboard";
 import { runtimeGlobalName, SeqvioRuntimeKey } from "../brand";
-import { flushSeekables } from "@seqvio/core";
+import {
+  disposeSeekables,
+  prepareSeekables,
+  renderSeekables,
+  waitForSeekablesReady,
+} from "@seqvio/core";
 import { svgDataUrl, waitForImageReady } from "../whiteboard-layer-cache";
 
 export interface BrowserRuntimeOptions {
@@ -38,6 +43,23 @@ interface TimelineLike {
   seekToFrame(frame: number): void;
 }
 
+interface RuntimeLifecycleState {
+  stage: string;
+  status: "running" | "completed" | "failed";
+  startedAt: number;
+  timeoutMs: number;
+  frame?: number;
+  message?: string;
+}
+
+const RUNTIME_TIMEOUTS = {
+  fonts: 30_000,
+  resources: 30_000,
+  adapterPhase: 35_000,
+  frame: 15_000,
+  dispose: 10_000,
+} as const;
+
 declare global {
   interface Window {
     __seqvio_ready?: boolean;
@@ -51,6 +73,7 @@ declare global {
     __seqvio_whiteboardOptimize?: string;
     __seqvio_terminalReady?: Promise<void>;
     __seqvio_terminalReadyById?: Map<string, Promise<void>>;
+    __seqvio_annotationReadyById?: Map<string, Promise<void>>;
   }
 }
 
@@ -186,6 +209,36 @@ function writeRuntimeGlobal<T>(key: SeqvioRuntimeKey, value: T): void {
   (window as Record<string, unknown>)[runtimeGlobalName(key)] = value;
 }
 
+async function runRuntimeStage<T>(
+  stage: string,
+  timeoutMs: number,
+  action: () => T | Promise<T>,
+  frame?: number,
+): Promise<T> {
+  const startedAt = Date.now();
+  const state: RuntimeLifecycleState = { stage, status: "running", startedAt, timeoutMs, frame };
+  writeRuntimeGlobal("lifecycle", state);
+  let timeoutHandle = 0;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutHandle = window.setTimeout(() => {
+      reject(new Error(
+        `render_runtime_timeout: stage=${stage}${frame === undefined ? "" : ` frame=${frame}`} exceeded ${timeoutMs}ms`,
+      ));
+    }, timeoutMs);
+  });
+  try {
+    const result = await Promise.race([Promise.resolve().then(action), timeout]);
+    writeRuntimeGlobal("lifecycle", { ...state, status: "completed" });
+    return result;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    writeRuntimeGlobal("lifecycle", { ...state, status: "failed", message });
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutHandle);
+  }
+}
+
 /** Await any <img> that has not finished loading. Cheap no-op when all complete. */
 async function waitForPendingImages(): Promise<void> {
   const pending = Array.from(document.images).filter((img) => !img.complete);
@@ -240,6 +293,13 @@ async function waitForTerminalRenderers(): Promise<void> {
     : window.__seqvio_terminalReady
       ? [window.__seqvio_terminalReady]
       : [];
+  await Promise.all(pending);
+}
+
+async function waitForAnnotationLayers(): Promise<void> {
+  const pending = window.__seqvio_annotationReadyById
+    ? [...window.__seqvio_annotationReadyById.values()]
+    : [];
   await Promise.all(pending);
 }
 
@@ -306,6 +366,7 @@ async function waitForInitialResources(): Promise<void> {
       .map((video) => waitForVideoMetadata(video)),
   );
   await waitForTerminalRenderers();
+  await waitForAnnotationLayers();
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 }
 
@@ -319,18 +380,17 @@ async function waitForFrame(): Promise<void> {
   await syncSeekableVideos(readRuntimeGlobal<number>('frame') ?? 0);
   await applyWhiteboardLayerCache(readRuntimeGlobal<number>("frame") ?? 0);
   await waitForTerminalRenderers();
+  await waitForAnnotationLayers();
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 }
 
 function applyFrame(frame: number): void {
   writeRuntimeGlobal("frame", frame);
   const timeline = readRuntimeGlobal<TimelineLike>("timeline");
-  const fps = sceneMeta.fps;
   if (timeline && typeof timeline.seekToFrame === "function") {
     timeline.seekToFrame(frame);
   }
   setGlobalFrame(frame);
-  flushSeekables(frame, fps);
 }
 
 function CaptionOverlay({
@@ -364,6 +424,9 @@ function CaptionOverlay({
       }}
     >
       <div
+        data-seqvio-caption="true"
+        data-seqvio-caption-id={activeCaption.id}
+        data-seqvio-caption-scene={activeCaption.sceneId}
         style={{
           maxWidth: "85%",
           padding: "12px 20px",
@@ -464,30 +527,45 @@ export function mountBrowserRuntime(
       applyFrame(frame);
       setFrameState?.(frame);
     });
-    await waitForFrame();
+    const needsExtraRaf = await runRuntimeStage(
+      "adapters.render",
+      RUNTIME_TIMEOUTS.frame,
+      () => renderSeekables(frame, sceneMeta.fps),
+      frame,
+    );
+    await runRuntimeStage("frame.resources", RUNTIME_TIMEOUTS.frame, waitForFrame, frame);
+    if (needsExtraRaf) {
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    }
     writeRuntimeGlobal("frameReady", true);
+  });
+
+  writeRuntimeGlobal("dispose", async () => {
+    await runRuntimeStage("adapters.dispose", RUNTIME_TIMEOUTS.dispose, async () => {
+      await disposeSeekables();
+      root?.unmount();
+      root = null;
+      setFrameState = null;
+    });
   });
 
   void (async () => {
     try {
-      await preloadPathFonts("./NotoSansSC-Regular.woff", "./DejaVuSans.ttf");
-      await Promise.all([
-        preloadHandwritingFonts({
-          virgilUrl: "./Virgil.woff2",
-          longcangUrl: "./LongCang-Regular.ttf",
-          xiaolaiUrl: "./Xiaolai-Regular.ttf",
-          wenkaiUrl: "./LXGWWenKaiLite-Regular.ttf",
-          yozaiUrl: "./Yozai-Regular.ttf",
-          liuJianMaoCaoUrl: "./LiuJianMaoCao-Regular.ttf",
-          zhiMangXingUrl: "./ZhiMangXing-Regular.ttf",
-        }),
-        // CodeWalkthrough / technical scenes — must be ready before first paint.
-        preloadFontFace(
-          "JetBrains Mono",
-          "./JetBrainsMono-Regular.woff2",
-          "woff2",
-        ),
-      ]);
+      await runRuntimeStage("fonts", RUNTIME_TIMEOUTS.fonts, async () => {
+        await preloadPathFonts("./NotoSansSC-Regular.woff", "./DejaVuSans.ttf");
+        await Promise.all([
+          preloadHandwritingFonts({
+            virgilUrl: "./Virgil.woff2",
+            longcangUrl: "./LongCang-Regular.ttf",
+            xiaolaiUrl: "./Xiaolai-Regular.ttf",
+            wenkaiUrl: "./LXGWWenKaiLite-Regular.ttf",
+            yozaiUrl: "./Yozai-Regular.ttf",
+            liuJianMaoCaoUrl: "./LiuJianMaoCao-Regular.ttf",
+            zhiMangXingUrl: "./ZhiMangXing-Regular.ttf",
+          }),
+          preloadFontFace("JetBrains Mono", "./JetBrainsMono-Regular.woff2", "woff2"),
+        ]);
+      });
       flushSync(() => {
         root!.render(
           React.createElement(FrameRoot, {
@@ -496,7 +574,15 @@ export function mountBrowserRuntime(
           }),
         );
       });
-      await waitForInitialResources();
+      await runRuntimeStage("initial.resources", RUNTIME_TIMEOUTS.resources, waitForInitialResources);
+      await runRuntimeStage("adapters.prepare", RUNTIME_TIMEOUTS.adapterPhase, prepareSeekables);
+      await runRuntimeStage("adapters.ready", RUNTIME_TIMEOUTS.adapterPhase, waitForSeekablesReady);
+      await runRuntimeStage(
+        "adapters.initial-render",
+        RUNTIME_TIMEOUTS.frame,
+        () => renderSeekables(0, sceneMeta.fps),
+        0,
+      );
       writeRuntimeGlobal("ready", true);
       writeRuntimeGlobal("frameReady", true);
     } catch (error) {

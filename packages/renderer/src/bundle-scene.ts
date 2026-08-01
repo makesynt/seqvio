@@ -342,6 +342,10 @@ export async function bundleScene(
       platform: "browser",
       target: "es2020",
       jsx: "automatic",
+      // Generated compositions may live outside the caller project (for
+      // example an OS temp/output directory). Resolve runtime dependencies from
+      // the installed Seqvio package graph as well as from the component path.
+      nodePaths: collectNodeModulesRoots(),
       loader: {
         ".tsx": "tsx",
         ".ts": "ts",

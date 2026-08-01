@@ -5,16 +5,18 @@
 import { validateStoryboard, type StoryboardIssue } from '../storyboard/validate';
 import {
   ANNOTATION_KINDS,
-  SCENE_TYPES,
   type AnnotationSpec,
   type ChapterSpec,
   type CodeSceneSpec,
   type CompositionDocument,
   type DiagramSceneSpec,
+  type SceneExplanationSpec,
   type SceneSpec,
   type WhiteboardSceneSpec,
 } from './schema';
+import { SCENE_TYPES, isSceneType } from './capabilities';
 import { isPacingProfileId } from '../pacing';
+import { findNarrationAnchorMatches, normalizeNarrationText } from '../narration-anchor';
 
 export type CompositionIssue = StoryboardIssue;
 
@@ -497,14 +499,205 @@ function collectAddressableIds(scene: SceneSpec): string[] {
   if (scene.type === 'diagram') {
     for (const node of scene.nodes) ids.push(node.id);
     for (const edge of scene.edges) ids.push(edge.id);
+    for (const step of scene.steps) {
+      if (step.id) ids.push(step.id);
+    }
   } else if (scene.type === 'whiteboard') {
     for (const element of scene.elements) {
       if (typeof element.id === 'string' && element.id.length > 0) {
         ids.push(element.id);
       }
     }
+  } else if (scene.type === 'code') {
+    for (const step of scene.steps) {
+      if (step.id) ids.push(step.id);
+    }
+  } else if (scene.type === 'terminal' || scene.type === 'browser') {
+    for (const step of scene.steps ?? []) ids.push(step.id);
+    if (scene.type === 'browser') {
+      for (const target of scene.focusTargets ?? []) {
+        if (target.id) ids.push(target.id);
+      }
+    }
   }
+  for (const annotation of scene.annotations ?? []) ids.push(annotation.id);
   return ids;
+}
+
+function validateExplanation(
+  explanation: SceneExplanationSpec,
+  scene: SceneSpec,
+  scenePath: string,
+  issues: CompositionIssue[],
+): void {
+  const path = `${scenePath}.explanation`;
+  if (typeof scene.narration === 'string' && scene.narration.trim()) {
+    issue(issues, {
+      severity: 'error',
+      path,
+      code: 'conflicting_scene_narration',
+      message: `${scenePath} cannot define both narration and explanation`,
+      repairable: true,
+    });
+  }
+  if (!Array.isArray(explanation.cues) || explanation.cues.length === 0) {
+    issue(issues, {
+      severity: 'error',
+      path: `${path}.cues`,
+      code: 'missing_explanation_cues',
+      message: `${path}.cues must be a non-empty array`,
+      repairable: true,
+    });
+    return;
+  }
+  if (!Array.isArray(explanation.beats) || explanation.beats.length === 0) {
+    issue(issues, {
+      severity: 'error',
+      path: `${path}.beats`,
+      code: 'missing_explanation_beats',
+      message: `${path}.beats must be a non-empty array`,
+      repairable: true,
+    });
+    return;
+  }
+
+  const cues = new Map<string, { text: string; path: string }>();
+  explanation.cues.forEach((cue, index) => {
+    const cuePath = `${path}.cues[${index}]`;
+    if (!isObject(cue) || typeof cue.id !== 'string' || !cue.id.trim()) {
+      issue(issues, {
+        severity: 'error', path: `${cuePath}.id`, code: 'missing_explanation_cue_id',
+        message: `${cuePath}.id must be a non-empty string`, repairable: true,
+      });
+      return;
+    }
+    if (cues.has(cue.id)) {
+      issue(issues, {
+        severity: 'error', path: `${cuePath}.id`, code: 'duplicate_explanation_cue_id',
+        message: `Duplicate explanation cue id "${cue.id}"`, repairable: true,
+      });
+    }
+    if (typeof cue.text !== 'string' || !normalizeNarrationText(cue.text)) {
+      issue(issues, {
+        severity: 'error', path: `${cuePath}.text`, code: 'missing_explanation_cue_text',
+        message: `${cuePath}.text must be a non-empty string`, repairable: true,
+      });
+    }
+    cues.set(cue.id, { text: typeof cue.text === 'string' ? cue.text : '', path: cuePath });
+  });
+
+  const addressableIds = new Set(collectAddressableIds(scene));
+  const captureStepIds = new Set(
+    scene.type === 'terminal' || scene.type === 'browser'
+      ? (scene.steps ?? []).map((step) => step.id)
+      : [],
+  );
+  const beatIds = new Set<string>();
+  const priorAnchorIndexByCue = new Map<string, number>();
+  explanation.beats.forEach((beat, index) => {
+    const beatPath = `${path}.beats[${index}]`;
+    if (!isObject(beat) || typeof beat.id !== 'string' || !beat.id.trim()) {
+      issue(issues, {
+        severity: 'error', path: `${beatPath}.id`, code: 'missing_explanation_beat_id',
+        message: `${beatPath}.id must be a non-empty string`, repairable: true,
+      });
+      return;
+    }
+    if (beatIds.has(beat.id)) {
+      issue(issues, {
+        severity: 'error', path: `${beatPath}.id`, code: 'duplicate_explanation_beat_id',
+        message: `Duplicate explanation beat id "${beat.id}"`, repairable: true,
+      });
+    }
+    beatIds.add(beat.id);
+    if (typeof beat.cueId !== 'string' || !cues.has(beat.cueId)) {
+      issue(issues, {
+        severity: 'error', path: `${beatPath}.cueId`, code: 'unknown_explanation_cue',
+        message: `${beatPath}.cueId must reference an explanation cue`, repairable: true,
+      });
+    }
+    if (!isObject(beat.anchor) || typeof beat.anchor.text !== 'string' || !normalizeNarrationText(beat.anchor.text)) {
+      issue(issues, {
+        severity: 'error', path: `${beatPath}.anchor`, code: 'missing_beat_anchor',
+        message: `${beatPath}.anchor.text must be a non-empty string`, repairable: true,
+      });
+    } else if (typeof beat.cueId === 'string' && cues.has(beat.cueId)) {
+      const occurrence = beat.anchor.occurrence;
+      if (occurrence !== undefined && (!Number.isInteger(occurrence) || occurrence < 1)) {
+        issue(issues, {
+          severity: 'error', path: `${beatPath}.anchor.occurrence`, code: 'invalid_beat_anchor_occurrence',
+          message: `${beatPath}.anchor.occurrence must be a positive integer`, repairable: true,
+        });
+      }
+      const matches = findNarrationAnchorMatches(cues.get(beat.cueId)!.text, beat.anchor.text);
+      if (matches.length === 0 || (occurrence !== undefined && matches[occurrence - 1] === undefined)) {
+        issue(issues, {
+          severity: 'error', path: `${beatPath}.anchor.text`, code: 'missing_beat_anchor',
+          message: `Anchor "${beat.anchor.text}" was not found in cue "${beat.cueId}"`, repairable: true,
+        });
+      } else if (occurrence === undefined && matches.length > 1) {
+        issue(issues, {
+          severity: 'error', path: `${beatPath}.anchor`, code: 'ambiguous_beat_anchor',
+          message: `Anchor "${beat.anchor.text}" occurs ${matches.length} times; set occurrence`, repairable: true,
+        });
+      } else {
+        const anchorIndex = matches[(occurrence ?? 1) - 1];
+        const previous = priorAnchorIndexByCue.get(beat.cueId);
+        if (previous !== undefined && anchorIndex < previous) {
+          issue(issues, {
+            severity: 'error', path: `${beatPath}.anchor`, code: 'non_monotonic_beat_anchor',
+            message: `Beat anchor order reverses within cue "${beat.cueId}"`, repairable: true,
+          });
+        }
+        priorAnchorIndexByCue.set(beat.cueId, anchorIndex);
+      }
+    }
+
+    if (!Array.isArray(beat.visuals) || beat.visuals.length === 0) {
+      issue(issues, {
+        severity: 'error', path: `${beatPath}.visuals`, code: 'missing_beat_visuals',
+        message: `${beatPath}.visuals must be a non-empty array`, repairable: true,
+      });
+    } else {
+      beat.visuals.forEach((visual, visualIndex) => {
+        const visualPath = `${beatPath}.visuals[${visualIndex}]`;
+        if (!isObject(visual) || typeof visual.targetId !== 'string' || !addressableIds.has(visual.targetId)) {
+          issue(issues, {
+            severity: 'error', path: `${visualPath}.targetId`, code: 'unknown_beat_visual_target',
+            message: `${visualPath}.targetId must reference an addressable element in the scene`, repairable: true,
+          });
+        }
+        if (!isObject(visual) || !['reveal', 'highlight', 'focus', 'annotate'].includes(String(visual.action))) {
+          issue(issues, {
+            severity: 'error', path: `${visualPath}.action`, code: 'unsupported_beat_visual_action',
+            message: `${visualPath}.action is unsupported`, repairable: true,
+          });
+        }
+        if (isObject(visual) && visual.offsetMs !== undefined && !Number.isFinite(visual.offsetMs)) {
+          issue(issues, {
+            severity: 'error', path: `${visualPath}.offsetMs`, code: 'invalid_beat_visual_offset',
+            message: `${visualPath}.offsetMs must be finite`, repairable: true,
+          });
+        }
+        if (isObject(visual) && visual.minHoldMs !== undefined &&
+          (!Number.isFinite(visual.minHoldMs) || Number(visual.minHoldMs) <= 0)) {
+          issue(issues, {
+            severity: 'error', path: `${visualPath}.minHoldMs`, code: 'invalid_beat_visual_hold',
+            message: `${visualPath}.minHoldMs must be greater than zero`, repairable: true,
+          });
+        }
+      });
+    }
+
+    const captureStepId = isObject(beat.evidence) ? beat.evidence.captureStepId : undefined;
+    if (captureStepId !== undefined &&
+      (typeof captureStepId !== 'string' || !captureStepIds.has(captureStepId))) {
+      issue(issues, {
+        severity: 'error', path: `${beatPath}.evidence.captureStepId`, code: 'unknown_beat_capture_step',
+        message: `${beatPath}.evidence.captureStepId must reference a capture step in this scene`, repairable: true,
+      });
+    }
+  });
 }
 
 function validateChapters(
@@ -674,7 +867,7 @@ export function validateCompositionDocument(input: unknown): CompositionIssue[] 
     }
 
     const sceneType = scene.type;
-    if (typeof sceneType !== 'string' || !SCENE_TYPES.includes(sceneType as never)) {
+    if (!isSceneType(sceneType)) {
       issue(issues, {
         severity: 'error',
         path: `${scenePath}.type`,
@@ -728,6 +921,17 @@ export function validateCompositionDocument(input: unknown): CompositionIssue[] 
       validateDiagramScene(typedScene, scenePath, issues);
     } else {
       validatePlaceholderScene(typedScene, scenePath, issues);
+    }
+
+    if (typedScene.explanation !== undefined) {
+      if (!isObject(typedScene.explanation)) {
+        issue(issues, {
+          severity: 'error', path: `${scenePath}.explanation`, code: 'invalid_scene_explanation',
+          message: `${scenePath}.explanation must be an object`, repairable: true,
+        });
+      } else {
+        validateExplanation(typedScene.explanation, typedScene, scenePath, issues);
+      }
     }
 
     if (Array.isArray(typedScene.annotations)) {

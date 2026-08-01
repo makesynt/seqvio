@@ -6,7 +6,7 @@ export function samplePlan(): TerminalNarratorPlan {
   return {
     version: '1.0',
     name: 'VHS-style terminal demo',
-    viewport: { width: 1920, height: 1080 },
+    viewport: { width: 1280, height: 720 },
     renderFps: 30,
     maxLines: 220,
     presentation: 'vhs',
@@ -115,7 +115,7 @@ export function sampleClaudePlan(options: ClaudeSampleOptions = {}): TerminalNar
   return {
     version: '1.0',
     name: `Claude Code skill demo: ${skill}`,
-    viewport: { width: 1920, height: 1080 },
+    viewport: { width: 1280, height: 720 },
     renderFps: 30,
     maxLines: 280,
     presentation: 'vhs',

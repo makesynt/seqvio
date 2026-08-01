@@ -269,11 +269,6 @@ export function compileCompositionDocumentToTsx(
     .map((scene, index) => compileSceneComponent(scene, sceneNames[index], r))
     .join('\n\n');
 
-  const narratedScenes = pacedDoc.scenes.filter(
-    (scene) => scene.narration && scene.narration.trim().length > 0
-  );
-  const hasNarration = narratedScenes.length > 0;
-
   const sceneDurations = pacedDoc.scenes.map((scene) => sceneDurationFramesForCompile(scene, r.fps));
   const totalDuration =
     sceneDurations.reduce((sum, d) => sum + d, 0) +
@@ -285,8 +280,11 @@ export function compileCompositionDocumentToTsx(
     sceneCursor += duration + (index < sceneDurations.length - 1 ? r.transitionDuration : 0);
     return start;
   });
-  const pacingHighlights = pacedDoc.scenes.flatMap((scene, index) =>
-    resolveScenePacing(scene, r.fps, pacingProfile.policy).highlights.map((highlight) => ({
+  const scenePacing = pacedDoc.scenes.map((scene) =>
+    resolveScenePacing(scene, r.fps, pacingProfile.policy)
+  );
+  const pacingHighlights = scenePacing.flatMap((pacing, index) =>
+    pacing.highlights.map((highlight) => ({
       ...highlight,
       startFrame: highlight.startFrame + sceneStarts[index],
       endFrame: highlight.endFrame + sceneStarts[index],
@@ -298,8 +296,39 @@ export function compileCompositionDocumentToTsx(
     durationFrames: sceneDurations[index],
     sourceDurationFrames: sceneDurations[index],
     transitionAfterFrames: index < pacedDoc.scenes.length - 1 ? r.transitionDuration : 0,
-    highlights: resolveScenePacing(scene, r.fps, pacingProfile.policy).highlights,
+    highlights: scenePacing[index].highlights,
   }));
+  const explanationBeats = scenePacing.flatMap((pacing) => pacing.explanationBeats);
+  const narrationCueData = pacedDoc.scenes.flatMap((scene, index) => {
+    const sceneStartMs = Math.round((sceneStarts[index] / r.fps) * 1000);
+    if (scene.explanation?.cues.length) {
+      let cueCursorMs = sceneStartMs;
+      return scene.explanation.cues.map((cue, cueIndex) => {
+        const durationMs = estimateNarrationDurationMs(cue.text, pacingProfile.policy);
+        const resolvedCue = {
+          id: `${scene.id}.${cue.id}`,
+          sceneId: scene.id,
+          text: cue.text,
+          voice: cue.voice,
+          startMs: cueCursorMs,
+          endMs: cueCursorMs + durationMs,
+        };
+        cueCursorMs += durationMs + (cueIndex < scene.explanation!.cues.length - 1 ? 180 : 0);
+        return resolvedCue;
+      });
+    }
+    if (scene.narration?.trim()) {
+      return [{
+        id: scene.id,
+        sceneId: scene.id,
+        text: scene.narration,
+        startMs: sceneStartMs,
+        endMs: sceneStartMs + estimateNarrationDurationMs(scene.narration, pacingProfile.policy),
+      }];
+    }
+    return [];
+  });
+  const hasNarration = narrationCueData.length > 0;
 
   const sceneTree = pacedDoc.scenes
     .map((scene, index) => {
@@ -313,14 +342,7 @@ export function compileCompositionDocumentToTsx(
     })
     .join('\n');
 
-  const narrationCues = narratedScenes
-    .map((scene) => {
-      const index = pacedDoc.scenes.indexOf(scene);
-      const startMs = Math.round((sceneStarts[index] / r.fps) * 1000);
-      const endMs = startMs + estimateNarrationDurationMs(scene.narration ?? '', pacingProfile.policy);
-      return `      {\n        id: ${JSON.stringify(scene.id)},\n        sceneId: ${JSON.stringify(scene.id)},\n        text: ${JSON.stringify(scene.narration)},\n        startMs: ${startMs},\n        endMs: ${endMs},\n      },`;
-    })
-    .join('\n');
+  const narrationCues = JSON.stringify(narrationCueData, null, 2);
 
   const whiteboardImports = usesWhiteboard
     ? `import {
@@ -400,9 +422,8 @@ ${
     lockToAudio: ${r.lockToAudio},
     pacingProfile: ${JSON.stringify(pacingProfile.id)},
     sceneTimings: ${JSON.stringify(audioSceneTimings, null, 2)},
-    narration: [
-${narrationCues}
-    ],
+    explanationBeats: ${JSON.stringify(explanationBeats, null, 2)},
+    narration: ${narrationCues},
   },
 };`
     : `export const meta: RenderableMeta = {

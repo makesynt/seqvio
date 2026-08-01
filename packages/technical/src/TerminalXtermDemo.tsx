@@ -415,6 +415,10 @@ export const TerminalXtermDemo: React.FC<TerminalXtermDemoProps> = ({
   return (
     <div
       data-terminal-demo-id={id}
+      data-seqvio-terminal-time-ms={Math.round(currentMs)}
+      data-seqvio-terminal-active-input={frameState.activeInput}
+      data-seqvio-terminal-cursor-x={frameState.cursorX + Array.from(frameState.activeInput).length}
+      data-seqvio-terminal-cursor-y={frameState.cursorY}
       style={{
         width,
         height,

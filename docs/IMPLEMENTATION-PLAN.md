@@ -5,19 +5,20 @@
 > each phase breaks into concrete work against the current codebase*. For
 > positioning and scope, [`VISION.md`](./VISION.md) wins.
 >
-> Last revised: 2026-07-30.
+> Last revised: 2026-08-01.
 
 ## Current-State Inventory (what is already there)
 
 | Capability | Current state | Disposition |
 | --- | --- | --- |
-| CompositionDocument v2 IR | `core/composition-document/` (schema/migrate/validate/compile/timeline), with `ChapterSpec` + `ChapterRenderPlanEntry` + `BrowserSceneSpec` | Reuse as-is; the spine |
+| CompositionDocument v2 IR | Five complete scene families plus `ExplanationBeat` cues, phrase anchors, visual actions, capture evidence, validation, compilation, and pacing | Canonical interchange contract |
 | chapter-render | `renderer/chapter-render.ts`: `hashRenderSettings`, `resume`, `onlyChapters`, `changedChapterIds`, `documentPath` | Reuse; incremental render built |
-| visual-regression.mjs | `scripts/visual-regression.mjs`: FFmpeg PSNR vs baseline, `--update`, non-zero exit | Repo-wide fixed cases; extend if needed |
-| seqvio-qa | `renderer/qa-cli.ts`: puppeteer frame snapshots, DOM checks, `exit(1)` on error; checks blank/empty/offscreen + text-overflow/font-size/contrast | Extend with pacing/narration-agreement/audio if needed |
+| render conformance | Cross-platform semantic golden plus same-host PNG hash/PSNR checks for mixed Terminal/Browser frames | Three-host CI gate with environment-tagged artifacts |
+| seqvio-qa | Baseline/capture profiles cover visual, pacing, audio, media, capture-manifest, and resolved ExplanationBeat failures | Screenshot privacy masking intentionally deferred |
 | `@seqvio/capture` | New: `CaptureSession` contract, `CaptureManifest` union, `compileCaptureManifestToCompositionDocument` dispatcher | Built (Phase 1.1) |
-| terminal-narrator | `node-pty` + asciinema cast; `compileTerminalCapture` + `terminalCaptureSession` | Production pipeline uses manifest -> IR -> TSX; shared-dispatcher consolidation and legacy writer retirement remain |
-| browser-recorder | `compileBrowserCapture` + `browserCaptureSession`; `BrowserSceneSpec` in IR | Production pipeline uses manifest -> IR -> TSX; shared-dispatcher consolidation and legacy writer retirement remain |
+| Release/capability governance | `seqvio.release-policy.json`, package lifecycle metadata, core scene registry, docs snapshot, changesets/CI drift verifier | Built; release publication pending |
+| terminal-narrator | `node-pty` + asciinema/xterm state; compiler emits capture-backed cues/Beats and audio scene timing | Production pipeline uses shared dispatcher -> IR -> TSX; legacy writer removed |
+| browser-recorder | Records exact action clocks; compiler emits BrowserSceneSpec plus capture-backed cues/Beats | Production pipeline uses shared dispatcher -> IR -> TSX; legacy writer removed |
 | technical components | `CodeWalkthrough{source,steps}`, `ArchitectureDiagram`, `TerminalDemo`, `ansi.ts`, `code-utils.ts` | Reuse |
 
 ## Architectural Decisions
@@ -29,13 +30,17 @@
    state: terminal stdout, browser cursor/focus/screenshot), a
    `CaptureManifest -> CompositionDocument` dispatcher (compilers injected by
    adapters, no import cycle), and an **AI explain** step (agent generates
-   narration from the manifest's real recorded state, injected into
-   `scene.narration`). Capture is agent-driven: the agent controls the session
-   and explains it (narration from what actually happened, not from the plan).
+   narration from the manifest's real recorded state, injected as jointly
+   authored `scene.explanation.cues` and capture-backed `explanation.beats`).
+   Capture is agent-driven: the agent controls the session and explains what
+   actually happened, not what the plan intended.
 2. **browser-recorder migrates to the IR like terminal.** Both capture sources
    go through the IR: `BrowserSceneSpec` (peer to `TerminalSceneSpec`:
-   sourceVideo + cursorPoints + focusTargets + clicks + narration) compiles to
-   `RecordedBrowserDemo`.
+   sourceVideo + cursorPoints + focusTargets + clicks + exact recorded steps +
+   explanation) compiles to `RecordedBrowserDemo`.
+3. **No pre-stable IR migration program.** CompositionDocument changes may be
+   explicitly breaking until a stable compatibility policy is declared.
+   Storyboard v1 remains a separate whiteboard input, not a migration obligation.
 
 ## Phase 0 - Clear the Floor and Stop Duplicating the Closed Layer
 
@@ -50,8 +55,8 @@
 
 ### 0.2 Doc alignment - DONE (refreshed 2026-07-30)
 
-README/README.zh-CN Roadmap summary aligned to the new phases; VISION/ROADMAP/
-this doc updated.
+README/README.zh-CN, package READMEs, agent skill references, authoring docs,
+VISION/ROADMAP, and this plan are aligned with the ExplanationBeat pipeline.
 
 ### 0.3 Test baseline - DEFERRED
 
@@ -71,19 +76,34 @@ added when those are refactored (Phase 1.2/1.3 pipeline migration).
 `compileTerminalCapture` (manifest -> `TerminalSceneSpec` IR + audio manifest,
 ports compose.ts timing logic) + `terminalCaptureSession` (CaptureSession impl)
 + `toCaptureManifest`. The production pipeline compiles manifest -> IR -> TSX,
-including visual control through `TerminalSceneSpec.renderOptions`. Remaining:
-route through the shared capture dispatcher and retire the legacy writer.
+including visual control through `TerminalSceneSpec.renderOptions`. Each captured
+step emits a cue, a phrase anchor, visual focus, and capture evidence. The
+production pipeline now uses the shared dispatcher and the legacy writer is
+removed. CLI contract `1.0` fixes JSON results, exit codes, progress, safe job
+ids, artifact layout, per-job capture QA, and independent audio/caption options.
+Windows package/CLI verification passes locally; the three-host CI matrix is
+configured and must pass before promotion.
 
 ### 1.3 browser-recorder - DONE (core)
 
 `compileBrowserCapture` (manifest -> `BrowserSceneSpec` IR + audio manifest) +
 `browserCaptureSession` + `toBrowserCaptureManifest`. The production pipeline
-compiles manifest -> IR -> TSX. Remaining: route through the shared capture
-dispatcher and retire the legacy writer.
+compiles manifest -> IR -> TSX. New recordings retain exact per-action start
+times instead of evenly distributing steps; older recording manifests keep the
+fallback. The production pipeline now uses the shared dispatcher and the legacy
+writer is removed. CLI contract `1.0` adds direct plan execution, JSON results,
+exit codes, progress, safe job ids, and artifact layout. Remaining:
+per-job capture QA and audio parity. Windows package/CLI verification passes
+locally; the three-host CI matrix is configured and must pass before promotion.
 
-### 1.5 Promote out of experimental (not started)
+### 1.5 Promote out of pre-stable (in progress)
 
-Drop experimental markers; stabilize CLI; update README/skill docs.
+README/skill/current-capability docs now describe the working IR path and its
+pre-stable CLI status. Shared dispatcher routing and legacy writer removal are
+complete. CLI contract `1.0`, per-job QA, audio parity, and independent caption
+burn-in are also complete. Windows host verification passes locally; Linux and
+macOS execution remains pending the configured CI matrix. Screenshot privacy
+remains an explicitly deferred boundary.
 
 ## Phase 2 - Generic QA Checks
 
@@ -105,8 +125,10 @@ clipping risk, and sampled visual change. Missing/corrupt/truncated browser medi
   accepts `--audioManifest` so final QA evaluates the same resolved timing used
   by rendering.
   Reflow also preserves each authored/captured source duration and supplies a
-  monotonic scene-local time map. Narration chunk anchors align sequential
-  highlights when available; otherwise rendering uses uniform scaling. React
+  monotonic scene-local time map. ExplanationBeats resolve exact normalized
+  phrases inside TTS chunks; providers without fine chunks use a lower-confidence
+  whole-cue character position. Chunk-order/highlight pairing remains only a
+  legacy fallback when semantic Beats are absent. React
   frame hooks, GSAP adapters, browser media seeking, and final pacing QA consume
   the same mapping. Stretch beyond the profile's 2x limit emits
   `scene_time_stretch_excessive`.
@@ -127,6 +149,11 @@ clipping risk, and sampled visual change. Missing/corrupt/truncated browser medi
   The release contract now records `explainer-v1` end to end and accepts a
   versioned `--qaConfig`; suppressions require an exact code/path and documented
   reason, never apply to errors, and remain auditable in `qa-report.json`.
+  Terminal and Browser production jobs now run this capture profile after
+  rendering and include `qa-report.json` in `artifacts.json`. QA errors return
+  pipeline exit code 3 while retaining diagnostic artifacts. Explicitly silent
+  jobs still run capture/visual/pacing checks without requiring an audio track;
+  `--withAudio` jobs must contain valid synthesized narration.
 
 ### Ground-truth verification - DROPPED
 
@@ -147,10 +174,11 @@ Phase 2.1 (generic QA) - independent
 
 ## Risks
 
-- **Pipeline consolidation (1.2/1.3).** Terminal/browser production pipelines
-  produce IR, but call their adapter compiler directly instead of the shared
-  capture dispatcher. Legacy `writeComposition` exports also remain and need a
-  compatibility decision.
-- **Scope.** Phase 1 core (capture contract + terminal/browser compile +
-  session) is done. Remaining: promote (1.5), pipeline
-  migration, optional generic-QA extensions.
+- **Pipeline consolidation (1.2/1.3).** Complete: Terminal/browser production
+  pipelines and release smoke use the shared dispatcher, canonical artifact
+  tests cover both adapters, and legacy `writeComposition` exports are removed.
+- **Scope.** Capture, joint ExplanationBeat authoring, post-TTS semantic timing,
+  release QA, and CLI/artifact contract `1.0` are implemented. Remaining:
+  CI confirmation on Linux/macOS and lifecycle promotion. Windows host package
+  and CLI verification passes locally. Screenshot privacy remains explicitly
+  deferred.

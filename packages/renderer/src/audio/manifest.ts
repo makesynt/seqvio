@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {
   isPacingProfileId,
+  resolveNarrationAnchor,
   resolveNarrationCueTimes,
   type CaptionCue,
   type CompositionAudioManifest,
@@ -41,14 +42,25 @@ export function reflowSynthesizedTimeline(
   synthesizedNarration: NarrationCue[],
   fps: number,
   options: { cueGapMs?: number; sceneTailMs?: number } = {},
-): { narration: NarrationCue[]; sceneTimings: CompositionAudioManifest['sceneTimings']; durationFrames?: number } {
+): {
+  narration: NarrationCue[];
+  sceneTimings: CompositionAudioManifest['sceneTimings'];
+  explanationBeats: CompositionAudioManifest['explanationBeats'];
+  durationFrames?: number;
+} {
   if (!manifest.sceneTimings?.length) {
-    return { narration: synthesizedNarration, sceneTimings: manifest.sceneTimings, durationFrames: manifest.duration };
+    return {
+      narration: synthesizedNarration,
+      sceneTimings: manifest.sceneTimings,
+      explanationBeats: manifest.explanationBeats,
+      durationFrames: manifest.duration,
+    };
   }
   const cueGapMs = options.cueGapMs ?? 180;
   const sceneTailMs = options.sceneTailMs ?? 600;
   const resolvedById = new Map<string, NarrationCue>();
   const sceneTimings: NonNullable<CompositionAudioManifest['sceneTimings']> = [];
+  const explanationBeats: NonNullable<CompositionAudioManifest['explanationBeats']> = [];
   let frameCursor = 0;
 
   for (const scene of manifest.sceneTimings) {
@@ -71,20 +83,54 @@ export function reflowSynthesizedTimeline(
     }
     const narrationFrames = Math.ceil((((cueCursorMs - sceneStartMs) + (sceneCues.length ? sceneTailMs : 0)) / 1000) * fps);
     const durationFrames = Math.max(scene.durationFrames, narrationFrames);
+    const resolvedSceneBeats = (manifest.explanationBeats ?? [])
+      .filter((beat) => beat.sceneId === scene.sceneId)
+      .map((beat) => {
+        const cue = resolvedById.get(beat.cueId);
+        if (!cue) return beat;
+        const resolution = resolveNarrationAnchor(cue, beat.anchor, fps);
+        if (!resolution.ok) return { ...beat, resolutionError: resolution.code };
+        return {
+          ...beat,
+          outputFrame: Math.max(0, resolution.absoluteFrame - frameCursor),
+          method: resolution.method,
+          confidence: resolution.confidence,
+          resolutionError: undefined,
+        };
+      });
+    explanationBeats.push(...resolvedSceneBeats);
+    const semanticPoints = resolvedSceneBeats
+      .filter((beat): beat is typeof beat & { outputFrame: number } =>
+        typeof beat.outputFrame === 'number'
+      )
+      .sort((a, b) => a.outputFrame - b.outputFrame)
+      .map((beat) => ({
+        outputFrame: Math.min(durationFrames, beat.outputFrame),
+        sourceFrame: Math.min(sourceDurationFrames, beat.sourceFrame),
+      }));
     const orderedHighlights = [...(scene.highlights ?? [])].sort((a, b) => a.startFrame - b.startFrame);
     const chunkFrames = sceneCues
-      .flatMap((cue) => cue.chunks ?? [])
-      .map((chunk) => chunk.offsetFrame)
+      .flatMap((cue) => {
+        const resolvedCue = resolvedById.get(cue.id) ?? cue;
+        const cueStartFrame = resolvedCue.startFrame
+          ?? Math.round((resolveNarrationCueTimes(resolvedCue, fps).startMs / 1000) * fps);
+        const cueSceneOffset = Math.max(0, cueStartFrame - frameCursor);
+        return (cue.chunks ?? []).map((chunk) => cueSceneOffset + chunk.offsetFrame);
+      })
       .filter((frame) => Number.isFinite(frame) && frame >= 0)
       .sort((a, b) => a - b);
     const mappedCount = Math.min(orderedHighlights.length, chunkFrames.length);
-    const timeMap = mappedCount > 0
+    const fallbackPoints = Array.from({ length: mappedCount }, (_, index) => ({
+      outputFrame: Math.min(durationFrames, chunkFrames[index]),
+      sourceFrame: Math.min(sourceDurationFrames, orderedHighlights[index].startFrame),
+    }));
+    const anchorPoints = semanticPoints.length > 0 ? semanticPoints : fallbackPoints;
+    const timeMap = anchorPoints.length > 0
       ? [
-          { outputFrame: 0, sourceFrame: 0 },
-          ...Array.from({ length: mappedCount }, (_, index) => ({
-            outputFrame: Math.min(durationFrames, chunkFrames[index]),
-            sourceFrame: Math.min(sourceDurationFrames, orderedHighlights[index].startFrame),
-          })),
+          ...(anchorPoints[0].outputFrame === 0
+            ? []
+            : [{ outputFrame: 0, sourceFrame: 0 }]),
+          ...anchorPoints,
           { outputFrame: durationFrames, sourceFrame: sourceDurationFrames },
         ].filter((point, index, points) => index === 0 || (
           point.outputFrame > points[index - 1].outputFrame &&
@@ -104,6 +150,7 @@ export function reflowSynthesizedTimeline(
   return {
     narration: synthesizedNarration.map((cue) => resolvedById.get(cue.id) ?? cue),
     sceneTimings,
+    explanationBeats,
     durationFrames: frameCursor,
   };
 }
@@ -130,6 +177,7 @@ export function buildManifestFromMeta(
     tracks: meta.audio?.tracks,
     captions: meta.captions ?? meta.audio?.captions,
     sceneTimings: meta.audio?.sceneTimings,
+    explanationBeats: meta.audio?.explanationBeats,
     pacingProfile: meta.audio?.pacingProfile ?? meta.pacing?.profile,
   };
 
@@ -158,6 +206,7 @@ export function validateAudioManifest(
   const issues: ManifestValidationIssue[] = [];
   const fps = Math.max(1, manifest.fps ?? 30);
   const seenNarrationIds = new Set<string>();
+  const narrationById = new Map<string, NarrationCue>();
   const seenTrackIds = new Set<string>();
 
   if (manifest.pacingProfile !== undefined && !isPacingProfileId(manifest.pacingProfile)) {
@@ -184,6 +233,7 @@ export function validateAudioManifest(
       });
     } else {
       seenNarrationIds.add(cue.id);
+      narrationById.set(cue.id, cue);
     }
 
     if (!cue.text && !cue.silent) {
@@ -292,6 +342,79 @@ export function validateAudioManifest(
       }
     }
     previousSceneStart = scene.startFrame;
+  }
+
+  const seenBeatIds = new Set<string>();
+  const previousBeatByScene = new Map<string, { sourceFrame: number; outputFrame?: number }>();
+  for (const [index, beat] of (manifest.explanationBeats ?? []).entries()) {
+    const beatPath = `explanationBeats[${index}]`;
+    if (!beat.id || seenBeatIds.has(beat.id)) {
+      issues.push({
+        severity: 'error',
+        code: beat.id ? 'duplicate_explanation_beat_id' : 'missing_explanation_beat_id',
+        path: `${beatPath}.id`,
+        message: beat.id ? `Duplicate explanation beat id "${beat.id}".` : 'Explanation beat is missing id.',
+      });
+    }
+    seenBeatIds.add(beat.id);
+    const cue = narrationById.get(beat.cueId);
+    if (!cue) {
+      issues.push({
+        severity: 'error', code: 'unknown_explanation_beat_cue', path: `${beatPath}.cueId`,
+        message: `Explanation beat "${beat.id}" references unknown cue "${beat.cueId}".`,
+      });
+    }
+    if (!seenSceneIds.has(beat.sceneId)) {
+      issues.push({
+        severity: 'error', code: 'unknown_explanation_beat_scene', path: `${beatPath}.sceneId`,
+        message: `Explanation beat "${beat.id}" references unknown scene "${beat.sceneId}".`,
+      });
+    }
+    if (!beat.anchor?.text?.trim()) {
+      issues.push({
+        severity: 'error', code: 'missing_explanation_beat_anchor', path: `${beatPath}.anchor`,
+        message: `Explanation beat "${beat.id}" is missing its narration anchor.`,
+      });
+    }
+    if (!Number.isFinite(beat.sourceFrame) || beat.sourceFrame < 0) {
+      issues.push({
+        severity: 'error', code: 'invalid_explanation_beat_source_frame', path: `${beatPath}.sourceFrame`,
+        message: `Explanation beat "${beat.id}" has an invalid source frame.`,
+      });
+    }
+    if (beat.outputFrame !== undefined && (!Number.isFinite(beat.outputFrame) || beat.outputFrame < 0)) {
+      issues.push({
+        severity: 'error', code: 'invalid_explanation_beat_output_frame', path: `${beatPath}.outputFrame`,
+        message: `Explanation beat "${beat.id}" has an invalid resolved speech frame.`,
+      });
+    } else if (beat.resolutionError || (beat.outputFrame === undefined && (cue?.chunks?.length ?? 0) > 0)) {
+      issues.push({
+        severity: 'error', code: 'unresolved_explanation_beat_anchor', path: `${beatPath}.anchor`,
+        message: `Explanation beat "${beat.id}" could not be resolved against synthesized narration${beat.resolutionError ? ` (${beat.resolutionError})` : ''}.`,
+        repair: 'Correct the anchor text or occurrence and synthesize narration again.',
+      });
+    }
+    if (beat.confidence !== undefined && beat.confidence < 0.7) {
+      issues.push({
+        severity: 'warning', code: 'low_confidence_explanation_beat', path: beatPath,
+        message: `Explanation beat "${beat.id}" resolved with confidence ${beat.confidence.toFixed(2)}.`,
+        repair: 'Use a more specific phrase anchor or a TTS provider with finer timing chunks.',
+      });
+    }
+    const previous = previousBeatByScene.get(beat.sceneId);
+    if (previous && (
+      beat.sourceFrame < previous.sourceFrame ||
+      (beat.outputFrame !== undefined && previous.outputFrame !== undefined && beat.outputFrame < previous.outputFrame)
+    )) {
+      issues.push({
+        severity: 'error', code: 'non_monotonic_explanation_beats', path: beatPath,
+        message: `Explanation beats in scene "${beat.sceneId}" must not reverse source or speech time.`,
+      });
+    }
+    previousBeatByScene.set(beat.sceneId, {
+      sourceFrame: beat.sourceFrame,
+      outputFrame: beat.outputFrame,
+    });
   }
 
   for (const [index, track] of (manifest.tracks ?? []).entries()) {

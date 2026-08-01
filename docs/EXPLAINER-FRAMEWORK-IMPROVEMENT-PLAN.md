@@ -1,13 +1,13 @@
 # Seqvio Explainer Framework Improvement Plan
 
-> **Status:** active proposal.
+> **Status:** active implementation plan.
 >
 > **Purpose:** turn Seqvio from a broad collection of video components into a
 > reliable capture-to-explanation framework for coding agents. This document is
 > an execution plan, subordinate to [`VISION.md`](./VISION.md) and
 > [`ROADMAP.md`](./ROADMAP.md).
 >
-> **Baseline date:** 2026-07-30. Statements about current behavior were checked
+> **Baseline date:** 2026-08-01. Statements about current behavior were checked
 > against the repository at this date; update this document when implementation
 > changes invalidate them.
 
@@ -21,6 +21,8 @@ real system activity
   -> CaptureSession
   -> CaptureManifest
   -> CompositionDocument
+  -> ExplanationBeat cues + visual actions + capture evidence
+  -> TTS-resolved semantic time map
   -> supported explainer scenes
   -> deterministic render
   -> executable QA
@@ -41,36 +43,39 @@ failures without relying on manual inspection.
   `CompositionDocument v2` before generating TSX.
 - `CompositionDocument v2` has complete compiler paths for `whiteboard`, `code`,
   `diagram`, `terminal`, and `browser` scenes.
-- Narration metadata, audio manifests, scene timing, local Puppeteer rendering,
-  FFmpeg output, chapter rendering, and visual regression infrastructure exist.
-- Generic QA detects mostly blank frames, offscreen elements, text overflow,
-  small text, and low contrast.
+- ExplanationBeat authoring joins narration cues, exact phrase anchors, visual
+  actions, and capture evidence. The compiler creates logical source timing;
+  post-TTS reflow resolves speech frames and semantic scene time maps.
+- Terminal and Browser capture compilers generate ExplanationBeats per recorded
+  step. Browser recordings now persist exact action start times.
+- Baseline/capture QA covers visual layout, pacing, audio health, capture state
+  and media, unresolved/reversed Beats, and semantic time-map integrity.
+- A deterministic 1280x720 release smoke renders and fully decodes both capture
+  families without network or provider credentials.
 - Terminal rendering now has a deterministic xterm-backed state path and
   explicit visual controls in IR `renderOptions`.
 
 ### Gaps that block the product promise
 
-- The public positioning still mixes a generic visual language, a component
-  library, and a system-capture product. The stable product contract is unclear.
-- Terminal and browser capture remain documented as experimental even though
-  their production pipelines use the IR path.
-- Legacy `writeComposition` paths and tests remain beside the IR pipeline,
-  creating two ways to produce similar output.
+- Terminal and Browser CLI/artifact contract `1.0` is implemented with explicit
+  experimental package and pre-stable adapter labels. Windows verification
+  passes locally; Linux/macOS matrix confirmation remains before promotion.
+- Terminal and Browser production pipelines now use the shared capture
+  dispatcher; duplicate `writeComposition` paths and tests have been removed.
 - Stable scene types now compile to real components. The former `chat`, `diff`,
   and `infographic` types were removed: generic chat playback, generated-code
   comparison, and generic panel layouts do not belong in the current capture
   contract. A future captured agent-session contract must be designed from real
   events rather than reusing the removed `chat` shape.
-- Stateful and asynchronous scene components do not yet share an explicit
-  framework-wide seek-safety and readiness contract.
-- QA covers basic frame and DOM failures but not temporal pacing, audio health,
-  caption/narration timing, or capture-specific failures.
-- Capture security is uneven. Terminal redaction exists, but there is no common
-  policy and audit model for browser screenshots, URLs, page text, or future
-  adapters.
-- Documentation and version metadata drift from implementation. In particular,
-  existing planning documents still describe terminal/browser pipeline migration
-  as unfinished.
+- Stateful and asynchronous scene components share a framework-wide
+  prepare/ready/render/dispose contract with per-stage deadlines, stable errors,
+  browser-stage state, and explicit disposal. Cross-platform semantic goldens
+  and same-host pixel determinism now run in the three-host CI matrix.
+- Screenshot privacy masking/OCR remains intentionally deferred. Text, URL, and
+  credential-like capture scanning exists but does not make raw screenshots safe.
+- Root/stable-train versions, package lifecycle markers, changesets grouping,
+  local dependency versions, and scene capability documentation are governed by
+  a checked machine-readable release policy. Release publication remains pending.
 - Browser-per-frame rendering is adequate for short videos but lacks a published
   performance baseline and regression budget.
 
@@ -113,13 +118,16 @@ Deliverables:
   browser pipelines already compile through IR.
 - Define public, experimental, internal, deprecated, and removed lifecycle labels
   and apply them consistently to packages and exports.
-- Decide the compatibility window for terminal/browser `writeComposition`.
-  Deprecate it immediately, document the IR replacement, and remove it in the
-  next allowed breaking release.
+- Keep terminal/browser composition generation on the shared dispatcher and
+  reject reintroduction of direct string-writer paths.
 - Align root/package versions and add a release check that rejects inconsistent
   versions or stale capability markers.
-- Publish one canonical end-to-end command for terminal and browser explanation,
-  including the produced manifest, document, diagnostics, and video artifacts.
+- Keep the implemented canonical Terminal/Browser commands and versioned
+  `artifacts.json` contract covered by process-level and pipeline tests.
+
+Implemented as of 2026-08-01: lifecycle/version policy, stable release train,
+changesets alignment, five-scene capability registry, agent-authoring filtering,
+machine-readable capability snapshot, and CI/release drift verification.
 
 Exit criteria:
 
@@ -148,18 +156,18 @@ Deliverables:
   adapter compilers through parallel orchestration code.
 - Persist `CaptureManifest`, `CompositionDocument`, resolved timeline, generated
   TSX, and audio manifest as named artifacts for every pipeline run.
-- Define versioned migrations for all public IR changes and add fixtures for the
-  oldest supported document version.
-- Retire Storyboard v1 from new examples and agent prompts; retain migration only
-  for the declared compatibility window.
+- Treat CompositionDocument changes as explicitly breaking until the first
+  stable IR release; do not build migrations for temporary pre-stable documents.
+- Keep Storyboard v1 as an isolated whiteboard input while it remains useful. It
+  is not a CompositionDocument migration path and creates no compatibility work.
 
 Exit criteria:
 
 - Stable validation accepts only scene types that compile without placeholders.
 - Terminal and browser use the same dispatcher and artifact layout.
 - No production pipeline imports a legacy composition writer.
-- Every public schema change has a migration or an explicit breaking-release
-  note.
+- Every public schema change has an explicit breaking-release note until the IR
+  receives a stable compatibility policy.
 - Golden IR fixtures compile deterministically to normalized TSX.
 
 ### Phase 2 - Establish Deterministic Playback Contracts
@@ -167,7 +175,7 @@ Exit criteria:
 **Goal:** make stateful terminal, browser, audio, and annotation scenes reliable
 under arbitrary frame access.
 
-Progress as of 2026-07-30:
+Progress as of 2026-08-01:
 
 - Terminal frame-state tests cover forward, reverse, repeated, and shuffled
   requests; renderer readiness now waits for every mounted xterm instance rather
@@ -182,8 +190,23 @@ Progress as of 2026-07-30:
   mixed terminal/browser scene in forward, reverse, and repeated frame order,
   and enforces PSNR plus significant-pixel thresholds. Missing seekable media now
   fails with an explicit browser-runtime diagnostic.
-- Stored cross-platform golden baselines and corrupt mid-stream media fixtures
-  remain open.
+- The core adapter contract now supports `prepare`, `ready`, deterministic
+  `render({ frame, fps, timeSeconds })`, and `dispose`. Renderer initialization
+  awaits preparation/readiness, and each requested frame awaits asynchronous
+  rendering before capture. Legacy `seek()` adapters remain compatible.
+- Lifecycle tests cover forward, backward, repeated, and shuffled frame access,
+  adapter failure wrapping, stage timeouts, and disposal timeouts. Core and
+  browser runtime deadlines plus diagnostic fields are documented in
+  `RENDER-LIFECYCLE.md`.
+- Missing, corrupt-header, and truncated mid-stream browser media fixtures are
+  covered. A committed five-frame semantic golden fixes Terminal and Browser
+  interaction state across operating systems; each host also enforces repeated
+  and shuffled-frame pixel equivalence and uploads environment-tagged evidence.
+- A second Chromium fixture covers Whiteboard, Code, and Diagram scene starts,
+  narration-expanded local clocks, both sides of transitions, burned captions,
+  annotations, reverse seeks, and repeated-frame pixels. Annotation measurement
+  now participates in the readiness barrier and cannot reuse previous-frame DOM
+  bounds.
 
 Deliverables:
 
@@ -217,7 +240,7 @@ Exit criteria:
 **Goal:** detect explanation failures and sensitive-data exposure before an MP4
 is accepted.
 
-Progress as of 2026-07-30:
+Progress as of 2026-08-01:
 
 - `seqvio-qa` exposes `baseline` and `capture` profiles. The capture profile
   requires a manifest and fails before Chromium startup when steps, observed
@@ -245,11 +268,16 @@ Progress as of 2026-07-30:
   uses the reflowed scene-local frame rather than the composition-global frame.
 - Scene extension no longer leaves the authored visual clock unchanged with only
   a static tail. Each scene retains its source duration and receives a monotonic
-  output-to-source time map. Narration chunk offsets are paired with sequential
-  highlight anchors when present, with uniform scaling as the deterministic
-  fallback. React frame hooks, GSAP adapters, browser media seeking, and pacing QA
-  use this shared clock. `scene_time_stretch_excessive` warns when narration
-  stretches a scene beyond the `explainer-v1` 2x threshold.
+  output-to-source time map. ExplanationBeats resolve exact normalized phrases
+  inside TTS chunks; whole-cue character position is the explicit lower-confidence
+  fallback when fine timing is unavailable. Sequential chunk/highlight pairing
+  remains only for manifests without semantic Beats. React frame hooks, GSAP
+  adapters, browser media seeking, and pacing QA use this shared clock.
+  `scene_time_stretch_excessive` warns when narration stretches a scene beyond
+  the `explainer-v1` 2x threshold.
+- QA rejects post-TTS unresolved anchors, reversed Beat timelines, unknown cue or
+  scene references, and invalid source/output frames. Low-confidence cue-character
+  alignment remains a promotable warning with a source repair instruction.
 - `explainer-v1` is now a versioned pacing profile carried by the source IR,
   generated meta, resolved audio, and QA report. `--qaConfig` supports exact
   warning suppressions with mandatory reasons; errors cannot be suppressed and
@@ -266,6 +294,10 @@ Progress as of 2026-07-30:
   cleans each repository-local temporary job after completion. Passing
   `--outDir output/release-pipeline-preview` retains both MP4s and their QA/audio
   sidecars for human inspection.
+- Terminal and Browser production commands now run capture QA after rendering.
+  `qa-report.json` is a standard artifact; QA errors retain diagnostics, mark
+  the job failed, and return exit code 3. Explicitly silent jobs do not require
+  a narration track, while `--withAudio` jobs do.
 
 Deliverables:
 
@@ -316,9 +348,12 @@ Deliverables:
   selecting an unsupported target in advance.
 - Validate installation and smoke rendering on supported Windows, macOS, and
   Linux environments, including Chromium, FFmpeg, fonts, and `node-pty`.
+  A three-host CI matrix now performs clean install/build/tests/package checks
+  and real Terminal plus Browser direct-CLI capture/QA runtime smokes. Windows
+  package/CLI verification also passes locally; matrix confirmation is pending.
 - Provide one diagnostic command that reports missing dependencies, incompatible
   versions, writable paths, media probes, and font availability.
-- Promote terminal and browser capture out of experimental only after their Phase
+- Promote terminal and browser capture out of pre-stable only after their Phase
   1-3 gates pass on every supported platform.
 
 Exit criteria:
@@ -338,7 +373,7 @@ Each phase must extend a shared matrix rather than adding isolated package tests
 | --- | --- |
 | Capture contract | schema validation, timestamp ordering, artifact paths, cancellation, failure propagation |
 | Adapter | real or hermetic terminal/browser fixture, redaction, cross-platform behavior |
-| IR | stable validation, migration fixtures, deterministic compilation, unsupported capability rejection |
+| IR | stable validation, deterministic compilation, unsupported capability rejection |
 | Scene runtime | random-access frames, reverse seek, repeated frame, asynchronous readiness, missing assets |
 | Timeline/audio | narration lock, captions, transitions, silence, media-duration mismatch |
 | Visual output | golden frames at scene start/middle/end and interaction boundaries |
@@ -388,7 +423,7 @@ contracts; otherwise each adapter will create another special-case pipeline.
 
 | Risk | Control |
 | --- | --- |
-| Compatibility breaks while removing duplicate paths | Deprecation window, migration fixtures, one documented replacement |
+| Duplicate capture paths return | Canonical artifact tests and one documented shared-dispatcher path |
 | IR becomes a second programming language | Keep it declarative, capability-based, and limited to explainer semantics |
 | Visual tests become platform-noisy | Pin fonts/browser, record environment metadata, separate semantic and pixel assertions |
 | Security checks create false confidence | Treat reports as defense in depth; sensitive raw artifacts remain protected by default |
@@ -405,19 +440,20 @@ contracts; otherwise each adapter will create another special-case pipeline.
 - An internal planner or mandatory model provider.
 - Feature parity with general-purpose code-to-video engines.
 - New capture adapters before the shared terminal/browser contract is stable.
+- Pre-stable CompositionDocument migrations or compatibility fixtures.
 
 ## 10. First Implementation Slice
 
 The first slice should be small enough to review as one coherent change and
 should establish the direction of later work:
 
-1. Correct stale pipeline statements in planning documentation.
-2. Add lifecycle labels and a supported-scene capability table.
-3. Make stable validation reject placeholder-only scene types.
-4. Route terminal and browser pipelines through the shared capture dispatcher.
-5. Deprecate legacy `writeComposition` exports and add migration notes.
+1. Correct stale pipeline statements in planning documentation. **Done.**
+2. Add lifecycle labels and a supported-scene capability registry/table. **Done.**
+3. Make stable validation reject placeholder-only scene types. **Done.**
+4. Route terminal and browser pipelines through the shared capture dispatcher. **Done.**
+5. Remove legacy `writeComposition` exports and replace their tests with canonical artifact tests. **Done.**
 6. Add one end-to-end terminal fixture and one browser fixture that preserve all
-   intermediate artifacts and run the existing QA profile.
+   intermediate artifacts and run the existing QA profile. **Done.**
 
-Completion of this slice does not promote capture out of experimental. It makes
+Completion of this slice does not promote capture out of pre-stable. It makes
 the architecture honest and provides the test spine required for that promotion.

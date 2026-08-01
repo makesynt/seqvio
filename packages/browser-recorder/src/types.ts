@@ -32,6 +32,7 @@ export interface BrowserRecordingPlan {
 }
 
 export interface TimedPoint {
+  id?: string;
   timeMs: number;
   x: number;
   y: number;
@@ -57,12 +58,38 @@ export interface RecordingManifest {
   cursorPoints: TimedPoint[];
   focusTargets: RecordedFocusTarget[];
   clicks: TimedPoint[];
+  /** Exact action start times captured from the recording clock. */
+  actionTimings?: Array<{ id: string; timeMs: number }>;
 }
 
 export interface PipelineProgress {
-  phase: 'queued' | 'recording' | 'encoding' | 'composing' | 'rendering' | 'done' | 'failed';
+  phase: 'queued' | 'recording' | 'encoding' | 'composing' | 'synthesizing' | 'rendering' | 'qa' | 'done' | 'failed';
   percent: number;
   message: string;
+}
+
+export type TtsProvider = 'elevenlabs' | 'minimax' | 'edge-tts' | 'openai';
+
+export interface BrowserPipelineOptions {
+  withAudio?: boolean;
+  burnCaptions?: boolean;
+  audioProvider?: TtsProvider;
+  audioVoice?: string;
+  qaConfig?: string;
+}
+
+export interface BrowserPipelineResult {
+  rawVideoPath: string;
+  outputVideoPath: string;
+  planPath: string;
+  manifestPath: string;
+  captureManifestPath: string;
+  compositionDocumentPath: string;
+  componentPath: string;
+  audioManifestPath?: string;
+  resolvedAudioManifestPath?: string;
+  qaReportPath?: string;
+  artifactManifestPath: string;
 }
 
 export interface RecorderJob extends PipelineProgress {
@@ -72,6 +99,7 @@ export interface RecorderJob extends PipelineProgress {
   rawVideoUrl?: string;
   outputVideoUrl?: string;
   manifestUrl?: string;
+  artifactManifestUrl?: string;
   error?: string;
 }
 

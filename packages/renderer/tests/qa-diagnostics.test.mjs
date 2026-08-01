@@ -48,6 +48,31 @@ test('audio validation rejects unknown pacing profiles', () => {
     .some((issue) => issue.code === 'unsupported_pacing_profile'));
 });
 
+test('audio validation rejects unresolved and reversed explanation beats', () => {
+  const issues = validateAudioManifest({
+    narration: [{
+      id: 'scene.voice', sceneId: 'scene', text: 'first only', startMs: 0, endMs: 1000,
+      chunks: [{ text: 'first only', offsetFrame: 0, durationFrame: 30 }],
+    }],
+    sceneTimings: [{ sceneId: 'scene', startFrame: 0, durationFrames: 60 }],
+    explanationBeats: [
+      {
+        id: 'scene.second', sceneId: 'scene', cueId: 'scene.voice', anchor: { text: 'missing' },
+        sourceFrame: 30, visuals: [{ targetId: 'second', action: 'reveal' }],
+      },
+      {
+        id: 'scene.first', sceneId: 'scene', cueId: 'scene.voice', anchor: { text: 'first' },
+        sourceFrame: 0, outputFrame: 0, confidence: 0.55,
+        visuals: [{ targetId: 'first', action: 'reveal' }],
+      },
+    ],
+  });
+  const codes = issues.map((issue) => issue.code);
+  assert.ok(codes.includes('unresolved_explanation_beat_anchor'));
+  assert.ok(codes.includes('non_monotonic_explanation_beats'));
+  assert.ok(codes.includes('low_confidence_explanation_beat'));
+});
+
 test('synthesized narration replaces estimated end with probed audio duration', () => {
   assert.deepEqual(resolveSynthesizedCueTiming({
     id: 'voice', text: 'Hello', startMs: 1000, endMs: 9000,
@@ -86,6 +111,78 @@ test('synthesized narration reflows later scenes without shrinking visual timing
     { outputFrame: 75, sourceFrame: 30 },
     { outputFrame: 108, sourceFrame: 60 },
   ]);
+});
+
+test('semantic explanation anchors drive the scene time map', () => {
+  const result = reflowSynthesizedTimeline({
+    fps: 30,
+    sceneTimings: [{
+      sceneId: 'scene', startFrame: 0, durationFrames: 90, sourceDurationFrames: 90,
+      highlights: [
+        { id: 'scene.first', source: 'beat', startFrame: 0, endFrame: 30, minDurationFrames: 27 },
+        { id: 'scene.second', source: 'beat', startFrame: 30, endFrame: 60, minDurationFrames: 27 },
+      ],
+    }],
+    explanationBeats: [
+      {
+        id: 'scene.first', sceneId: 'scene', cueId: 'scene.voice',
+        anchor: { text: 'first' }, sourceFrame: 0,
+        visuals: [{ targetId: 'first', action: 'reveal' }],
+      },
+      {
+        id: 'scene.second', sceneId: 'scene', cueId: 'scene.voice',
+        anchor: { text: 'second' }, sourceFrame: 30,
+        visuals: [{ targetId: 'second', action: 'reveal' }],
+      },
+    ],
+  }, [{
+    id: 'scene.voice', sceneId: 'scene', text: 'first then second',
+    startMs: 0, endMs: 3000,
+    chunks: [{ text: 'first then second', offsetFrame: 0, durationFrame: 90 }],
+  }], 30);
+
+  assert.equal(result.explanationBeats[0].outputFrame, 0);
+  assert.equal(result.explanationBeats[1].outputFrame, 54);
+  assert.equal(result.explanationBeats[1].method, 'chunk-character');
+  assert.deepEqual(result.sceneTimings[0].timeMap, [
+    { outputFrame: 0, sourceFrame: 0 },
+    { outputFrame: 54, sourceFrame: 30 },
+    { outputFrame: 108, sourceFrame: 90 },
+  ]);
+});
+
+test('semantic anchor failures survive reflow for release QA', () => {
+  const result = reflowSynthesizedTimeline({
+    fps: 30,
+    sceneTimings: [{ sceneId: 'scene', startFrame: 0, durationFrames: 30 }],
+    explanationBeats: [{
+      id: 'scene.missing', sceneId: 'scene', cueId: 'scene.voice',
+      anchor: { text: 'absent' }, sourceFrame: 0,
+      visuals: [{ targetId: 'target', action: 'focus' }],
+    }],
+  }, [{ id: 'scene.voice', sceneId: 'scene', text: 'present', startMs: 0, endMs: 1000 }], 30);
+  assert.equal(result.explanationBeats[0].resolutionError, 'anchor_not_found');
+  assert.ok(validateAudioManifest({
+    narration: result.narration,
+    sceneTimings: result.sceneTimings,
+    explanationBeats: result.explanationBeats,
+  }).some((issue) => issue.code === 'unresolved_explanation_beat_anchor'));
+});
+
+test('a speech-start beat replaces the default source-zero time-map anchor', () => {
+  const result = reflowSynthesizedTimeline({
+    fps: 30,
+    sceneTimings: [{ sceneId: 'capture', startFrame: 0, durationFrames: 60, sourceDurationFrames: 60 }],
+    explanationBeats: [{
+      id: 'capture.action', sceneId: 'capture', cueId: 'capture.voice',
+      anchor: { text: 'action' }, sourceFrame: 18,
+      visuals: [{ targetId: 'action', action: 'focus' }],
+    }],
+  }, [{
+    id: 'capture.voice', sceneId: 'capture', text: 'action starts', startMs: 0, endMs: 1000,
+    chunks: [{ text: 'action starts', offsetFrame: 0, durationFrame: 30 }],
+  }], 30);
+  assert.deepEqual(result.sceneTimings[0].timeMap[0], { outputFrame: 0, sourceFrame: 18 });
 });
 
 test('runtime media failures map to stable QA codes', () => {
