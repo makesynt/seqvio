@@ -255,7 +255,12 @@ async function waitForPendingImages(): Promise<void> {
 }
 
 async function waitForVideoMetadata(video: HTMLVideoElement): Promise<void> {
+  const source = () => video.currentSrc || video.src;
+  const hasFailed = () => video.error !== null;
   if (video.readyState >= HTMLMediaElement.HAVE_METADATA) return;
+  if (hasFailed()) {
+    throw new Error(`Unable to load seekable video metadata: ${source()}`);
+  }
   await new Promise<void>((resolve, reject) => {
     let settled = false;
     let timeout = 0;
@@ -274,7 +279,7 @@ async function waitForVideoMetadata(video: HTMLVideoElement): Promise<void> {
       if (settled) return;
       settled = true;
       cleanup();
-      reject(new Error(`Unable to load seekable video metadata: ${video.currentSrc || video.src}`));
+      reject(new Error(`Unable to load seekable video metadata: ${source()}`));
     };
     timeout = window.setTimeout(() => {
       if (settled) return;
@@ -284,6 +289,7 @@ async function waitForVideoMetadata(video: HTMLVideoElement): Promise<void> {
     }, 10000);
     video.addEventListener('loadedmetadata', loaded, { once: true });
     video.addEventListener('error', failed, { once: true });
+    if (hasFailed()) failed();
   });
 }
 

@@ -23,7 +23,7 @@
   "scripts": {
     "build": "node ../../scripts/clean-package-dist.mjs && tsc",
     "prepack": "npm run build",
-    "test": "node --test tests/*.test.mjs",
+    "test": "node --test",
     "test:ui": "node scripts/ui-smoke.mjs",
     "start": "node dist/cli.js serve"
   },
