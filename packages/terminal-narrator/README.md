@@ -1,6 +1,11 @@
 # @seqvio/terminal-narrator
 
-把 coding agent / shell 的终端会话录成演示视频：捕获 TTY 流 → 美化回放 → 可选旁白字幕。
+把 coding agent / shell 的终端会话录成讲解视频：捕获 TTY 流 → xterm
+状态回放 → `CompositionDocument v2` → ExplanationBeat 音画对齐 → 可选 TTS
+旁白 → QA / MP4。
+
+当前 CLI 属于 pre-stable；生产管线已经使用 manifest → shared capture
+dispatcher → IR → TSX，legacy `writeComposition` writer 已移除。
 
 **范围**：机制 1（外壳调教 Claude Code）+ 机制 3（日志回放渲染）。**不含** MCP（机制 2）。
 
@@ -28,7 +33,7 @@ Claude sample 默认会先等待真实的 `❯` 提示符，再开始逐字输�
 
 | 参数 | 说明 |
 |------|------|
-| `--sample-claude` | 机制 1 示例 plan（默认 1920×1080 + VHS 外观） |
+| `--sample-claude` | 机制 1 示例 plan（默认 1280×720 + VHS 外观） |
 | `--skill` | 输入文本，默认 `/help`（也可用 `SEQVIO_DEMO_SKILL`） |
 | `--claudeBin` | Claude 可执行文件（默认 `CLAUDE_BIN` 或 `claude` / `claude.cmd`） |
 | `--cwd` | 录制会话工作目录 |
@@ -50,10 +55,19 @@ node packages/terminal-narrator/dist/cli.js record --sample --withAudio --provid
 
 - `plan.json`
 - `recording-manifest.json` — Seqvio 内部时间轴
+- `capture-manifest.json` — shared capture contract
+- `composition-document.json` — canonical IR
 - `session.cast` — asciinema v2（可用 `asciinema play`）
-- `composition.tsx` — TerminalDemo + narration/captions
-- `audio-manifest.json` / `audio-manifest.resolved.json`（`--withAudio`）
+- `composition.tsx` — 从 TerminalSceneSpec 编译的 TerminalXtermDemo
+- `audio-manifest.json` — 每步 narration cue、ExplanationBeat、capture evidence 和 scene timing
+- `audio-manifest.resolved.json`（`--withAudio`）— TTS 后的 Beat outputFrame 与 semantic timeMap
 - `final.mp4`
+- `qa-report.json` — capture、画面、节奏、媒体和音频诊断；错误会使作业失败
+- `artifacts.json` — 版本化状态与相对产物路径
+
+CLI contract `1.0` 支持 `--json`、稳定退出码、单调进度、`--jobId` 和旧作业
+防覆盖。完整约定见
+[`docs/CAPTURE-CLI-CONTRACT.md`](../../docs/CAPTURE-CLI-CONTRACT.md)。
 
 ---
 
@@ -63,7 +77,7 @@ node packages/terminal-narrator/dist/cli.js record --sample --withAudio --provid
 {
   "version": "1.0",
   "name": "Claude skill demo",
-  "viewport": { "width": 1920, "height": 1080 },
+  "viewport": { "width": 1280, "height": 720 },
   "presentation": "vhs",
   "startupWaitMs": 2500,
   "readyPattern": ">",
@@ -108,10 +122,23 @@ native compose 会先通过 `@xterm/headless` 回放 PTY 流，再生成确定�
 | 参数 | 说明 |
 |------|------|
 | `--withAudio` | TTS 合成旁白并 mux 进 MP4 |
+| `--burnCaptions` | 把字幕烧录进画面；必须同时使用 `--withAudio` |
 | `--provider` | `edge-tts`（默认）/ `elevenlabs` / `openai` / `minimax` |
 | `--voice` | 提供商 voice id |
 
-compose 会用 stdout echo 对齐 step/caption 时间；未开 `--withAudio` 时仍写出 captions 元数据。
+录制器会用 stdout echo 修正 step 时间；编译器为每个步骤同时生成旁白 cue
+和 `evidence.captureStepId` 对应的 ExplanationBeat。开启 `--withAudio` 后，
+实际 TTS 时长会解析短语锚点并生成 semantic timeMap。只有显式添加
+`--burnCaptions` 才会烧录 step captions；未开启音频时仍写出 audio/caption
+元数据，但 `final.mp4` 不包含合成旁白或烧录字幕。所有作业在完成前都会
+运行 capture QA；无音频作业仍检查捕获、画面和节奏，但不会错误要求音轨。
+
+1280x720 的确定性 release smoke 会覆盖 capture → IR → Beat resolution →
+capture QA → MP4 → FFmpeg 完整解码：
+
+```powershell
+npm run smoke:release-pipeline:terminal
+```
 
 ---
 

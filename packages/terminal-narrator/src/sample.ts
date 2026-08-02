@@ -6,11 +6,12 @@ export function samplePlan(): TerminalNarratorPlan {
   return {
     version: '1.0',
     name: 'VHS-style terminal demo',
-    viewport: { width: 1920, height: 1080 },
+    viewport: { width: 1280, height: 720 },
     renderFps: 30,
     maxLines: 220,
     presentation: 'vhs',
     typeDelayMs: 28,
+    startupWaitMs: 5000,
     shell: isWin
       ? {
           command: 'powershell.exe',
@@ -32,20 +33,20 @@ export function samplePlan(): TerminalNarratorPlan {
           {
             id: 'hello',
             label: '打印 Hello',
-            text: "Write-Host 'Hello' -ForegroundColor Green",
-            afterMs: 900,
+            text: 'echo "$([char]27)[32mHello$([char]27)[0m"',
+            afterMs: 1000,
           },
           {
             id: 'world',
             label: '打印 World',
-            text: "Write-Host 'World' -ForegroundColor Cyan",
-            afterMs: 900,
+            text: 'echo "$([char]27)[36mWorld$([char]27)[0m"',
+            afterMs: 1000,
           },
           {
             id: 'done',
             label: '结束会话',
-            text: "Write-Host 'Done' -ForegroundColor Magenta",
-            afterMs: 700,
+            text: 'echo "$([char]27)[35mDone$([char]27)[0m"',
+            afterMs: 800,
           },
         ]
       : [
@@ -114,7 +115,7 @@ export function sampleClaudePlan(options: ClaudeSampleOptions = {}): TerminalNar
   return {
     version: '1.0',
     name: `Claude Code skill demo: ${skill}`,
-    viewport: { width: 1920, height: 1080 },
+    viewport: { width: 1280, height: 720 },
     renderFps: 30,
     maxLines: 280,
     presentation: 'vhs',

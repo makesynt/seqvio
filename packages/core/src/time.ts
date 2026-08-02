@@ -60,6 +60,11 @@ export function resolveSceneDurationFrames(
     return undefined;
   }
 
+  const resolvedScene = manifest.sceneTimings?.find((scene) => scene.sceneId === sceneId);
+  if (resolvedScene && resolvedScene.durationFrames > 0) {
+    return Math.max(1, Math.round(resolvedScene.durationFrames));
+  }
+
   let minStartMs = Number.POSITIVE_INFINITY;
   let maxEndMs = 0;
   let found = false;

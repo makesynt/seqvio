@@ -1,6 +1,10 @@
 {
   "name": "seqvio",
-  "version": "0.5.0",
+  "version": "0.7.0",
+  "seqvio": {
+    "lifecycle": "internal",
+    "releaseTrain": "0.7"
+  },
   "private": true,
   "description": "A visual language for coding agents to explain ideas with narrated video",
   "keywords": [
@@ -27,8 +31,20 @@
     "dev": "npm run dev --workspaces --if-present --include-workspace-root=false",
     "build": "npm run build -w @seqvio/core && npm run build -w @seqvio/capture && npm run build -w @seqvio/whiteboard && npm run build -w @seqvio/scatterbrain && npm run build -w @seqvio/product-demo && npm run build -w @seqvio/technical && npm run build -w @seqvio/renderer && npm run build -w @seqvio/browser-recorder && npm run build -w @seqvio/terminal-narrator",
     "test": "npm run test --workspaces --if-present --include-workspace-root=false",
+    "test:browser": "npm run test:browser -w @seqvio/renderer",
+    "test:conformance": "npm run test:browser -w @seqvio/renderer",
+    "smoke:release-pipeline": "node scripts/release-pipeline-smoke.mjs",
+    "smoke:release-pipeline:terminal": "node scripts/release-pipeline-smoke.mjs --kind terminal",
+    "smoke:release-pipeline:browser": "node scripts/release-pipeline-smoke.mjs --kind browser",
+    "verify:capture-host": "node scripts/verify-capture-host.mjs",
+    "smoke:capture-host-runtime": "node scripts/capture-host-runtime-smoke.mjs",
+    "verify:contracts": "node scripts/verify-contracts.mjs",
+    "doctor": "node packages/renderer/dist/doctor-cli.js",
     "test:visual": "node scripts/visual-regression.mjs",
     "test:visual:update": "node scripts/visual-regression.mjs --update",
+    "benchmark:render": "node scripts/render-benchmark.mjs",
+    "benchmark:render:check": "node scripts/render-benchmark.mjs --check",
+    "benchmark:render:update": "node scripts/render-benchmark.mjs --update-baseline",
     "audio:technical-explainer": "node scripts/technical-explainer-audio-loop.mjs",
     "smoke:terminal:native": "node packages/terminal-narrator/dist/cli.js record --sample --outputDir temp/terminal-smoke-native",
     "smoke:terminal:claude": "node packages/terminal-narrator/dist/cli.js record --sample-claude --skill /help --outputDir temp/terminal-smoke-claude",
@@ -37,7 +53,7 @@
     "clean": "npm run clean --workspaces --if-present --include-workspace-root=false",
     "changeset": "changeset",
     "version": "changeset version",
-    "release": "npm run build && changeset publish"
+    "release": "npm run build && npm run verify:contracts && changeset publish"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",
@@ -52,6 +68,7 @@
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "fluent-ffmpeg": "^2.1.3",
-    "puppeteer": "^25.1.0"
+    "puppeteer": "^25.1.0",
+    "xterm": "^5.3.0"
   }
 }

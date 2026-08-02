@@ -1,6 +1,6 @@
 export * from './capture-session';
-export * from './compose';
 export * from './compile-to-ir';
+export * from './composition';
 export * from './inspect';
 export * from './pipeline';
 export * from './planner';

@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "fixture": "authored-scene-families-v1",
+  "duration": 162,
+  "frames": [10, 40, 43, 46, 60, 96, 99, 102, 110, 161],
+  "samples": {
+    "10": {
+      "scenes": [{ "id": "whiteboard", "localFrame": 7, "transitionRole": null, "transitionProgress": null }],
+      "caption": "Whiteboard explanation",
+      "annotations": ["board-note"],
+      "families": { "whiteboard": true, "code": false, "diagram": false }
+    },
+    "40": {
+      "scenes": [
+        { "id": "whiteboard", "localFrame": 29, "transitionRole": "outgoing", "transitionProgress": 0 },
+        { "id": "code", "localFrame": 0, "transitionRole": "incoming", "transitionProgress": 0 }
+      ],
+      "caption": "Move to code",
+      "annotations": ["board-note"],
+      "families": { "whiteboard": true, "code": true, "diagram": false }
+    },
+    "43": {
+      "scenes": [
+        { "id": "whiteboard", "localFrame": 29, "transitionRole": "outgoing", "transitionProgress": 0.5 },
+        { "id": "code", "localFrame": 0, "transitionRole": "incoming", "transitionProgress": 0.5 }
+      ],
+      "caption": "Move to code",
+      "annotations": ["board-note"],
+      "families": { "whiteboard": true, "code": true, "diagram": false }
+    },
+    "46": {
+      "scenes": [{ "id": "code", "localFrame": 0, "transitionRole": null, "transitionProgress": null }],
+      "caption": "Code explanation",
+      "annotations": [],
+      "families": { "whiteboard": false, "code": true, "diagram": false }
+    },
+    "60": {
+      "scenes": [{ "id": "code", "localFrame": 8, "transitionRole": null, "transitionProgress": null }],
+      "caption": "Code explanation",
+      "annotations": ["code-note"],
+      "families": { "whiteboard": false, "code": true, "diagram": false }
+    },
+    "96": {
+      "scenes": [
+        { "id": "code", "localFrame": 29, "transitionRole": "outgoing", "transitionProgress": 0 },
+        { "id": "diagram", "localFrame": 0, "transitionRole": "incoming", "transitionProgress": 0 }
+      ],
+      "caption": "Move to diagram",
+      "annotations": ["code-note"],
+      "families": { "whiteboard": false, "code": true, "diagram": true }
+    },
+    "99": {
+      "scenes": [
+        { "id": "code", "localFrame": 29, "transitionRole": "outgoing", "transitionProgress": 0.5 },
+        { "id": "diagram", "localFrame": 0, "transitionRole": "incoming", "transitionProgress": 0.5 }
+      ],
+      "caption": "Move to diagram",
+      "annotations": ["code-note"],
+      "families": { "whiteboard": false, "code": true, "diagram": true }
+    },
+    "102": {
+      "scenes": [{ "id": "diagram", "localFrame": 0, "transitionRole": null, "transitionProgress": null }],
+      "caption": "Diagram explanation",
+      "annotations": [],
+      "families": { "whiteboard": false, "code": false, "diagram": true }
+    },
+    "110": {
+      "scenes": [{ "id": "diagram", "localFrame": 4, "transitionRole": null, "transitionProgress": null }],
+      "caption": "Diagram explanation",
+      "annotations": ["diagram-note"],
+      "families": { "whiteboard": false, "code": false, "diagram": true }
+    },
+    "161": {
+      "scenes": [{ "id": "diagram", "localFrame": 29, "transitionRole": null, "transitionProgress": null }],
+      "caption": "Diagram explanation",
+      "annotations": ["diagram-note"],
+      "families": { "whiteboard": false, "code": false, "diagram": true }
+    }
+  }
+}

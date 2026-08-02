@@ -9,9 +9,9 @@ English | [简体中文](./README.zh-CN.md)
 
 **A visual language for coding agents to explain ideas.**
 
-Seqvio gives coding agents concrete primitives for turning technical ideas into clear narrated videos. Agents can choose whiteboard scenes, sticky-note workshops, or product walkthroughs, then combine narration, captions, visual QA, and local MP4 rendering in a React/TSX composition.
+Seqvio gives coding agents a capture-to-explanation path for turning real terminal/browser activity and technical ideas into clear narrated videos. `CompositionDocument v2` can author spoken cues and visual actions together as `ExplanationBeat`s, then resolve them against measured TTS timing before local QA and MP4 rendering.
 
-> **Current status:** Seqvio `0.5.0` publishes `@seqvio/core`, `@seqvio/whiteboard`, `@seqvio/scatterbrain`, `@seqvio/product-demo`, `@seqvio/technical`, and `@seqvio/renderer`. The repository supports explicit React/TSX compositions, storyboard IR validation/compilation, style presets, product walkthrough scenes, technical explainer scenes (code walkthroughs, architecture diagrams, terminal demos), audio/caption metadata, visual QA snapshots, and local MP4 rendering. Experimental capture tools (`@seqvio/browser-recorder`, `@seqvio/terminal-narrator`) are available in the monorepo. Higher-level AI authoring and studio workflows are tracked in the [Roadmap](#roadmap).
+> **Current status:** The repository supports explicit React/TSX compositions and `CompositionDocument v2` with complete `whiteboard`, `code`, `diagram`, `terminal`, and `browser` compiler paths. Phrase-anchored ExplanationBeats drive logical visual timing, post-TTS semantic time maps, speech/highlight QA, and deterministic local rendering. Terminal and browser production pipelines use the shared capture dispatcher, compile real recorded steps through the IR, run capture QA for every job, and pass a 1280x720 release smoke gate. Capture CLI contract `1.0` fixes commands, JSON results, exit codes, progress, audio/caption options, and artifact layout; a Windows/Linux/macOS host matrix is configured before lifecycle promotion.
 
 ## Demo
 
@@ -95,7 +95,7 @@ See [`.env.example`](./.env.example). The CLI reads process environment variable
 
 After steps 1 and 2, try a prompt like:
 
-> Using `/seqvio`, create a 4-scene Chinese product overview with whiteboard visuals, ElevenLabs narration, and burned-in captions. Render the final MP4.
+> Using `/seqvio`, create a 4-scene Chinese technical explainer as CompositionDocument v2. Jointly author narration cues and phrase-anchored visual Beats, synthesize with ElevenLabs, run QA, and render the final MP4.
 
 The skill guides the agent through: pick an example composition, edit TSX, extract narration metadata, synthesize audio, and run `seqvio-render`.
 
@@ -112,21 +112,24 @@ seqvio-render \
 
 When using a local repo checkout, run the built CLI with `node packages/renderer/dist/cli.js`. More detail: [Manual setup](#manual-setup).
 
-### Browser recorder MVP
+### Browser capture adapter
 
-The local [`@seqvio/browser-recorder`](./packages/browser-recorder) workspace can execute a validated Chromium action plan, capture cursor and element-focus metadata, and render smooth focus movement through `@seqvio/product-demo`:
+The local [`@seqvio/browser-recorder`](./packages/browser-recorder) workspace executes a validated Chromium action plan and records video, cursor/focus metadata, and exact action start times. Its compiler emits a Browser scene, narration cues, capture-backed ExplanationBeats, and an audio manifest through `CompositionDocument v2`:
 
 ```bash
 node packages/browser-recorder/dist/cli.js serve --port 4175
+
+# Or execute a plan directly with one machine-readable result
+node packages/browser-recorder/dist/cli.js record --plan plan.json --jobId demo --json
 ```
 
-Open `http://127.0.0.1:4175`. The built-in sample runs without an AI provider; configure a planner webhook when AI-generated action plans are required. See the [browser recorder README](./packages/browser-recorder/README.md) for the plan contract and current MVP boundaries.
+Open `http://127.0.0.1:4175`. The built-in sample runs without an AI provider; configure a planner webhook only when AI-generated action plans are required. See the [browser recorder README](./packages/browser-recorder/README.md) for the plan contract and pre-stable CLI boundaries.
 
-**Requirements:** Node.js `>=18`, Chromium (via Puppeteer), FFmpeg (bundled in `@seqvio/renderer`). Local repo development uses npm workspaces and `package-lock.json`.
+**Requirements:** Node.js `>=18`, Chromium (via Puppeteer), FFmpeg (bundled in `@seqvio/renderer`). Local repo development uses npm workspaces and `package-lock.json`. Verify the complete local toolchain with `seqvio-doctor` or `npm run doctor` in a repository checkout.
 
-### Terminal narrator (experimental)
+### Terminal capture adapter
 
-[`@seqvio/terminal-narrator`](./packages/terminal-narrator) uses `node-pty` to capture terminal sessions and orchestrates them into a Seqvio `TerminalDemo` composition, rendering the result to `final.mp4` with step captions overlaid by default.
+[`@seqvio/terminal-narrator`](./packages/terminal-narrator) uses `node-pty` and xterm-backed snapshots to preserve terminal state and recorded step timing. It compiles each observed step into a Terminal scene plus jointly-authored narration cues and capture-backed ExplanationBeats. `--withAudio` synthesizes and muxes narration; hard captions are added only when `--burnCaptions` is also explicit.
 
 ## What You Can Build
 
@@ -154,14 +157,22 @@ Start from examples:
 ## How It Works
 
 ```text
-TSX composition -> audio manifest -> TTS synthesis -> seqvio-render -> MP4
+content or real capture
+  -> CompositionDocument v2 (cues + ExplanationBeats + visual targets)
+  -> TSX + logical source timeline
+  -> TTS synthesis + phrase-anchor resolution
+  -> semantic scene timeMap
+  -> seqvio-qa
+  -> seqvio-render -> MP4
 ```
 
-1. Author a composition in TSX with `@seqvio/core` plus visual packages such as `@seqvio/whiteboard`, `@seqvio/scatterbrain`, `@seqvio/product-demo`, or `@seqvio/technical`.
-2. Declare narration in `meta.audio.narration` when the video needs voiceover.
-3. Extract and synthesize audio with `seqvio-audio`.
-4. Check key frames with `seqvio-qa` when layout or visual fidelity matters.
-5. Render frames and mux narration with `seqvio-render`.
+1. Produce or capture a `CompositionDocument v2` scene using stable visual and capture-step ids.
+2. Author `explanation.cues` and `explanation.beats` together; the compiler emits narration, visual timing, highlights, and scene metadata.
+3. Extract and synthesize audio with `seqvio-audio`. Measured audio resolves Beat `outputFrame`s and semantic scene time maps.
+4. Run `seqvio-qa`; unresolved/reversed Beats are errors, while low-confidence whole-cue alignment is reported as a warning.
+5. Render frames and mux narration with `seqvio-render --audioManifest ...`.
+
+Hand-authored TSX remains supported as the lower-level production surface and may declare `meta.audio.narration` directly.
 
 See [`docs/COMPOSITION-AUTHORING.md`](./docs/COMPOSITION-AUTHORING.md) for the authoring contract.
 
@@ -193,8 +204,8 @@ Seqvio is the visual language for coding agents that need to explain, not merely
 - **Explainer-first workflow** — scenes, narration, captions, and visual steps in one composition
 - **Whiteboard-native primitives** — handwritten-style text, shapes, images, icons, style presets, and pen/hand timing
 - **Specialized visual packages** — sticky-note workshop scenes with `@seqvio/scatterbrain`, product walkthrough scenes with `@seqvio/product-demo`, and technical explainer scenes with `@seqvio/technical`
-- **Structured narration contract** — visual timing and audio metadata stay close together
-- **Visual QA loop** — snapshot key frames and catch blank renders before final MP4 work
+- **Joint explanation contract** — narration phrases, visual actions, and capture evidence are authored as one ExplanationBeat structure
+- **Executable QA loop** — catches unresolved/reversed Beats, speech-rate and highlight pacing, audio/media failures, and visual defects
 - **Agent-friendly authoring surface** — small contracts, explicit frame timing, curated examples
 - **Local MP4 output** — render the finished explanation with Puppeteer + FFmpeg
 
@@ -206,11 +217,15 @@ Seqvio is the visual language for coding agents that need to explain, not merely
 - `@seqvio/product-demo` components: `ProductDemoScene`, `BrowserFrame`, `ScreenshotPlaceholder`, `CursorPath`, `Callout`, `ProductTitle`
 - `@seqvio/technical` components: `TechnicalScene`, `AnnotationTarget`, `CodeWalkthrough`, `ArchitectureDiagram`, `TerminalDemo`, plus ANSI/grid utilities and bundled code fonts
 - Terminal scene support in the composition-document IR (`events` / `steps` / `commands`) with validation and TSX compilation
+- Browser scene support with recorded video, cursor/focus/click metadata, exact action clocks, and time-mapped media seeking
+- `ExplanationBeat` cues, exact phrase anchors, visual actions, capture evidence, post-TTS `outputFrame`s, and semantic `sceneTimings[].timeMap`
 - `@seqvio/core` scene and transition primitives: `VideoComposition`, `Scene`, `Transition`
-- Storyboard IR schema, layout registry, validation, and TSX compilation helpers
+- CompositionDocument v2 and retained Storyboard IR schema, validation, pacing,
+  and TSX compilation helpers
 - `seqvio-render` CLI for TSX-to-MP4 rendering
 - `seqvio-audio` CLI for audio/caption manifest extraction and TTS synthesis
-- `seqvio-qa` CLI for key-frame visual snapshots and lightweight render checks
+- `seqvio-qa` CLI with baseline/capture profiles, stable audio/temporal/media diagnostics, configurable warning promotion, and key-frame visual checks
+- `seqvio-doctor` CLI for Node, Chromium, FFmpeg, bundled-font, `node-pty`, and writable-path diagnostics (`--json` is available for automation)
 - ElevenLabs, OpenAI, MiniMax, and edge-tts narration providers
 
 ## Manual setup
@@ -223,7 +238,7 @@ Use this section when working from a local repository checkout or when you need 
 npm install -g @seqvio/renderer
 ```
 
-This installs `seqvio-render`, `seqvio-audio`, `seqvio-generate`, `seqvio-preview`, `seqvio-add`, and `seqvio-qa` globally. Dependencies `@seqvio/core` and `@seqvio/whiteboard` are pulled in automatically. Install `@seqvio/product-demo`, `@seqvio/scatterbrain`, or `@seqvio/technical` separately when your composition imports those packages outside the monorepo.
+This installs `seqvio-render`, `seqvio-audio`, `seqvio-generate`, `seqvio-preview`, `seqvio-add`, `seqvio-qa`, and `seqvio-doctor` globally. Dependencies `@seqvio/core` and `@seqvio/whiteboard` are pulled in automatically. Install `@seqvio/product-demo`, `@seqvio/scatterbrain`, or `@seqvio/technical` separately when your composition imports those packages outside the monorepo.
 
 ### Clone and build the repository
 
@@ -275,8 +290,8 @@ Voiceover is muxed automatically from the manifest. **Do not** add `--burnCaptio
 | [`@seqvio/scatterbrain`](./packages/scatterbrain) | Sticky-note / cork-board style components |
 | [`@seqvio/product-demo`](./packages/product-demo) | Browser frames, cursor paths, screenshot placeholders, callouts, and product walkthrough components |
 | [`@seqvio/technical`](./packages/technical) | Technical explainer runtime: code walkthroughs, architecture diagrams, terminal demos, annotations, and bundled fonts |
-| [`@seqvio/terminal-narrator`](./packages/terminal-narrator) | node-pty terminal capture → composition manifest → narrated MP4 |
-| [`@seqvio/browser-recorder`](./packages/browser-recorder) | AI browser recorder — executes Chromium action plans, captures cursor/element-focus metadata |
+| [`@seqvio/terminal-narrator`](./packages/terminal-narrator) | Pre-stable node-pty/xterm capture → IR/ExplanationBeat → optional narrated MP4 |
+| [`@seqvio/browser-recorder`](./packages/browser-recorder) | Pre-stable Chromium action capture with exact action timing → IR/ExplanationBeat |
 | [`@seqvio/renderer`](./packages/renderer) | TSX bundler plus `seqvio-render` and `seqvio-audio` CLIs |
 
 ## Documentation
@@ -286,6 +301,8 @@ Start at the docs hub: [`docs/README.md`](./docs/README.md)
 Recommended reading:
 
 - [`docs/COMPOSITION-AUTHORING.md`](./docs/COMPOSITION-AUTHORING.md) — authoring contract and API rules
+- [`docs/EXPLANATION-BEAT-TIMING.md`](./docs/EXPLANATION-BEAT-TIMING.md) — joint narration/visual timing and post-TTS alignment
+- [`docs/CAPTURE-CLI-CONTRACT.md`](./docs/CAPTURE-CLI-CONTRACT.md) — capture commands, JSON output, exit codes, and artifacts
 - [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md) — renderer, audio, and environment issues
 - [`examples/compositions/README.md`](./examples/compositions/README.md) — example catalog and conventions
 - [`skills/seqvio/SKILL.md`](./skills/seqvio/SKILL.md) — agent production loop
@@ -297,11 +314,10 @@ If documentation conflicts with code, treat the code and [`docs/COMPOSITION-AUTH
 
 Full phase ordering and the reasoning behind it: [`docs/ROADMAP.md`](./docs/ROADMAP.md). In short:
 
-1. **Clear the floor** - shader transitions deleted; audio ducking and `TransportClock` marked `@internal`. Stop investing in the closed layer.
-2. **System capture adapters** - one `CaptureSession -> CompositionDocument` contract, with temporal fidelity, for terminal sessions and browser walkthroughs. The data-access moat.
-3. **Generic QA checks** - text overflow, font-size floor, contrast (WCAG AA), offscreen elements; deterministic, no LLM, `--ci` exit code.
-
-Multi-target IR output, a studio editor, ground-truth verification, CI guardianship, and a benchmark were considered and dropped (see docs).
+1. **Singular capture/IR path** - shared dispatcher routing and legacy writer removal are complete; stabilize adapter CLIs around `CaptureSession -> CompositionDocument`.
+2. **ExplanationBeat timing** - now implemented across all stable scenes, including capture evidence and post-TTS phrase alignment.
+3. **Release QA** - baseline/capture profiles now cover visual, pacing, audio, media, and semantic Beat failures; screenshot privacy masking remains deferred.
+4. **Packaging and promotion** - CLI/artifact contract `1.0` is implemented; verify supported npm/runtime hosts before lifecycle promotion. Screenshot privacy remains deferred.
 
 Product positioning and scope:
 

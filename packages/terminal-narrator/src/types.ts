@@ -35,6 +35,8 @@ export interface TerminalEvent {
   /** Complete terminal viewport produced by a terminal emulator. */
   snapshot?: boolean;
   grid?: TerminalGridSnapshot;
+  /** Raw ANSI escape-sequence input that produced this snapshot. */
+  raw?: string;
 }
 
 export interface TerminalInputStep {
@@ -113,6 +115,8 @@ export interface TerminalNarratorPlan {
    * Characters per second for the native typewriter replay.
    */
   typingCps?: number;
+  /** Frame-time-driven block cursor blink. Defaults to true. */
+  cursorBlink?: boolean;
   /**
    * Hold time after the last captured event so the final terminal state is visible.
    */
@@ -180,8 +184,10 @@ export type TtsProvider = 'elevenlabs' | 'minimax' | 'edge-tts' | 'openai';
 
 export interface PipelineOptions {
   withAudio?: boolean;
+  burnCaptions?: boolean;
   audioProvider?: TtsProvider;
   audioVoice?: string;
+  qaConfig?: string;
 }
 
 export interface PipelineProgress {
@@ -192,6 +198,7 @@ export interface PipelineProgress {
     | 'composing'
     | 'synthesizing'
     | 'rendering'
+    | 'qa'
     | 'done'
     | 'failed';
   percent: number;
@@ -206,9 +213,13 @@ export interface PipelineResult {
   /** Asciinema cast exported from the native recording. */
   castPath: string;
   componentPath?: string;
+  captureManifestPath?: string;
+  compositionDocumentPath?: string;
   audioManifestPath?: string;
   resolvedAudioManifestPath?: string;
+  qaReportPath?: string;
   outputVideoPath: string;
+  artifactManifestPath: string;
 }
 
 export interface RecorderJob extends PipelineProgress {

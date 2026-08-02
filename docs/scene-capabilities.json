@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "2.0",
+  "scenes": [
+    {
+      "type": "whiteboard",
+      "compiler": "complete",
+      "requiredPackage": "@seqvio/whiteboard",
+      "lifecycle": "public",
+      "agentAuthoring": true,
+      "qaRules": ["visual-layout", "pacing", "audio-timeline", "explanation-beats"]
+    },
+    {
+      "type": "code",
+      "compiler": "complete",
+      "requiredPackage": "@seqvio/technical",
+      "lifecycle": "public",
+      "agentAuthoring": true,
+      "qaRules": ["visual-layout", "pacing", "audio-timeline", "explanation-beats"]
+    },
+    {
+      "type": "diagram",
+      "compiler": "complete",
+      "requiredPackage": "@seqvio/technical",
+      "lifecycle": "public",
+      "agentAuthoring": true,
+      "qaRules": ["visual-layout", "pacing", "audio-timeline", "explanation-beats"]
+    },
+    {
+      "type": "terminal",
+      "compiler": "complete",
+      "requiredPackage": "@seqvio/technical",
+      "lifecycle": "public",
+      "agentAuthoring": false,
+      "qaRules": ["visual-layout", "capture-state", "pacing", "audio-timeline", "explanation-beats"]
+    },
+    {
+      "type": "browser",
+      "compiler": "complete",
+      "requiredPackage": "@seqvio/product-demo",
+      "lifecycle": "public",
+      "agentAuthoring": false,
+      "qaRules": ["visual-layout", "capture-state", "capture-media", "pacing", "audio-timeline", "explanation-beats"]
+    }
+  ]
+}

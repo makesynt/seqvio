@@ -3,7 +3,7 @@ import gsap from 'gsap';
 import {
   registerSeekable,
   unregisterSeekable,
-  useSceneGlobalStart,
+  useSceneFrameMapper,
   type SeekableAdapter,
 } from '@seqvio/core';
 
@@ -20,13 +20,13 @@ const DEFAULT_FPS = 30;
 function gsapSceneSeekable(
   tl: gsap.core.Timeline,
   id: string,
-  globalStart: number,
+  mapFrame: (frame: number) => number,
   fps: number,
 ): SeekableAdapter {
   return {
     id,
     seek(_timeSeconds: number, frame: number) {
-      tl.seek(Math.max(0, frame - globalStart) / fps);
+      tl.seek(mapFrame(frame) / fps);
     },
     requiresRaf: false,
   };
@@ -40,7 +40,7 @@ export function useGsapReveal(
   durationFrames: number,
   fps: number = DEFAULT_FPS,
 ): void {
-  const globalStart = useSceneGlobalStart();
+  const mapFrame = useSceneFrameMapper();
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -53,13 +53,13 @@ export function useGsapReveal(
       },
       startFrame / fps,
     );
-    const adapter = gsapSceneSeekable(tl, id, globalStart, fps);
+    const adapter = gsapSceneSeekable(tl, id, mapFrame, fps);
     registerSeekable(adapter);
     return () => {
       unregisterSeekable(id);
       tl.kill();
     };
-  }, [id, startFrame, durationFrames, fps, globalStart]);
+  }, [id, startFrame, durationFrames, fps, mapFrame]);
 }
 
 export function useGsapTimeline(
@@ -70,17 +70,17 @@ export function useGsapTimeline(
 ): void {
   const buildRef = useRef(build);
   buildRef.current = build;
-  const globalStart = useSceneGlobalStart();
+  const mapFrame = useSceneFrameMapper();
 
   useLayoutEffect(() => {
     const tl = gsap.timeline({ paused: true });
     buildRef.current(tl);
-    const adapter = gsapSceneSeekable(tl, id, globalStart, fps);
+    const adapter = gsapSceneSeekable(tl, id, mapFrame, fps);
     registerSeekable(adapter);
     return () => {
       unregisterSeekable(id);
       tl.kill();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, globalStart, fps, ...deps]);
+  }, [id, mapFrame, fps, ...deps]);
 }

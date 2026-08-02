@@ -5,8 +5,8 @@
 > milestones. For positioning and scope, read [`VISION.md`](./VISION.md) - when
 > the two disagree, `VISION.md` wins.
 >
-> Last revised: 2026-07-27 (reordered against HyperFrames' closed-layer coverage;
-> see below).
+> Last revised: 2026-08-01 (implementation status aligned with the current
+> ExplanationBeat and terminal/browser IR pipelines).
 
 ## What Changed in This Revision
 
@@ -94,20 +94,30 @@ infrastructure, not identity.
 moat.** Promoted from the previous Phase 3 because the closed-layer moat it was
 sitting behind is gone.
 
-Promote `browser-recorder` and `terminal-narrator` from "experimental" to a
+Promote `browser-recorder` and `terminal-narrator` from pre-stable to a
 single capture-adapter contract: `CaptureSession -> CaptureManifest ->
-CompositionDocument`. Both already produce compositions (they hand-string tsx
-via `writeComposition`); the work is routing them through the IR instead, so
-they pick up narration and CI-diffability. `terminal-narrator`
+CompositionDocument`. Both production pipelines now invoke their adapter
+compiler through the shared capture dispatcher before generating TSX. Canonical
+artifact tests cover the IR, TSX, and audio-manifest outputs, and the legacy
+`writeComposition` paths are removed. CLI contract `1.0` now fixes direct
+commands, JSON results, exit codes, monotonic progress, and the job-artifact
+layout. Per-job capture QA and Terminal/Browser audio-option parity are now in
+the production commands. Windows package/CLI verification passes locally, and a
+Windows/Linux/macOS CI matrix covers install, build, adapter tests, package
+contents, and CLI contract before lifecycle promotion.
+`terminal-narrator`
 (~2.4k lines: `record.ts`, `cast.ts`, `timing.ts`, `redact.ts`, `validate.ts`)
-maps to the existing `TerminalSceneSpec`; `browser-recorder` (~0.7k lines) needs
-a new `BrowserSceneSpec` (peer to terminal: sourceVideo + cursor + focus +
-actions + narration), compiled to `RecordedBrowserDemo`.
+maps to the existing `TerminalSceneSpec`; `browser-recorder` (~0.7k lines) uses
+`BrowserSceneSpec` (peer to terminal: sourceVideo + cursor + focus + actions +
+narration), compiled to `RecordedBrowserDemo`.
 
 Capture is agent-driven, not passive recording: the agent controls the session
 (runs the commands, clicks the UI) and explains it - an **AI explain** step
 generates narration from the manifest's real recorded state (stdout, page
-state), not from the plan. Narration follows what actually happened.
+state), not from the plan. Narration and visual actions are now emitted together
+as phrase-anchored ExplanationBeats. Terminal Beats preserve scheduled capture
+steps; new Browser recordings preserve exact action start times rather than
+distributing steps uniformly.
 
 Then widen the sources. Each of these is something developers generate daily and
 have never been able to explain clearly:
@@ -133,15 +143,28 @@ one.
 ## Phase 2 - Generic QA Checks
 
 `seqvio-qa` checks rendered frames for blank frames, text overflow, font-size
-floor, contrast (WCAG AA), offscreen elements. These are deterministic, no LLM,
-and ship as a `--ci` mode that exits non-zero. They are table stakes - HyperFrames
-ships a growing lint suite too - but they are correct and cheap and stay.
+floor, contrast (WCAG AA), and offscreen elements. Its baseline/capture profiles
+also validate narration/captions, speech rate, highlight hold time, audio health,
+capture media/state, semantic time maps, unresolved phrase anchors, and reversed
+ExplanationBeats. These checks are deterministic, use no LLM, and ship as a
+`--ci` mode that exits non-zero. Screenshot privacy masking remains explicitly
+deferred.
 
 Ground-truth verification (code vs source AST, diagram edges vs dependency graph,
 terminal vs real stdout) was considered and dropped: capture-produced IR is
 faithful (same-source as the real recording, so verification is self-consistent),
 and hand-written IR either has no ground truth (whiteboard) or was dropped
 (code/diagram char-level checks conflate simplification with fabrication).
+
+## Operational Stabilization
+
+This is supporting infrastructure, not a new product layer. Seqvio now carries
+four generated 1280x720 render benchmarks (Code, Terminal, Browser, and mixed),
+a three-sample local reference with compatible-host budgets, and a scheduled CI
+report. The baseline makes Browser capture the first optimization target and
+Terminal the second. `seqvio-doctor` provides one deterministic preflight for
+Node, Chromium, FFmpeg, technical fonts, `node-pty`, and writable render paths.
+Cross-host confirmation remains part of the lifecycle-promotion gate.
 
 ## Deprioritized
 
@@ -176,7 +199,8 @@ Restating, because roadmap pressure is where scope erodes:
 ## Long-Lived Assets
 
 1. **Versioned contracts.** IR schema and the frame contract need explicit
-   versions and migration paths. `composition-document/migrate.ts` is the seed.
+   versions and explicit breaking-change notes. Pre-stable CompositionDocument
+   migrations are intentionally outside the current plan.
 
 ## If Only One Thing Ships
 

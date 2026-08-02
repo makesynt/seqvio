@@ -12,6 +12,8 @@ export interface SceneRegistration {
   globalStart: number;
   globalEnd: number;
   order: number;
+  sourceDuration: number;
+  timeMap?: import('./audio').AudioSceneTiming['timeMap'];
 }
 
 export interface TransitionRegistration {
@@ -102,14 +104,16 @@ export function buildCompositionLayout(
     const props = child.props as SceneElementProps;
     const id = String(props.id);
     const authoredDuration = Number(props.duration);
-    const duration =
-      Number.isFinite(authoredDuration) && authoredDuration > 0
-        ? authoredDuration
-        : resolveSceneDurationFrames(
-            id,
-            Math.max(1, options?.fps ?? options?.audioManifest?.fps ?? 30),
-            options?.audioManifest
-          ) ?? 0;
+    const resolvedAudioDuration = resolveSceneDurationFrames(
+      id,
+      Math.max(1, options?.fps ?? options?.audioManifest?.fps ?? 30),
+      options?.audioManifest,
+    );
+    const duration = Number.isFinite(authoredDuration) && authoredDuration > 0
+      ? Math.max(authoredDuration, resolvedAudioDuration ?? 0)
+      : resolvedAudioDuration ?? 0;
+    const resolvedTiming = options?.audioManifest?.sceneTimings?.find((scene) => scene.sceneId === id);
+    const sourceDuration = Math.max(1, resolvedTiming?.sourceDurationFrames ?? (authoredDuration > 0 ? authoredDuration : duration));
     if (duration <= 0) {
       throw new Error(
         `Scene "${id}" is missing a valid duration and no audio-aligned duration could be derived.`
@@ -126,6 +130,8 @@ export function buildCompositionLayout(
       globalStart: cursor,
       globalEnd: cursor + duration,
       order: order++,
+      sourceDuration,
+      timeMap: resolvedTiming?.timeMap,
     });
     lastSceneId = id;
     cursor += duration;

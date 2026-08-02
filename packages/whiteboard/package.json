@@ -1,6 +1,7 @@
 {
   "name": "@seqvio/whiteboard",
   "version": "0.7.0",
+  "seqvio": { "lifecycle": "public", "releaseTrain": "0.7" },
   "description": "Whiteboard animation components for Seqvio",
   "keywords": [
     "seqvio",

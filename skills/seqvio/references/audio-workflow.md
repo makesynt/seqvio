@@ -15,6 +15,15 @@ Hard-coded subtitle burn-in (`--burnCaptions`) is **not** part of the default na
 
 ## Authoring contract
 
+For CompositionDocument v2, author voice and visuals together in each scene:
+
+1. declare spoken text in `explanation.cues`
+2. anchor `explanation.beats` to exact phrases in those cues
+3. point each Beat at stable visual target ids
+4. compile the document so Seqvio emits narration and logical visual timing together
+
+For hand-authored TSX, use the lower-level contract below.
+
 In the composition TSX file:
 
 1. declare narration cues in `meta.audio.narration`
@@ -133,17 +142,19 @@ pnpm --filter @seqvio/renderer exec seqvio-render \
 
 ## Audio-aligned timing rules
 
-- Prefer one narration cue per scene or beat.
+- Prefer one narration cue per scene or coherent spoken passage.
 - Set `sceneId` on each cue in multi-scene compositions.
-- Scene and composition durations may be omitted when `lockToAudio: true` and resolved audio should drive timing.
 - After changing narration text, re-run extract and synthesize before rendering.
-- **Match the visual timeline to the resolved audio length.** With `lockToAudio: true`,
-  the video is stretched to the synthesized narration duration. If the authored
-  draw animations finish well before that (e.g. visuals end at frame 560 but the
-  narration resolves to 1303 frames), the picture freezes for the remainder.
-  After synthesizing, read the cue `startFrame`/`endFrame` (and total `duration`)
-  from `audio-manifest.resolved.json`, then space each scene's `start`/`duration`
-  to fill its cue's frame window so drawing stays paced with the voice.
+- CompositionDocument `ExplanationBeat` timing is resolved automatically after
+  synthesis. Inspect `explanationBeats`, `sceneTimings[].timeMap`, and QA rather
+  than manually redistributing element frames.
+- Every resolved Beat must have `outputFrame`; `resolutionError` means the anchor
+  text or occurrence must be repaired and narration synthesized again.
+- `low_confidence_explanation_beat` means whole-cue character timing was used.
+  Split the cue, use a more specific phrase, or choose a provider with finer
+  timing chunks when tighter alignment is required.
+- Hand-authored TSX without ExplanationBeat metadata still requires manual visual
+  timing against the resolved cue windows.
 
 ## Refreshing README demo videos
 

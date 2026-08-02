@@ -91,6 +91,13 @@ export function createRecorderServer(options: { port: number; host?: string; out
       if (req.method === 'GET' && jobMatch) {
         const job = jobs.get(jobMatch[1]); return job ? json(res, 200, job) : json(res, 404, { error: 'Job not found' });
       }
+      const artifactsMatch = /^\/api\/jobs\/([^/]+)\/artifacts$/.exec(url.pathname);
+      if (req.method === 'GET' && artifactsMatch) {
+        if (!jobs.has(artifactsMatch[1])) return json(res, 404, { error: 'Job not found' });
+        const artifactPath = path.join(options.outputDir, artifactsMatch[1], 'artifacts.json');
+        if (!fs.existsSync(artifactPath)) return json(res, 404, { error: 'Artifact manifest not found' });
+        return json(res, 200, JSON.parse(fs.readFileSync(artifactPath, 'utf8')));
+      }
       const mediaMatch = /^\/media\/([^/]+)\/(raw|final)\.mp4$/.exec(url.pathname);
       if (req.method === 'GET' && mediaMatch) {
         const filePath = path.join(options.outputDir, mediaMatch[1], `${mediaMatch[2]}.mp4`);
@@ -116,6 +123,7 @@ export function createRecorderServer(options: { port: number; host?: string; out
             phase: 'done', percent: 100, message: 'Recording rendered',
             rawVideoUrl: `/media/${id}/raw.mp4`, outputVideoUrl: `/media/${id}/final.mp4`,
             manifestUrl: `/api/jobs/${id}`,
+            artifactManifestUrl: `/api/jobs/${id}/artifacts`,
           }))
           .catch((error) => Object.assign(job, {
             phase: 'failed', message: 'Pipeline failed', error: error instanceof Error ? error.message : String(error),

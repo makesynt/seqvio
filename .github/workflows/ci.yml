@@ -12,6 +12,48 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  capture-host-contract:
+    name: Capture host contract (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build packages
+        run: npm run build
+      - name: Verify versions, lifecycle, and scene capabilities
+        run: npm run verify:contracts
+      - name: Adapter tests
+        run: npm test --workspace @seqvio/terminal-narrator --workspace @seqvio/browser-recorder
+      - name: Cross-platform render conformance
+        timeout-minutes: 5
+        env:
+          SEQVIO_CONFORMANCE_ARTIFACT_DIR: ${{ github.workspace }}/conformance-artifacts
+        run: npm run test:conformance
+      - name: Upload render conformance artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-conformance-${{ runner.os }}-${{ runner.arch }}
+          path: conformance-artifacts
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Package and CLI host contract
+        run: npm run verify:capture-host
+      - name: Terminal and Browser runtime smoke
+        timeout-minutes: 15
+        run: npm run smoke:capture-host-runtime
+
   build-test:
     name: Build & Test
     runs-on: ubuntu-latest
@@ -31,5 +73,12 @@ jobs:
       - name: Build packages
         run: npm run build
 
+      - name: Verify versions, lifecycle, and scene capabilities
+        run: npm run verify:contracts
+
       - name: Test
         run: npm test
+
+      - name: Release pipeline smoke (terminal + browser)
+        timeout-minutes: 15
+        run: npm run smoke:release-pipeline

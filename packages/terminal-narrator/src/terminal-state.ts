@@ -210,6 +210,9 @@ export async function buildTerminalSnapshotEvents(
         text: snapshot,
         snapshot: true,
         grid: serializeGrid(terminal),
+        // Preserve raw ANSI so xterm.js-based renderers can replay
+        // the original escape sequences instead of the grid serialization.
+        raw: event.text,
       });
     }
   } finally {
@@ -238,7 +241,13 @@ export function coalesceTerminalSnapshotBursts(
       previous?.snapshot &&
       event.timeMs - previous.timeMs <= maximumGapMs
     ) {
-      result[result.length - 1] = event;
+      result[result.length - 1] = {
+        ...event,
+        // `text`/`grid` are complete snapshots, while `raw` is a PTY delta.
+        // Keep every delta when collapsing intermediate visual states so raw
+        // replay consumers cannot silently lose command output.
+        raw: `${previous.raw ?? ''}${event.raw ?? ''}` || undefined,
+      };
     } else {
       if (previous?.snapshot && event.timeMs - previous.timeMs > maximumGapMs) {
         inputBurst = false;

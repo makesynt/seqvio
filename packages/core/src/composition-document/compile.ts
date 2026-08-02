@@ -23,6 +23,12 @@ import {
   type SceneSpec,
 } from './schema';
 import { sceneDurationFrames } from './timeline';
+import {
+  estimateNarrationDurationMs,
+  resolveCompositionPacing,
+  resolvePacingProfile,
+  resolveScenePacing,
+} from '../pacing';
 
 function resolved(doc: CompositionDocument) {
   return {
@@ -155,27 +161,24 @@ function compileTerminalScene(scene: Extract<SceneSpec, { type: 'terminal' }>, c
 
   return `function ${componentName}() {
   return (
-    <TechnicalScene width={W} height={H} annotations={${annotations}}>
-      <AnnotationTarget id=${JSON.stringify(scene.id)} style={{ width: '100%', height: '100%' }}>
-        <TerminalDemo
-          id=${JSON.stringify(scene.id)}
-          ${prop('title', ro?.title, true)}
-          events={${events}}
-          steps={${steps}}
-          width={W}
-          height={H}
-          ${prop('maxLines', scene.maxLines)}
-          ${prop('cols', scene.cols)}
-          ${prop('rows', scene.rows)}
-          ${prop('presentation', ro?.presentation, true)}
-          ${prop('typingCps', ro?.typingCps)}
-          ${prop('zoomOnInput', ro?.zoomOnInput)}
-          ${prop('maxZoom', ro?.maxZoom)}
-          ${prop('zoomTransitionMs', ro?.zoomTransitionMs)}
-          ${prop('zoomHoldMs', ro?.zoomHoldMs)}
-        />
-      </AnnotationTarget>
-    </TechnicalScene>
+    <TerminalXtermDemo
+      id=${JSON.stringify(scene.id)}
+      ${prop('title', ro?.title, true)}
+      events={${events}}
+      steps={${steps}}
+      width={W}
+      height={H}
+      ${prop('maxLines', scene.maxLines)}
+      ${prop('cols', scene.cols)}
+      ${prop('rows', scene.rows)}
+      ${prop('presentation', ro?.presentation, true)}
+      ${prop('typingCps', ro?.typingCps)}
+      ${prop('cursorBlink', ro?.cursorBlink)}
+      ${prop('zoomOnInput', ro?.zoomOnInput)}
+      ${prop('maxZoom', ro?.maxZoom)}
+      ${prop('zoomTransitionMs', ro?.zoomTransitionMs)}
+      ${prop('zoomHoldMs', ro?.zoomHoldMs)}
+    />
   );
 }`;
 }
@@ -214,20 +217,9 @@ function compileBrowserScene(
 }`;
 }
 
-function compileGenericPlaceholder(scene: SceneSpec, componentName: string): string {
-  const annotations =
-    'annotations' in scene ? serializeAnnotations(scene.annotations) : '[]';
-  return `function ${componentName}() {
-  return (
-    <TechnicalScene width={W} height={H} annotations={${annotations}}>
-      <AnnotationTarget id=${JSON.stringify(scene.id)} style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center' }}>
-        <div style={{ fontSize: 28, color: '#94a3b8' }}>
-          {${JSON.stringify(scene.type)}} scene placeholder
-        </div>
-      </AnnotationTarget>
-    </TechnicalScene>
-  );
-}`;
+function unsupportedSceneType(scene: never): never {
+  const type = (scene as { type?: unknown }).type;
+  throw new Error(`Unsupported CompositionDocument scene type: ${String(type)}`);
 }
 
 function compileSceneComponent(
@@ -246,9 +238,9 @@ function compileSceneComponent(
       return compileTerminalScene(scene, componentName);
     case 'browser':
       return compileBrowserScene(scene, componentName);
-    default:
-      return compileGenericPlaceholder(scene, componentName);
   }
+
+  return unsupportedSceneType(scene);
 }
 
 function sceneDurationFramesForCompile(scene: SceneSpec, fps: number): number {
@@ -262,30 +254,83 @@ export interface CompileCompositionResult {
 export function compileCompositionDocumentToTsx(
   doc: CompositionDocument
 ): CompileCompositionResult {
-  const r = resolved(doc);
-  const sceneNames = doc.scenes.map((scene, index) =>
+  const pacingProfile = resolvePacingProfile(doc.pacingProfile);
+  const pacedDoc = resolveCompositionPacing(doc, pacingProfile.policy);
+  const r = resolved(pacedDoc);
+  const sceneNames = pacedDoc.scenes.map((scene, index) =>
     sceneComponentName(scene.id, index)
   );
 
-  const usesWhiteboard = doc.scenes.some((scene) => scene.type === 'whiteboard');
-  const usesTechnical = doc.scenes.some((scene) => scene.type !== 'whiteboard') ||
-    doc.scenes.some((scene) => scene.annotations && scene.annotations.length > 0);
+  const usesWhiteboard = pacedDoc.scenes.some((scene) => scene.type === 'whiteboard');
+  const usesTechnical = pacedDoc.scenes.some((scene) => scene.type !== 'whiteboard') ||
+    pacedDoc.scenes.some((scene) => scene.annotations && scene.annotations.length > 0);
 
-  const sceneFns = doc.scenes
+  const sceneFns = pacedDoc.scenes
     .map((scene, index) => compileSceneComponent(scene, sceneNames[index], r))
     .join('\n\n');
 
-  const narratedScenes = doc.scenes.filter(
-    (scene) => scene.narration && scene.narration.trim().length > 0
-  );
-  const hasNarration = narratedScenes.length > 0;
-
-  const sceneDurations = doc.scenes.map((scene) => sceneDurationFramesForCompile(scene, r.fps));
+  const sceneDurations = pacedDoc.scenes.map((scene) => sceneDurationFramesForCompile(scene, r.fps));
   const totalDuration =
     sceneDurations.reduce((sum, d) => sum + d, 0) +
-    Math.max(0, doc.scenes.length - 1) * r.transitionDuration;
+    Math.max(0, pacedDoc.scenes.length - 1) * r.transitionDuration;
 
-  const sceneTree = doc.scenes
+  let sceneCursor = 0;
+  const sceneStarts = sceneDurations.map((duration, index) => {
+    const start = sceneCursor;
+    sceneCursor += duration + (index < sceneDurations.length - 1 ? r.transitionDuration : 0);
+    return start;
+  });
+  const scenePacing = pacedDoc.scenes.map((scene) =>
+    resolveScenePacing(scene, r.fps, pacingProfile.policy)
+  );
+  const pacingHighlights = scenePacing.flatMap((pacing, index) =>
+    pacing.highlights.map((highlight) => ({
+      ...highlight,
+      startFrame: highlight.startFrame + sceneStarts[index],
+      endFrame: highlight.endFrame + sceneStarts[index],
+    })),
+  );
+  const audioSceneTimings = pacedDoc.scenes.map((scene, index) => ({
+    sceneId: scene.id,
+    startFrame: sceneStarts[index],
+    durationFrames: sceneDurations[index],
+    sourceDurationFrames: sceneDurations[index],
+    transitionAfterFrames: index < pacedDoc.scenes.length - 1 ? r.transitionDuration : 0,
+    highlights: scenePacing[index].highlights,
+  }));
+  const explanationBeats = scenePacing.flatMap((pacing) => pacing.explanationBeats);
+  const narrationCueData = pacedDoc.scenes.flatMap((scene, index) => {
+    const sceneStartMs = Math.round((sceneStarts[index] / r.fps) * 1000);
+    if (scene.explanation?.cues.length) {
+      let cueCursorMs = sceneStartMs;
+      return scene.explanation.cues.map((cue, cueIndex) => {
+        const durationMs = estimateNarrationDurationMs(cue.text, pacingProfile.policy);
+        const resolvedCue = {
+          id: `${scene.id}.${cue.id}`,
+          sceneId: scene.id,
+          text: cue.text,
+          voice: cue.voice,
+          startMs: cueCursorMs,
+          endMs: cueCursorMs + durationMs,
+        };
+        cueCursorMs += durationMs + (cueIndex < scene.explanation!.cues.length - 1 ? 180 : 0);
+        return resolvedCue;
+      });
+    }
+    if (scene.narration?.trim()) {
+      return [{
+        id: scene.id,
+        sceneId: scene.id,
+        text: scene.narration,
+        startMs: sceneStartMs,
+        endMs: sceneStartMs + estimateNarrationDurationMs(scene.narration, pacingProfile.policy),
+      }];
+    }
+    return [];
+  });
+  const hasNarration = narrationCueData.length > 0;
+
+  const sceneTree = pacedDoc.scenes
     .map((scene, index) => {
       const durationAttr = ` duration={${sceneDurations[index]}}`;
       const tag = `      <Scene id=${JSON.stringify(scene.id)}${durationAttr}>\n        <${sceneNames[index]} />\n      </Scene>`;
@@ -297,12 +342,7 @@ export function compileCompositionDocumentToTsx(
     })
     .join('\n');
 
-  const narrationCues = narratedScenes
-    .map(
-      (scene) =>
-        `      {\n        id: ${JSON.stringify(scene.id)},\n        sceneId: ${JSON.stringify(scene.id)},\n        text: ${JSON.stringify(scene.narration)},\n      },`
-    )
-    .join('\n');
+  const narrationCues = JSON.stringify(narrationCueData, null, 2);
 
   const whiteboardImports = usesWhiteboard
     ? `import {
@@ -323,10 +363,10 @@ export function compileCompositionDocumentToTsx(
   AnnotationTarget,
   CodeWalkthrough,
   ArchitectureDiagram,
-  TerminalDemo,
+  TerminalXtermDemo,
 } from '@seqvio/technical';`
     : '';
-  const usesProductDemo = doc.scenes.some((scene) => scene.type === 'browser');
+  const usesProductDemo = pacedDoc.scenes.some((scene) => scene.type === 'browser');
   const productDemoImports = usesProductDemo
     ? `import { RecordedBrowserDemo } from '@seqvio/product-demo';`
     : '';
@@ -376,12 +416,14 @@ ${
   duration: ${totalDuration},
   width: W,
   height: H,
+  pacing: { profile: ${JSON.stringify(pacingProfile.id)}, highlights: ${JSON.stringify(pacingHighlights, null, 2)} },
   audio: {
     fps: FPS,
     lockToAudio: ${r.lockToAudio},
-    narration: [
-${narrationCues}
-    ],
+    pacingProfile: ${JSON.stringify(pacingProfile.id)},
+    sceneTimings: ${JSON.stringify(audioSceneTimings, null, 2)},
+    explanationBeats: ${JSON.stringify(explanationBeats, null, 2)},
+    narration: ${narrationCues},
   },
 };`
     : `export const meta: RenderableMeta = {
@@ -389,6 +431,7 @@ ${narrationCues}
   duration: ${totalDuration},
   width: W,
   height: H,
+  pacing: { profile: ${JSON.stringify(pacingProfile.id)}, highlights: ${JSON.stringify(pacingHighlights, null, 2)} },
 };`
 }
 `;

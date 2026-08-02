@@ -28,16 +28,8 @@ export interface CodeLineRecord {
   lineNumber: number;
 }
 
-let lineIdCounter = 0;
-
-export function resetLineIdCounter(seed = 0): void {
-  lineIdCounter = seed;
-}
-
-function nextLineId(prefix = 'L'): string {
-  lineIdCounter += 1;
-  return `${prefix}${lineIdCounter}`;
-}
+/** @deprecated Line IDs are now local and deterministic for every frame. */
+export function resetLineIdCounter(_seed = 0): void {}
 
 export function createLineRecords(source: string, idPrefix = 'L'): CodeLineRecord[] {
   return splitSourceLines(source).map((text, index) => ({
@@ -72,6 +64,11 @@ export function applyCodeSteps(source: string, steps: CodeStep[], frame: number)
   let records = createLineRecords(source);
   let focusRange: LineRange | undefined;
   let focusLineIds: string[] = [];
+  let generatedLineId = 0;
+  const nextLineId = (prefix: string): string => {
+    generatedLineId += 1;
+    return `${prefix}${generatedLineId}`;
+  };
   const typedChars = new Map<string, number>();
   const annotations: Array<{ targetId: string; text: string }> = [];
 

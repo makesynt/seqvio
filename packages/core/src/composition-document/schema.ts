@@ -11,6 +11,7 @@ import type {
   StoryboardLayoutId,
   StoryboardSceneRole,
 } from '../storyboard/schema';
+export { SCENE_TYPES, type SceneType } from './capabilities';
 
 export const COMPOSITION_DOCUMENT_VERSION = '2.0' as const;
 
@@ -35,6 +36,43 @@ export interface AddressableElement {
   id: string;
 }
 
+export type VisualBeatActionKind = 'reveal' | 'highlight' | 'focus' | 'annotate';
+
+export interface ExplanationCueSpec {
+  id: string;
+  text: string;
+  voice?: string;
+}
+
+export interface ExplanationBeatAnchorSpec {
+  /** Exact phrase in the referenced cue after language-tag/whitespace normalization. */
+  text: string;
+  /** One-based match number when the phrase occurs more than once. */
+  occurrence?: number;
+}
+
+export interface VisualBeatAction {
+  targetId: string;
+  action: VisualBeatActionKind;
+  /** Negative values reveal before speech; positive values delay the action. */
+  offsetMs?: number;
+  minHoldMs?: number;
+}
+
+export interface ExplanationBeatSpec extends AddressableElement {
+  cueId: string;
+  anchor: ExplanationBeatAnchorSpec;
+  visuals: VisualBeatAction[];
+  evidence?: {
+    captureStepId?: string;
+  };
+}
+
+export interface SceneExplanationSpec {
+  cues: ExplanationCueSpec[];
+  beats: ExplanationBeatSpec[];
+}
+
 export interface AnnotationSpec extends AddressableElement {
   targetId: string;
   kind: AnnotationKind;
@@ -48,13 +86,17 @@ export interface LineRange {
   endLine: number;
 }
 
-export type CodeStep =
+export type CodeStep = {
+  /** Stable authoring target for ExplanationBeat timing. */
+  id?: string;
+} & (
   | { at: number; action: 'type'; range?: LineRange }
   | { at: number; action: 'focus'; range: LineRange }
   | { at: number; action: 'insert'; line: number; text: string }
   | { at: number; action: 'replace'; range: LineRange; text: string }
   | { at: number; action: 'delete'; range: LineRange }
-  | { at: number; action: 'annotate'; targetId: string; text: string };
+  | { at: number; action: 'annotate'; targetId: string; text: string }
+);
 
 export interface WhiteboardSceneSpec {
   type: 'whiteboard';
@@ -63,6 +105,7 @@ export interface WhiteboardSceneSpec {
   sceneRole?: StoryboardSceneRole;
   density?: StoryboardDensity;
   narration?: string;
+  explanation?: SceneExplanationSpec;
   duration?: number;
   elements: StoryboardElement[];
   annotations?: AnnotationSpec[];
@@ -75,6 +118,7 @@ export interface CodeSceneSpec {
   source: string;
   steps: CodeStep[];
   narration?: string;
+  explanation?: SceneExplanationSpec;
   duration?: number;
   annotations?: AnnotationSpec[];
 }
@@ -90,13 +134,17 @@ export interface DiagramEdge extends AddressableElement {
   label?: string;
 }
 
-export type DiagramStep =
+export type DiagramStep = {
+  /** Stable authoring target for ExplanationBeat timing. */
+  id?: string;
+} & (
   | { at: number; action: 'reveal'; targetId: string }
   | { at: number; action: 'connect'; edgeId: string }
   | { at: number; action: 'trace'; edgeId: string }
   | { at: number; action: 'emphasize'; targetId: string }
   | { at: number; action: 'collapse'; groupId: string }
-  | { at: number; action: 'expand'; groupId: string };
+  | { at: number; action: 'expand'; groupId: string }
+);
 
 export interface DiagramSceneSpec {
   type: 'diagram';
@@ -105,6 +153,7 @@ export interface DiagramSceneSpec {
   edges: DiagramEdge[];
   steps: DiagramStep[];
   narration?: string;
+  explanation?: SceneExplanationSpec;
   duration?: number;
   annotations?: AnnotationSpec[];
 }
@@ -139,6 +188,7 @@ export interface TerminalRenderOptions {
   title?: string;
   presentation?: 'minimal' | 'vhs';
   typingCps?: number;
+  cursorBlink?: boolean;
   zoomOnInput?: boolean;
   maxZoom?: number;
   zoomTransitionMs?: number;
@@ -167,6 +217,8 @@ export interface TerminalSceneSpec {
     transient?: boolean;
     /** Pre-rendered terminal viewport snapshot from a terminal emulator. */
     grid?: TerminalGridSnapshotSpec;
+    /** Raw ANSI escape-sequence bytes that produced this event. */
+    raw?: string;
   }>;
   /** Step boundaries used for highlighting and narration segmentation. */
   steps?: Array<{
@@ -179,40 +231,15 @@ export interface TerminalSceneSpec {
   maxLines?: number;
   renderOptions?: TerminalRenderOptions;
   narration?: string;
-  duration?: number;
-  annotations?: AnnotationSpec[];
-}
-
-export interface ChatSceneSpec {
-  type: 'chat';
-  id: string;
-  messages: Array<{ role: 'user' | 'assistant' | 'tool' | 'system'; text: string }>;
-  narration?: string;
-  duration?: number;
-  annotations?: AnnotationSpec[];
-}
-
-export interface DiffSceneSpec {
-  type: 'diff';
-  id: string;
-  before: string;
-  after: string;
-  narration?: string;
-  duration?: number;
-  annotations?: AnnotationSpec[];
-}
-
-export interface InfographicSceneSpec {
-  type: 'infographic';
-  id: string;
-  panels: Array<{ id: string; label: string; value?: string }>;
-  narration?: string;
+  explanation?: SceneExplanationSpec;
   duration?: number;
   annotations?: AnnotationSpec[];
 }
 
 /** Timed point for cursor/click tracking in browser capture scenes. */
 export interface TimedPoint {
+  /** Optional capture action id that produced this point. */
+  id?: string;
   timeMs: number;
   x: number;
   y: number;
@@ -233,10 +260,17 @@ export interface BrowserSceneSpec {
   cursorPoints?: TimedPoint[];
   focusTargets?: RecordedFocusTarget[];
   clicks?: TimedPoint[];
+  /** Recorded action boundaries used as evidence for explanation timing. */
+  steps?: Array<{
+    id: string;
+    label: string;
+    timeMs: number;
+  }>;
   recordingWidth?: number;
   recordingHeight?: number;
   maxZoom?: number;
   narration?: string;
+  explanation?: SceneExplanationSpec;
   duration?: number;
   annotations?: AnnotationSpec[];
 }
@@ -246,23 +280,7 @@ export type SceneSpec =
   | CodeSceneSpec
   | DiagramSceneSpec
   | TerminalSceneSpec
-  | ChatSceneSpec
-  | DiffSceneSpec
-  | InfographicSceneSpec
   | BrowserSceneSpec;
-
-export const SCENE_TYPES = [
-  'whiteboard',
-  'code',
-  'diagram',
-  'terminal',
-  'chat',
-  'diff',
-  'infographic',
-  'browser',
-] as const;
-
-export type SceneType = (typeof SCENE_TYPES)[number];
 
 export interface ChapterSpec {
   id: string;
@@ -280,6 +298,8 @@ export interface CompositionDocument {
   backgroundColor?: string;
   lockToAudio?: boolean;
   transitionDuration?: number;
+  /** Versioned pacing policy used by authoring, timing resolution, and QA. */
+  pacingProfile?: string;
   chapters?: ChapterSpec[];
   scenes: SceneSpec[];
   /** Document-level annotations that may target any scene element id. */
@@ -293,6 +313,7 @@ export const COMPOSITION_DOCUMENT_DEFAULTS = {
   backgroundColor: '#ffffff',
   lockToAudio: true,
   transitionDuration: 12,
+  pacingProfile: 'explainer-v1',
 };
 
 /** Render-plan contracts (Phase A schema; resume implementation follows in renderer). */

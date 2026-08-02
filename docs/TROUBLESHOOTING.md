@@ -16,6 +16,19 @@ npm run build
 
 Use `npm ci` (not `npm install`) for a clean, lockfile-exact install.
 
+Run the unified environment diagnostic before investigating a composition:
+
+```bash
+npm run doctor
+# Installed CLI:
+seqvio-doctor --json
+```
+
+It checks the supported Node version, the `node-pty` native module, bundled
+technical fonts, an actual FFmpeg media probe, a real headless Chromium launch,
+and write access to `temp/` and `output/`. A failing check includes a repair
+hint and exits non-zero.
+
 ### Build succeeds in one package but not the repo
 
 Run the workspace build from repo root:
@@ -66,7 +79,7 @@ Try one or more of these:
 Fast preview example:
 
 ```bash
-pnpm --filter @seqvio/renderer exec seqvio-render \
+node packages/renderer/dist/cli.js \
   --component examples/compositions/seqvio-intro.tsx \
   --output output/preview.mp4 \
   --preset preview
@@ -82,6 +95,11 @@ npm run render:composition-smoke -w @seqvio/renderer
 You can also enable `--workers auto` (parallel capture) or `--preset preview`
 (fast jpeg pass) for large compositions.
 
+For repeatable performance evidence, run `npm run benchmark:render`. The report
+is written to `output/benchmarks/latest.json`; `benchmark:render:check` compares
+three-sample medians only when the current platform, architecture, and CPU match
+the stored reference environment.
+
 ### Video duration looks wrong
 
 For audio-aligned compositions:
@@ -95,6 +113,40 @@ If durations still look wrong, inspect the resolved manifest and confirm:
 - narration cue `startMs` / `endMs`
 - caption cue `startMs` / `endMs`
 - transition durations in the composition
+
+### Visual actions drift from the spoken explanation
+
+For CompositionDocument v2, treat `scene.explanation.cues` and
+`scene.explanation.beats` as one contract. Do not repair drift by independently
+moving visual frames after synthesis.
+
+Inspect `audio-manifest.resolved.json` and confirm:
+
+- every Beat has an `outputFrame`
+- no Beat has a `resolutionError`
+- phrase anchors match text that actually occurs in the referenced cue
+- `sceneTimings[].timeMap` is ordered by both output and source frame
+- capture-backed Beats refer to the intended `captureStepId`
+
+Run final timing QA with the resolved manifest:
+
+```bash
+seqvio-qa \
+  --component examples/compositions/example.tsx \
+  --outDir output/example-qa \
+  --audioManifest output/example-audio/audio-manifest.resolved.json \
+  --ci
+```
+
+An unresolved or reversed Beat is an error. Fix its cue reference, phrase
+anchor, visual target, or source-frame order and synthesize again. A
+low-confidence warning means Seqvio used a whole-cue character-position
+fallback because fine-grained TTS timing was unavailable; shorten the cue or
+choose a unique phrase anchor before considering a targeted QA suppression.
+
+For Browser captures, current manifests preserve exact recorded action start
+times. Older manifests may use evenly distributed fallback timing; re-record
+when exact action-to-speech correspondence matters.
 
 ## Puppeteer and Browser Runtime
 

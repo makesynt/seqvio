@@ -1,4 +1,4 @@
-import type { Page } from 'puppeteer';
+import type { Page, ElementHandle } from 'puppeteer';
 
 export interface CdpScreenshotInput {
   width: number;
@@ -43,4 +43,36 @@ export async function captureFrameBuffer(
   }
   const result = await client.send('Page.captureScreenshot', buildCdpScreenshotParams(input));
   return Buffer.from(result.data, 'base64');
+}
+
+/**
+ * Check if the page has a terminal canvas element (from TerminalXtermDemo).
+ * Returns the element handle if found, null otherwise.
+ */
+export async function findTerminalElement(page: Page): Promise<ElementHandle | null> {
+  const el = await page.$('[data-seqvio-terminal]');
+  return el ?? null;
+}
+
+/**
+ * Capture just the terminal canvas element via Puppeteer element screenshot.
+ * Returns the screenshot buffer and the element's pixel dimensions.
+ */
+export async function captureTerminalCanvas(
+  page: Page,
+  terminalEl: ElementHandle,
+): Promise<{ buffer: Buffer; width: number; height: number }> {
+  const box = await terminalEl.boundingBox();
+  if (!box) throw new Error('Terminal element has no bounding box');
+
+  const buffer = await terminalEl.screenshot({
+    type: 'png',
+    omitBackground: false,
+  });
+
+  return {
+    buffer,
+    width: Math.round(box.width),
+    height: Math.round(box.height),
+  };
 }

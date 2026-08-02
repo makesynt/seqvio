@@ -87,8 +87,9 @@ test('scheduleTerminalSnapshotEvents compresses idle gaps and preserves readable
 test('coalesceTerminalSnapshotBursts keeps the final stable TUI redraw', () => {
   const events = coalesceTerminalSnapshotBursts([
     { timeMs: 100, kind: 'stdin', text: '/help', transient: true },
-    { timeMs: 300, kind: 'stdout', text: '/', snapshot: true },
-    { timeMs: 370, kind: 'stdout', text: 'help screen', snapshot: true },
+    { timeMs: 300, kind: 'stdout', text: '/', raw: 'first-', snapshot: true },
+    { timeMs: 370, kind: 'stdout', text: 'help screen', raw: 'second', snapshot: true },
   ]);
   assert.deepEqual(events.map((event) => event.text), ['/help', 'help screen']);
+  assert.equal(events[1].raw, 'first-second');
 });

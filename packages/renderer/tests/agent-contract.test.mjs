@@ -2,6 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   formatAgentPlanningPrompt,
+  formatAgentSceneCapabilities,
   resolveAgentIrFormat,
 } from '../dist/agent-contract.js';
 
@@ -21,9 +22,24 @@ describe('agent-contract', () => {
       maxScenes: 6,
     });
     assert.match(prompt, /CompositionDocument v2/);
+    assert.match(prompt, /"pacingProfile": "explainer-v1"/);
     assert.match(prompt, /"version": "2\.0"/);
     assert.match(prompt, /type": "code"/);
+    assert.match(prompt, /explanation\.beats/);
+    assert.match(prompt, /"anchor": \{ "text": "typed helper" \}/);
+    assert.doesNotMatch(prompt, /"narration": "The client uses/);
     assert.match(prompt, /IR format: composition-v2/);
+    assert.match(prompt, /Public agent-authorable scene types/);
+    assert.match(prompt, /Terminal and browser scenes are capture-derived/);
+  });
+
+  it('derives agent scene descriptions from the public capability registry', () => {
+    const capabilities = formatAgentSceneCapabilities();
+    assert.match(capabilities, /- whiteboard:/);
+    assert.match(capabilities, /- code:/);
+    assert.match(capabilities, /- diagram:/);
+    assert.doesNotMatch(capabilities, /- terminal:/);
+    assert.doesNotMatch(capabilities, /- browser:/);
   });
 
   it('keeps whiteboard storyboard prompts for history', () => {

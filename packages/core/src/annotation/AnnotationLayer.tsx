@@ -1,6 +1,7 @@
 import React, {
   createContext,
   useContext,
+  useId,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -178,12 +179,67 @@ function annotationOpacity(frame: number, start: number, duration: number): numb
 export const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ annotations }) => {
   const registry = useAnnotationTargetRegistry();
   const frame = useCurrentFrame();
-  const [, bump] = useState(0);
+  const readyId = useId();
+  const [registryVersion, bump] = useState(0);
+  const [rects, setRects] = useState<Map<string, TargetRect>>(() => new Map());
+  const annotationKey = annotations
+    .map((annotation) => `${annotation.id}:${annotation.targetId}:${annotation.start}:${annotation.duration}`)
+    .join('|');
 
   useLayoutEffect(() => {
     if (!registry) return undefined;
     return registry.subscribe(() => bump((n) => n + 1));
   }, [registry]);
+
+  // Measure only after the requested frame has committed to the DOM. Reading
+  // bounds during render observes the previous frame and makes overlays depend
+  // on whether frames were requested forward or backward.
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined') return;
+    const runtime = window as unknown as Record<string, unknown>;
+    const key = '__seqvio_annotationReadyById';
+    const pending = (runtime[key] as Map<string, Promise<void>> | undefined) ?? new Map();
+    runtime[key] = pending;
+    return () => {
+      pending.delete(readyId);
+    };
+  }, [readyId]);
+
+  useLayoutEffect(() => {
+    let cancelled = false;
+    let resolveReady: (() => void) | undefined;
+    const ready = new Promise<void>((resolve) => {
+      resolveReady = resolve;
+    });
+    if (typeof window !== 'undefined') {
+      const runtime = window as unknown as Record<string, unknown>;
+      const key = '__seqvio_annotationReadyById';
+      const pending = (runtime[key] as Map<string, Promise<void>> | undefined) ?? new Map();
+      pending.set(readyId, ready);
+      runtime[key] = pending;
+    }
+    if (!registry) {
+      setRects(new Map());
+      resolveReady?.();
+      return;
+    }
+    const measureHandle = requestAnimationFrame(() => {
+      if (cancelled) return;
+      const next = new Map<string, TargetRect>();
+      for (const annotation of annotations) {
+        if (annotationOpacity(frame, annotation.start, annotation.duration) <= 0) continue;
+        const rect = registry.getRect(annotation.targetId);
+        if (rect) next.set(annotation.id, rect);
+      }
+      setRects(next);
+      resolveReady?.();
+    });
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(measureHandle);
+      resolveReady?.();
+    };
+  }, [registry, registryVersion, frame, annotationKey, readyId]);
 
   if (!registry) return null;
 
@@ -192,15 +248,21 @@ export const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ annotations })
       {annotations.map((annotation) => {
         const opacity = annotationOpacity(frame, annotation.start, annotation.duration);
         if (opacity <= 0) return null;
-        const rect = registry.getRect(annotation.targetId);
+        const rect = rects.get(annotation.id);
         if (!rect) return null;
         return (
-          <AnnotationOverlay
+          <div
             key={annotation.id}
-            annotation={annotation}
-            rect={rect}
-            opacity={opacity}
-          />
+            data-seqvio-annotation-id={annotation.id}
+            data-seqvio-annotation-kind={annotation.kind}
+            style={{ display: 'contents' }}
+          >
+            <AnnotationOverlay
+              annotation={annotation}
+              rect={rect}
+              opacity={opacity}
+            />
+          </div>
         );
       })}
     </div>

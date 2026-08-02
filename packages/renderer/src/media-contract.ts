@@ -13,6 +13,8 @@ export type {
   NarrationCue,
   AudioTrackKind,
   AudioTrackSpec,
+  AudioSceneTiming,
+  ExplanationBeatTiming,
   CompositionAudioManifest,
   RenderableMeta,
 } from '@seqvio/core';
@@ -23,4 +25,8 @@ export {
   resolveNarrationCueTimes,
   resolveCompositionDurationFrames,
   getActiveCaption,
+  isPacingProfileId,
+  resolvePacingProfile,
+  mapSceneSourceFrameToOutput,
+  resolveNarrationAnchor,
 } from '@seqvio/core';

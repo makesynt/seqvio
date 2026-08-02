@@ -1,0 +1,21 @@
+{
+  "kind": "browser",
+  "name": "phase-3-invalid-capture",
+  "durationMs": 1000,
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "renderFps": 30,
+  "steps": [
+    {
+      "id": "open",
+      "label": "Open private page",
+      "timeMs": 1200
+    }
+  ],
+  "sourceVideo": "missing-browser-recording.mp4",
+  "cursorPoints": [],
+  "focusTargets": [],
+  "clicks": []
+}

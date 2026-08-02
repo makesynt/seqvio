@@ -416,10 +416,36 @@ export interface RecordedBrowserDemoProps {
   style?: CSSProperties;
 }
 
-interface CameraState {
+export interface CameraState {
   scale: number;
   centerX: number;
   centerY: number;
+}
+
+export interface RecordedBrowserFrameState {
+  timeMs: number;
+  camera: CameraState;
+  translateX: number;
+  translateY: number;
+  renderedCursor?: TimedPoint;
+  activeClick?: ClickMarker;
+  renderedClick?: TimedPoint;
+  clickProgress: number;
+}
+
+export interface ResolveRecordedBrowserFrameStateOptions {
+  frame: number;
+  fps: number;
+  recordingWidth: number;
+  recordingHeight: number;
+  width: number;
+  height: number;
+  focusTargets?: FocusTarget[];
+  cursorPoints?: TimedPoint[];
+  clicks?: ClickMarker[];
+  maxZoom: number;
+  focusPadding: number;
+  transitionMs: number;
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -528,25 +554,21 @@ function interpolatePoint(timeMs: number, points: TimedPoint[]): TimedPoint | un
   };
 }
 
-export const RecordedBrowserDemo: React.FC<RecordedBrowserDemoProps> = ({
-  src,
+/** Resolve all browser overlay geometry from immutable input and one frame. */
+export function resolveRecordedBrowserFrameState({
+  frame,
+  fps,
   recordingWidth,
   recordingHeight,
-  width = 1280,
-  height = 720,
-  fps = 30,
+  width,
+  height,
   focusTargets = [],
   cursorPoints = [],
   clicks = [],
-  maxZoom = 2.2,
-  focusPadding = 110,
-  transitionMs = 520,
-  showCursor = true,
-  showFocusRing = true,
-  background = '#0B0F17',
-  style,
-}) => {
-  const frame = useCurrentFrame();
+  maxZoom,
+  focusPadding,
+  transitionMs,
+}: ResolveRecordedBrowserFrameStateOptions): RecordedBrowserFrameState {
   const timeMs = (frame / Math.max(1, fps)) * 1000;
   const camera = resolveCamera(
     timeMs,
@@ -573,19 +595,77 @@ export const RecordedBrowserDemo: React.FC<RecordedBrowserDemoProps> = ({
     Math.max(0, height - scaledHeight),
   );
   const activeClick = [...clicks]
-    .reverse()
+    .sort((a, b) => b.timeMs - a.timeMs)
     .find((click) => timeMs >= click.timeMs && timeMs - click.timeMs <= 420);
   const clickProgress = activeClick ? (timeMs - activeClick.timeMs) / 420 : 0;
-
-  const transformPoint = (point: { x: number; y: number }) => ({
+  const transformPoint = (point: { x: number; y: number }): TimedPoint => ({
+    timeMs,
     x: point.x * camera.scale + translateX,
     y: point.y * camera.scale + translateY,
   });
-  const renderedCursor = cursor ? transformPoint(cursor) : undefined;
-  const renderedClick = activeClick ? transformPoint(activeClick) : undefined;
+
+  return {
+    timeMs,
+    camera,
+    translateX,
+    translateY,
+    renderedCursor: cursor ? transformPoint(cursor) : undefined,
+    activeClick,
+    renderedClick: activeClick ? transformPoint(activeClick) : undefined,
+    clickProgress,
+  };
+}
+
+export const RecordedBrowserDemo: React.FC<RecordedBrowserDemoProps> = ({
+  src,
+  recordingWidth,
+  recordingHeight,
+  width = 1280,
+  height = 720,
+  fps = 30,
+  focusTargets = [],
+  cursorPoints = [],
+  clicks = [],
+  maxZoom = 2.2,
+  focusPadding = 110,
+  transitionMs = 520,
+  showCursor = true,
+  showFocusRing = true,
+  background = '#0B0F17',
+  style,
+}) => {
+  const frame = useCurrentFrame();
+  const {
+    camera,
+    translateX,
+    translateY,
+    renderedCursor,
+    renderedClick,
+    clickProgress,
+  } = resolveRecordedBrowserFrameState({
+    frame,
+    fps,
+    recordingWidth,
+    recordingHeight,
+    width,
+    height,
+    focusTargets,
+    cursorPoints,
+    clicks,
+    maxZoom,
+    focusPadding,
+    transitionMs,
+  });
 
   return (
     <div
+      data-seqvio-browser-demo="true"
+      data-seqvio-browser-time-ms={Math.round((frame / Math.max(1, fps)) * 1000)}
+      data-seqvio-browser-scale={camera.scale.toFixed(6)}
+      data-seqvio-browser-center-x={camera.centerX.toFixed(3)}
+      data-seqvio-browser-center-y={camera.centerY.toFixed(3)}
+      data-seqvio-browser-translate-x={translateX.toFixed(3)}
+      data-seqvio-browser-translate-y={translateY.toFixed(3)}
       style={{
         position: 'relative',
         width,
@@ -597,6 +677,8 @@ export const RecordedBrowserDemo: React.FC<RecordedBrowserDemoProps> = ({
     >
       <video
         data-seqvio-seekable-media="true"
+        data-seqvio-media-frame={frame}
+        data-seqvio-media-fps={fps}
         src={src}
         muted
         preload="auto"
@@ -615,6 +697,7 @@ export const RecordedBrowserDemo: React.FC<RecordedBrowserDemoProps> = ({
       />
       {showFocusRing && renderedClick ? (
         <div
+          data-seqvio-browser-click="true"
           style={{
             position: 'absolute',
             left: renderedClick.x,
@@ -631,19 +714,34 @@ export const RecordedBrowserDemo: React.FC<RecordedBrowserDemoProps> = ({
       ) : null}
       {showCursor && renderedCursor ? (
         <div
+          data-seqvio-browser-cursor="true"
+          data-seqvio-browser-cursor-x={renderedCursor.x.toFixed(3)}
+          data-seqvio-browser-cursor-y={renderedCursor.y.toFixed(3)}
           style={{
             position: 'absolute',
             left: renderedCursor.x,
             top: renderedCursor.y,
-            width: 23,
-            height: 30,
-            background: '#FFFFFF',
+            width: 25,
+            height: 32,
+            background: '#111827',
             clipPath: 'polygon(0 0, 0 83%, 24% 64%, 40% 100%, 58% 91%, 42% 58%, 75% 58%)',
-            filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.65))',
+            filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.4))',
             transform: 'translate(-2px, -2px)',
             pointerEvents: 'none',
           }}
-        />
+        >
+          <div
+            style={{
+              position: 'absolute',
+              left: 2,
+              top: 2,
+              width: 19,
+              height: 25,
+              background: '#FFFFFF',
+              clipPath: 'polygon(0 0, 0 83%, 24% 64%, 40% 100%, 58% 91%, 42% 58%, 75% 58%)',
+            }}
+          />
+        </div>
       ) : null}
     </div>
   );

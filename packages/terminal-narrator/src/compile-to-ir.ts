@@ -1,7 +1,7 @@
 /**
  * Compile a TerminalCaptureManifest into a CompositionDocument IR.
  *
- * Ports the timing logic from compose.ts (mergeTerminalEvents ->
+ * Applies the terminal timing pipeline (mergeTerminalEvents ->
  * buildTerminalSnapshotEvents -> scheduleTerminalSnapshotEvents) but produces a
  * TerminalSceneSpec IR instead of hand-stringing tsx. The per-step narration
  * (timed) is emitted as an audio manifest alongside the IR - IR scene.narration
@@ -26,7 +26,7 @@ import type {
   TerminalCaptureManifest,
 } from '@seqvio/capture';
 import { buildTerminalSnapshotEvents, scheduleTerminalSnapshotEvents } from './terminal-state';
-import { mergeTerminalEvents } from './compose';
+import { mergeTerminalEvents } from './event-utils';
 import type { TerminalEvent } from './types';
 import { DEFAULT_TRAILING_HOLD_MS } from './constants';
 
@@ -37,6 +37,7 @@ function mapEventsToSchema(events: TerminalEvent[]): TerminalSceneSpec['events']
     text: event.text,
     transient: event.transient,
     snapshot: event.snapshot,
+    raw: event.raw,
     grid: event.grid
       ? {
           cols: event.grid.cols,
@@ -68,7 +69,7 @@ export async function compileTerminalCapture(
   manifest: TerminalCaptureManifest,
   options?: CompileOptions
 ): Promise<CompositionDocumentSeed> {
-  // 1. Timing: compress -> snapshot -> schedule (port of compose.ts).
+  // 1. Timing: compress -> snapshot -> schedule.
   const events = manifest.events as unknown as TerminalEvent[];
   const compressed = mergeTerminalEvents(events, 1100);
   const rendered = await buildTerminalSnapshotEvents(compressed, {
@@ -92,6 +93,8 @@ export async function compileTerminalCapture(
   // 3. Per-step narration (AI explain or label fallback).
   const narration: NarrationCue[] = [];
   const captions: CaptionCue[] = [];
+  const explanationCues: NonNullable<TerminalSceneSpec['explanation']>['cues'] = [];
+  const explanationBeats: NonNullable<TerminalSceneSpec['explanation']>['beats'] = [];
   for (let i = 0; i < manifest.steps.length; i += 1) {
     const step = manifest.steps[i];
     const startMs = Math.max(0, timeline.mapTime(step.timeMs));
@@ -105,7 +108,7 @@ export async function compileTerminalCapture(
       ? await options.narration.narrate(step, manifest)
       : step.label;
     narration.push({
-      id: step.id,
+      id: `terminal.${step.id}`,
       sceneId: 'terminal',
       text,
       startMs,
@@ -117,6 +120,14 @@ export async function compileTerminalCapture(
       text: step.label,
       startMs,
       endMs: Math.max(startMs + 250, endMs),
+    });
+    explanationCues.push({ id: step.id, text });
+    explanationBeats.push({
+      id: `beat-${step.id}`,
+      cueId: step.id,
+      anchor: { text },
+      visuals: [{ targetId: step.id, action: 'focus' }],
+      evidence: { captureStepId: step.id },
     });
   }
 
@@ -131,6 +142,9 @@ export async function compileTerminalCapture(
     rows: manifest.rows,
     maxLines: manifest.maxLines,
     renderOptions: manifest.renderOptions,
+    explanation: explanationCues.length > 0
+      ? { cues: explanationCues, beats: explanationBeats }
+      : undefined,
   };
 
   // 5. CompositionDocument.
@@ -154,6 +168,29 @@ export async function compileTerminalCapture(
       duration,
       narration,
       captions,
+      sceneTimings: [{
+        sceneId: 'terminal',
+        startFrame: 0,
+        durationFrames: duration,
+        sourceDurationFrames: duration,
+        highlights: steps.map((step, index) => ({
+          id: `terminal.beat-${step.id}`,
+          source: 'beat',
+          startFrame: Math.round((step.timeMs / 1000) * fps),
+          endFrame: index + 1 < steps.length
+            ? Math.round((steps[index + 1].timeMs / 1000) * fps)
+            : duration,
+          minDurationFrames: Math.ceil(0.9 * fps),
+        })),
+      }],
+      explanationBeats: explanationBeats.map((beat) => ({
+        id: `terminal.${beat.id}`,
+        sceneId: 'terminal',
+        cueId: `terminal.${beat.cueId}`,
+        anchor: beat.anchor,
+        sourceFrame: Math.round((steps.find((step) => step.id === beat.evidence?.captureStepId)?.timeMs ?? 0) / 1000 * fps),
+        visuals: beat.visuals,
+      })),
     };
     fs.mkdirSync(options.jobDir, { recursive: true });
     audioManifestPath = path.join(options.jobDir, 'audio-manifest.json');

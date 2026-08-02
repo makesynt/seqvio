@@ -116,6 +116,10 @@ Common CompositionDocument v2 codes:
 - `duplicate_addressable_id`
 - `unknown_chapter_scene`
 - `unsupported_scene_type`
+- `unknown_explanation_cue`
+- `missing_beat_anchor`
+- `ambiguous_beat_anchor`
+- `unknown_beat_visual_target`
 
 Repair the IR in place, then run `seqvio-generate validate --json` again.
 
@@ -132,9 +136,12 @@ Repair the IR in place, then run `seqvio-generate validate --json` again.
 ### CompositionDocument v2
 
 - `"version": "2.0"`.
-- Scene types: `whiteboard`, `code`, `diagram` (plus placeholders for later families).
-- Unique ids for scenes, diagram nodes/edges, and annotation targets.
+- Scene types: `whiteboard`, `code`, `diagram`, `terminal`, and `browser`.
+- Unique ids for scenes, visual elements, Code/Diagram steps, diagram nodes/edges, and annotation targets.
 - Prefer semantic code/diagram steps over hand-authored pixel coordinates.
+- For narrated scenes, use `explanation.cues` plus `explanation.beats`; do not also set the legacy `narration` field.
+- Each Beat references an exact phrase in its cue and at least one stable visual target id. Set `anchor.occurrence` when a phrase repeats.
+- Terminal/Browser capture Beats reference the matching recorded step through `evidence.captureStepId`.
 - Optional `chapters[].sceneIds` for long-form render planning.
 
 Keep final TSX as the editable production source after compile.

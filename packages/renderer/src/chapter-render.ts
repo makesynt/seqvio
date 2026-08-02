@@ -332,6 +332,8 @@ export async function renderChapters(
     totalFrames,
     renderedFps: 0,
     outputBytes: stat.size,
+    reusedFrames: 0,
+    cacheHitRate: 0,
     workers: typeof options.workers === 'number' ? options.workers : 1,
     pixelRatio: options.pixelRatio ?? 1,
     frameFormat: options.frameFormat ?? 'png',

@@ -2,10 +2,8 @@
  * browser-recorder's CaptureSession implementation.
  *
  * record() runs the plan via the existing puppeteer recorder and adapts the
- * result to @seqvio/capture's BrowserCaptureManifest. Step timeMs is evenly
- * spaced across the recording duration for now (browser actions don't carry
- * absolute timestamps); deriving precise per-action timeMs from clicks/cursor
- * is a Phase 1.3 follow-up.
+ * result to @seqvio/capture's BrowserCaptureManifest. New recordings carry the
+ * exact action clock; older manifests retain the evenly-spaced fallback.
  */
 
 import type {
@@ -27,6 +25,9 @@ export function toBrowserCaptureManifest(
   const stepCount = plan.actions.length;
   const stepDuration =
     stepCount > 0 ? recording.durationMs / stepCount : recording.durationMs;
+  const actionTimeById = new Map(
+    (recording.actionTimings ?? []).map((timing) => [timing.id, timing.timeMs]),
+  );
   return {
     kind: 'browser',
     name: recording.name,
@@ -36,7 +37,7 @@ export function toBrowserCaptureManifest(
     steps: plan.actions.map((action, index) => ({
       id: action.id,
       label: action.label,
-      timeMs: index * stepDuration,
+      timeMs: actionTimeById.get(action.id) ?? index * stepDuration,
       capturedState: { kind: 'browser', url: plan.startUrl },
     })),
     sourceVideo: recording.sourceVideo,

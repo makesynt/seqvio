@@ -49,6 +49,8 @@ export interface TerminalEvent {
   /** Complete terminal viewport; replaces prior persistent output. */
   snapshot?: boolean;
   grid?: TerminalGridSnapshot;
+  /** Raw ANSI input that produced this snapshot. */
+  raw?: string;
 }
 
 export interface TerminalStep {
@@ -90,6 +92,12 @@ export interface TerminalDemoProps {
   zoomTransitionMs?: number;
   /** Hold (ms) after an input finishes typing before easing back out. */
   zoomHoldMs?: number;
+  /**
+   * Duration (ms) over which snapshot text changes are progressively revealed
+   * line-by-line.  0 = instant (no reveal animation), which looks like a real
+   * terminal.  Defaults to whatever gap the scheduler left between snapshots.
+   */
+  snapshotRevealMs?: number;
 }
 
 function clamp01(v: number): number {
@@ -275,8 +283,12 @@ function gridWithInput(
   let promptX = Math.max(0, grid.cursorX);
   let nearestDistance = Number.POSITIVE_INFINITY;
 
+  // Prompt chars ordered by priority: ❯ (VHS modern) → $ (bash/sh) → # (root) → > (cmd)
+  const PROMPT_CHARS = ['❯', '$', '#', '>'];
   for (let row = 0; row < grid.lines.length; row += 1) {
-    const prompt = grid.lines[row]?.find((cell) => cell.chars.includes('❯'));
+    const prompt = grid.lines[row]?.find((cell) =>
+      PROMPT_CHARS.some((ch) => cell.chars.includes(ch))
+    );
     if (!prompt) continue;
     const distance = Math.abs(row - grid.cursorY);
     if (distance < nearestDistance) {
@@ -325,6 +337,7 @@ export const TerminalDemo: React.FC<TerminalDemoProps> = ({
   maxZoom = 2.2,
   zoomTransitionMs = 480,
   zoomHoldMs = 220,
+  snapshotRevealMs = 0,
 }) => {
   const frame = useCurrentFrame();
   const fps = useFPS();
@@ -485,8 +498,14 @@ export const TerminalDemo: React.FC<TerminalDemoProps> = ({
       }
 
       if (seg.snapshot) {
+        const revealDurationMs =
+          snapshotRevealMs > 0
+            ? snapshotRevealMs
+            : snapshotRevealMs === 0
+              ? 1
+              : Math.max(1, seg.endMs - seg.startMs);
         const progress = clamp01(
-          (currentMs - seg.startMs) / Math.max(1, seg.endMs - seg.startMs)
+          (currentMs - seg.startMs) / Math.max(1, revealDurationMs)
         );
         persistentRaw = revealSnapshotLines(previousSnapshot, seg.text, progress);
         if (seg.grid) persistentGrid = revealGridRows(persistentGrid, seg.grid, progress);

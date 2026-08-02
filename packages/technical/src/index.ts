@@ -22,6 +22,12 @@ export { ArchitectureDiagram } from './ArchitectureDiagram';
 export type { ArchitectureDiagramProps } from './ArchitectureDiagram';
 
 export { TerminalDemo } from './TerminalDemo';
+export {
+  TerminalXtermDemo,
+  resolveTerminalFitScale,
+  resolveTerminalFrameState,
+} from './TerminalXtermDemo';
+export type { TerminalFrameState, TerminalXtermDemoProps } from './TerminalXtermDemo';
 export type {
   TerminalDemoProps,
   TerminalEvent,

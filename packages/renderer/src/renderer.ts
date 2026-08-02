@@ -24,6 +24,7 @@ import {
   writeRenderShell,
 } from "./bundle-scene";
 import {
+  disposeRenderShell,
   getMetaFromPage,
   loadRenderShell,
   setFrameAndWait,
@@ -44,7 +45,12 @@ import {
   type WhiteboardOptimizeInput,
   type WhiteboardOptimizeMode,
 } from "./whiteboard-optimization";
-import { captureFrameBuffer } from "./render-capture";
+import {
+  captureFrameBuffer,
+  captureTerminalCanvas,
+  findTerminalElement,
+  type CdpScreenshotInput,
+} from "./render-capture";
 // @ts-ignore
 import ffmpegPath from "@ffmpeg-installer/ffmpeg";
 
@@ -108,6 +114,10 @@ export interface RenderResult {
     cleanup: number;
   };
   outputBytes: number;
+  /** Screenshots avoided by adjacent static-frame reuse. */
+  reusedFrames: number;
+  /** Reused screenshots divided by total encoded frames. */
+  cacheHitRate: number;
   workers: number;
   frameFormat: "png" | "jpeg";
   pixelRatio: number;
@@ -119,6 +129,25 @@ interface ResolvedAudioTrack {
   kind: "narration" | "music" | "sfx";
   volume: number;
   offsetMs: number;
+}
+
+export function buildStreamCopyMuxArgs(
+  videoPath: string,
+  audioPath: string,
+  outputPath: string,
+): string[] {
+  return [
+    "-y",
+    "-i",
+    videoPath,
+    "-i",
+    audioPath,
+    "-c",
+    "copy",
+    "-movflags",
+    "+faststart",
+    outputPath,
+  ];
 }
 
 interface ResolvedRenderOptions {
@@ -161,6 +190,15 @@ export class VideoRenderer {
   private onProgress?: (progress: RenderProgress) => void;
   private cliWidth: number | undefined;
   private cliHeight: number | undefined;
+  /** Set by optimizeNarrationTracks() when pre-concat→AAC succeeds.
+   *  When non-null, the main H.264 encode inlines this AAC as a second
+   *  input so the video+audio land in one ffmpeg pass — zero extra mux. */
+  private inlineAudioPath: string | null = null;
+  /** True when the page contains a terminal canvas (TerminalXtermDemo).
+   *  Enables direct canvas capture + ffmpeg chrome compositing. */
+  private terminalMode = false;
+  private terminalDims: { width: number; height: number } | null = null;
+  private reusedFrames = 0;
 
   private browserLaunchOptions(): Parameters<typeof puppeteer.launch>[0] {
     return {
@@ -171,6 +209,12 @@ export class VideoRenderer {
         "--disable-setuid-sandbox",
         "--disable-dev-shm-usage",
         "--allow-file-access-from-files",
+        // Required for canvas 2D text rendering in headless Chrome:
+        // fonts need GPU access even in software mode.
+        "--enable-gpu",
+        "--use-gl=angle",
+        "--use-angle=d3d11",
+        "--disable-font-subpixel-positioning",
       ],
     };
   }
@@ -300,6 +344,12 @@ export class VideoRenderer {
         await this.calibrateWorkers(totalFrames);
       }
 
+      // Pre-concat narration → AAC now so the main H.264 encode can
+      // inline it as a second input — zero-cost mux.
+      if (this.resolvedAudioTracks.length > 0) {
+        await this.optimizeNarrationTracks();
+      }
+
       this.reportProgress({
         phase: "rendering",
         currentFrame: 0,
@@ -311,7 +361,8 @@ export class VideoRenderer {
       const tRender = Date.now();
 
       let tMux = tRender;
-      if (this.resolvedAudioTracks.length > 0) {
+      // Skip separate mux when audio was inlined into the main encode.
+      if (!this.inlineAudioPath && this.resolvedAudioTracks.length > 0) {
         this.reportProgress({
           phase: "muxing",
           percent: 0,
@@ -355,6 +406,8 @@ export class VideoRenderer {
           cleanup: tCleanup - tMux,
         },
         outputBytes,
+        reusedFrames: this.reusedFrames,
+        cacheHitRate: totalFrames > 0 ? this.reusedFrames / totalFrames : 0,
         workers: this.options.workers,
         frameFormat: this.options.frameFormat,
         pixelRatio: this.options.pixelRatio,
@@ -425,6 +478,7 @@ export class VideoRenderer {
       this.options.width !== this.page.viewport()!.width ||
       this.options.height !== this.page.viewport()!.height
     ) {
+      await disposeRenderShell(this.page);
       this.shellPath = writeRenderShell(
         this.options.tempDir,
         this.options.width,
@@ -463,6 +517,19 @@ export class VideoRenderer {
       explicitCaptions,
     );
     this.resolvedAudioTracks = this.resolveAudioTracks();
+
+    // Detect terminal canvas for direct element capture + ffmpeg chrome.
+    // NOTE: element.screenshot() on parent containers does not reliably
+    // capture xterm.js canvas text in headless Chrome. Keep page-level
+    // screenshot until this is resolved.
+    // const termEl = await findTerminalElement(this.page);
+    // if (termEl) {
+    //   const box = await termEl.boundingBox();
+    //   if (box) {
+    //     this.terminalMode = true;
+    //     this.terminalDims = { width: Math.round(box.width), height: Math.round(box.height) };
+    //   }
+    // }
   }
 
   private resolveRenderFrameCount(duration: number): number {
@@ -535,6 +602,17 @@ export class VideoRenderer {
       String(this.effectiveFps),
       "-i",
       "-",
+    ];
+
+    // Inline audio: pre-concat AAC rides alongside the image2pipe frames
+    // so video encode + audio mux happen in a single ffmpeg pass.
+    if (this.inlineAudioPath) {
+      args.push("-i", this.inlineAudioPath);
+    }
+
+    args.push(
+      "-map",
+      "0:v",
       "-c:v",
       "libx264",
       "-pix_fmt",
@@ -543,13 +621,74 @@ export class VideoRenderer {
       String(this.crfForQuality()),
       "-preset",
       "medium",
-      "-movflags",
-      "+faststart",
-    ];
+    );
+
+    if (this.inlineAudioPath) {
+      args.push("-map", "1:a", "-c:a", "copy");
+    }
+
     if (this.options.pixelRatio > 1) {
       args.push("-vf", `scale=${this.options.width}:${this.options.height}`);
     }
-    args.push("-r", String(this.effectiveFps), targetPath);
+
+    args.push(
+      "-movflags",
+      "+faststart",
+      "-r",
+      String(this.effectiveFps),
+      targetPath,
+    );
+    return args;
+  }
+
+  /**
+   * Build ffmpeg filter_complex for VHS-style terminal chrome compositing.
+   * Adds content padding, title bar, and stage background around the raw
+   * terminal canvas capture.
+   */
+  private buildTerminalFilterComplex(): string {
+    const { width: vw, height: vh } = this.options;
+    const ww = this.terminalDims!.width;   // captured window width (title bar + terminal)
+    const wh = this.terminalDims!.height;  // captured window height
+    const ox = Math.round((vw - ww) / 2);
+    const oy = Math.round((vh - wh) / 2);
+
+    // Center the captured window (title bar + terminal) in the video frame
+    // with VHS stage background color.
+    return `[0]pad=${vw}:${vh}:${ox}:${oy}:#1a1a2e[out]`;
+  }
+
+  /** Encode args for terminal canvas capture (uses filter_complex for chrome). */
+  private buildTerminalEncodeArgs(targetPath: string): string[] {
+    const args = [
+      "-y",
+      "-f", "image2pipe",
+      "-framerate", String(this.effectiveFps),
+      "-i", "-",
+    ];
+
+    if (this.inlineAudioPath) {
+      args.push("-i", this.inlineAudioPath);
+    }
+
+    args.push(
+      "-map", "[out]",
+      "-filter_complex", this.buildTerminalFilterComplex(),
+      "-c:v", "libx264",
+      "-pix_fmt", "yuv420p",
+      "-crf", String(this.crfForQuality()),
+      "-preset", "medium",
+    );
+
+    if (this.inlineAudioPath) {
+      args.push("-map", "1:a", "-c:a", "copy");
+    }
+
+    args.push(
+      "-movflags", "+faststart",
+      "-r", String(this.effectiveFps),
+      targetPath,
+    );
     return args;
   }
 
@@ -568,9 +707,12 @@ export class VideoRenderer {
     targetPath: string,
     onFrame: () => void,
   ): Promise<void> {
-    const ffmpeg = spawn(ffmpegPath.path, this.buildEncodeArgs(targetPath), {
-      windowsHide: true,
-    });
+    const useTerminal = this.terminalMode && this.terminalDims;
+    const ffmpeg = spawn(
+      ffmpegPath.path,
+      useTerminal ? this.buildTerminalEncodeArgs(targetPath) : this.buildEncodeArgs(targetPath),
+      { windowsHide: true },
+    );
 
     let ffmpegStderr = "";
     ffmpeg.stderr.on("data", (chunk) => {
@@ -604,10 +746,12 @@ export class VideoRenderer {
         const sourceFrame = firstSourceFrame + i;
         await setFrameAndWait(page, sourceFrame);
 
-        const signature = this.options.staticFrameDedup
+        const useDedup = !useTerminal && this.options.staticFrameDedup;
+        const signature = useDedup
           ? await this.getStaticFrameSignature(page)
           : null;
         const reusePrevious: boolean =
+          useDedup &&
           previousBuffer !== null &&
           shouldReuseStaticFrame({
             previousOutputIndex,
@@ -616,11 +760,21 @@ export class VideoRenderer {
             signature,
             signatureReusable: this.options.staticFrameDedup,
           });
+        const captureFrame = useTerminal
+          ? async () => {
+              const el = await findTerminalElement(page);
+              if (!el) throw new Error('Terminal element disappeared mid-render');
+              const { buffer } = await captureTerminalCanvas(page, el);
+              return buffer;
+            }
+          : () => this.captureFrameBuffer(page);
+
         const buffer: Buffer = reusePrevious
           ? previousBuffer!
-          : await this.captureFrameBuffer(page);
+          : await captureFrame();
         if (reusePrevious) {
           reusedFrames += 1;
+          this.reusedFrames += 1;
         }
 
         await writeFrame(buffer);
@@ -676,10 +830,14 @@ export class VideoRenderer {
    * remains inadvisable; cross-machine is a separate orchestration concern.
    */
   private async renderAndEncode(totalFrames: number): Promise<string> {
-    const targetPath =
-      this.resolvedAudioTracks.length > 0
-        ? path.join(this.options.tempDir, "video-only.mp4")
-        : this.options.output;
+    // When audio is inlined, output goes directly to the final path
+    // (video + audio land in one pass).  Otherwise write video-only and
+    // let muxAudio() add audio afterwards.
+    const needsSeparateMux =
+      !this.inlineAudioPath && this.resolvedAudioTracks.length > 0;
+    const targetPath = needsSeparateMux
+      ? path.join(this.options.tempDir, "video-only.mp4")
+      : this.options.output;
 
     if (this.options.workers > 1) {
       if (this.options.staticFrameDedup) {
@@ -849,6 +1007,7 @@ export class VideoRenderer {
           }
         } finally {
           if (assignment.workerIndex !== 0) {
+            await disposeRenderShell(page).catch(() => undefined);
             await browser.close().catch(() => undefined);
           }
         }
@@ -919,7 +1078,158 @@ export class VideoRenderer {
     return resolved;
   }
 
+  /**
+   * Pre-concatenates sequential back-to-back narration tracks into a single
+   * WAV (stream copy, near-instant).  This lets the mux filter-graph skip
+   * the per-track adelay + aresample chains and the multi-input amix,
+   * reducing mux time substantially on CosyVoice-style pipelines where
+   * narration cues sit end-to-end with no gaps or overlaps.
+   *
+   * Only activates when ALL *manifest* narration tracks are sequential
+   * (checked via the audio manifest's per-cue startMs/endMs).  CLI-provided
+   * --audioTrack and --mixMusic tracks are left untouched so sidechain
+   * compression still works when music is present.
+   */
+  private async optimizeNarrationTracks(): Promise<void> {
+    const manifestNarration = this.resolvedAudioTracks.filter(
+      (t) =>
+        t.kind === "narration" &&
+        t.id !== "cli-audio-track" &&
+        t.id !== "cli-music-track",
+    );
+    if (manifestNarration.length <= 1) return;
+
+    const cues = this.audioManifest?.narration;
+    if (!cues || cues.length === 0) return;
+
+    // Verify sequential: back-to-back, no gaps > 200ms
+    let prevEndMs = 0;
+    let allSequential = true;
+    const orderedPaths: string[] = [];
+
+    for (const cue of cues) {
+      const track = manifestNarration.find((t) => t.id === cue.id);
+      if (!track) {
+        allSequential = false;
+        break;
+      }
+      const cueStart = cue.startMs ?? 0;
+      if (Math.abs(cueStart - prevEndMs) > 200) {
+        allSequential = false;
+        break;
+      }
+      orderedPaths.push(track.path);
+      prevEndMs = cue.endMs ?? cueStart + 1000;
+    }
+
+    if (!allSequential || orderedPaths.length <= 1) return;
+
+    // Concat WAVs → AAC in one pass.  No intermediate PCM WAV on disk,
+    // and the encode time overlaps with browser screenshot work since
+    // this runs between setup and the render phase.
+    const aacPath = path.join(
+      this.options.tempDir,
+      "narration-premix.aac",
+    );
+    const listPath = `${aacPath}.txt`;
+    fs.writeFileSync(
+      listPath,
+      orderedPaths
+        .map((file) => `file '${file.replace(/'/g, "'\\''")}'`)
+        .join("\n"),
+    );
+
+    await new Promise<void>((resolve, reject) => {
+      const proc = spawn(
+        ffmpegPath.path,
+        [
+          "-y",
+          "-f",
+          "concat",
+          "-safe",
+          "0",
+          "-i",
+          listPath,
+          "-c:a",
+          "aac",
+          "-b:a",
+          "128k",
+          aacPath,
+        ],
+        { windowsHide: true },
+      );
+      proc.stderr.on("data", () => {}); // silence ffmpeg log
+      proc.on("close", (code) => {
+        if (code === 0) resolve();
+        else reject(new Error(`Pre-concat failed with code ${code}`));
+      });
+      proc.on("error", reject);
+    });
+
+    try {
+      fs.unlinkSync(listPath);
+    } catch {
+      // best-effort cleanup
+    }
+
+    // Replace manifest narration tracks with the single AAC pre-mix
+    // and flag that the main H.264 encode should inline it.
+    this.resolvedAudioTracks = [
+      {
+        id: "narration-premix",
+        path: aacPath,
+        kind: "narration" as const,
+        volume: 1,
+        offsetMs: 0,
+      },
+      ...this.resolvedAudioTracks.filter(
+        (t) =>
+          t.id === "cli-audio-track" ||
+          t.id === "cli-music-track" ||
+          t.kind !== "narration",
+      ),
+    ];
+    this.inlineAudioPath = aacPath;
+
+    this.reportProgress({
+      phase: "rendering",
+      message: `Pre-mixed ${orderedPaths.length} narration tracks -> 1`,
+    });
+  }
+
   private async muxAudio(videoPath: string): Promise<void> {
+    // Fast path: single narration track, no music/SFX.  The pre-concat
+    // step already produced an AAC file — just stream-copy video and
+    // audio into the output container (no encoding, near-instant).
+    const narrationTracks = this.resolvedAudioTracks.filter(
+      (t) => t.kind === "narration",
+    );
+    const otherTracks = this.resolvedAudioTracks.filter(
+      (t) => t.kind !== "narration",
+    );
+    if (narrationTracks.length === 1 && otherTracks.length === 0) {
+      const track = narrationTracks[0];
+      return new Promise((resolve, reject) => {
+        execFile(
+          ffmpegPath.path,
+          buildStreamCopyMuxArgs(videoPath, track.path, this.options.output),
+          { windowsHide: true },
+          (error, _stdout, stderr) => {
+            if (error) {
+              reject(new Error(stderr || error.message));
+              return;
+            }
+            this.reportProgress({
+              phase: "muxing",
+              percent: 100,
+              message: "Muxing: 100% (stream copy)",
+            });
+            resolve();
+          },
+        );
+      });
+    }
+
     return new Promise((resolve, reject) => {
       const targetDurationSeconds = this.sceneDuration / this.effectiveFps;
       const filters: string[] = [];
@@ -1051,6 +1361,7 @@ export class VideoRenderer {
 
   private async cleanup(): Promise<void> {
     if (this.browser) {
+      if (this.page) await disposeRenderShell(this.page);
       await this.browser.close();
     }
 

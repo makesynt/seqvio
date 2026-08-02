@@ -1,6 +1,7 @@
 {
   "name": "@seqvio/scatterbrain",
   "version": "0.7.0",
+  "seqvio": { "lifecycle": "public", "releaseTrain": "0.7" },
   "description": "Post-it / cork-board sticky-note style components for Seqvio",
   "keywords": [
     "seqvio",

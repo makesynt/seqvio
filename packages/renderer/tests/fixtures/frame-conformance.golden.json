@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "fixture": "mixed-terminal-browser-v1",
+  "width": 640,
+  "height": 360,
+  "fps": 30,
+  "frames": [0, 9, 18, 30, 45],
+  "samples": {
+    "0": {
+      "terminal": { "timeMs": 0, "activeInput": "", "cursorX": 2, "cursorY": 0 },
+      "browser": {
+        "timeMs": 0,
+        "scale": 2,
+        "centerX": 160,
+        "centerY": 90,
+        "translateX": -160,
+        "translateY": 0,
+        "cursorX": -120,
+        "cursorY": 40,
+        "clickVisible": false,
+        "mediaTime": 0
+      }
+    },
+    "9": {
+      "terminal": { "timeMs": 300, "activeInput": "ec", "cursorX": 4, "cursorY": 0 },
+      "browser": {
+        "timeMs": 300,
+        "scale": 2,
+        "centerX": 160,
+        "centerY": 90,
+        "translateX": -160,
+        "translateY": 0,
+        "cursorX": -38.75,
+        "cursorY": 80.625,
+        "clickVisible": false,
+        "mediaTime": 0.3
+      }
+    },
+    "18": {
+      "terminal": { "timeMs": 600, "activeInput": "echo seq", "cursorX": 10, "cursorY": 0 },
+      "browser": {
+        "timeMs": 600,
+        "scale": 2,
+        "centerX": 181.45,
+        "centerY": 81.75,
+        "translateX": -202.899,
+        "translateY": 0,
+        "cursorX": 97.101,
+        "cursorY": 170,
+        "clickVisible": false,
+        "mediaTime": 0.6
+      }
+    },
+    "30": {
+      "terminal": { "timeMs": 1000, "activeInput": "", "cursorX": 2, "cursorY": 2 },
+      "browser": {
+        "timeMs": 1000,
+        "scale": 2,
+        "centerX": 225,
+        "centerY": 65,
+        "translateX": -290,
+        "translateY": 0,
+        "cursorX": 231.481,
+        "cursorY": 280.741,
+        "clickVisible": true,
+        "mediaTime": 1
+      }
+    },
+    "45": {
+      "terminal": { "timeMs": 1500, "activeInput": "", "cursorX": 2, "cursorY": 2 },
+      "browser": {
+        "timeMs": 1500,
+        "scale": 2,
+        "centerX": 218.713,
+        "centerY": 67.418,
+        "translateX": -277.426,
+        "translateY": 0,
+        "cursorX": -237.426,
+        "cursorY": 40,
+        "clickVisible": false,
+        "mediaTime": 1.5
+      }
+    }
+  }
+}

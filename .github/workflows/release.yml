@@ -43,6 +43,13 @@ jobs:
       - name: Build packages
         run: npm run build
 
+      - name: Verify versions, lifecycle, and scene capabilities
+        run: npm run verify:contracts
+
+      - name: Release pipeline gate (terminal + browser)
+        timeout-minutes: 15
+        run: npm run smoke:release-pipeline
+
       - name: Create Release PR or Publish to npm
         uses: changesets/action@v1
         with:

@@ -12,7 +12,28 @@ import {
   validateIr,
   compileIr,
   detectIrVersion,
+  SCENE_CAPABILITIES,
+  SCENE_TYPES,
+  listAgentAuthorableSceneCapabilities,
 } from '../dist/index.js';
+
+describe('scene capability registry', () => {
+  it('is the complete source for stable scene validation and compilation metadata', () => {
+    assert.deepStrictEqual(SCENE_TYPES, ['whiteboard', 'code', 'diagram', 'terminal', 'browser']);
+    for (const type of SCENE_TYPES) {
+      const capability = SCENE_CAPABILITIES[type];
+      assert.strictEqual(capability.schemaVersion, '2.0');
+      assert.strictEqual(capability.compiler, 'complete');
+      assert.strictEqual(capability.lifecycle, 'public');
+      assert.ok(capability.requiredPackage.startsWith('@seqvio/'));
+      assert.ok(capability.qaRules.length > 0);
+    }
+    assert.deepStrictEqual(
+      listAgentAuthorableSceneCapabilities().map((capability) => capability.type),
+      ['whiteboard', 'code', 'diagram'],
+    );
+  });
+});
 
 const mixedV2 = {
   version: '2.0',
@@ -119,6 +140,14 @@ describe('validateCompositionDocument', () => {
     assert.ok(issues.some((i) => i.code === 'unknown_chapter_scene'));
   });
 
+  it('rejects unknown pacing profiles', () => {
+    const issues = validateCompositionDocument({
+      version: '2.0', id: 'x', pacingProfile: 'future-v9',
+      scenes: [{ type: 'code', id: 'c', language: 'js', source: '', steps: [] }],
+    });
+    assert.ok(issues.some((issue) => issue.code === 'unsupported_pacing_profile'));
+  });
+
   it('rejects a terminal scene with neither events nor commands', () => {
     const issues = validateCompositionDocument({
       version: '2.0',
@@ -141,6 +170,74 @@ describe('validateCompositionDocument', () => {
       ],
     });
     assert.ok(issues.some((i) => i.code === 'invalid_terminal_event_kind'));
+  });
+
+  it('rejects removed chat, diff, and infographic scene types', () => {
+    for (const scene of [
+      { type: 'chat', id: 'conversation', messages: [{ role: 'user', text: 'hello' }] },
+      { type: 'diff', id: 'change', before: 'old', after: 'new' },
+      { type: 'infographic', id: 'summary', panels: [{ id: 'total', label: 'Total' }] },
+    ]) {
+      const issues = validateCompositionDocument({
+        version: '2.0',
+        id: `removed-${scene.type}`,
+        scenes: [scene],
+      });
+      assert.ok(
+        issues.some((issue) => issue.code === 'unsupported_scene_type'),
+        `expected ${scene.type} to be rejected`,
+      );
+    }
+  });
+
+  it('accepts a jointly authored explanation beat and visual target', () => {
+    const issues = validateCompositionDocument({
+      version: '2.0',
+      id: 'beat-demo',
+      scenes: [{
+        type: 'whiteboard',
+        id: 'math',
+        elements: [{ id: 'result', type: 'text', text: '5050', position: { x: 100, y: 100 } }],
+        explanation: {
+          cues: [{ id: 'voice', text: '五十乘一百零一，等于五千零五十。' }],
+          beats: [{
+            id: 'show-result',
+            cueId: 'voice',
+            anchor: { text: '等于五千零五十' },
+            visuals: [{ targetId: 'result', action: 'reveal', offsetMs: -150, minHoldMs: 1200 }],
+          }],
+        },
+      }],
+    });
+    assert.deepEqual(issues, []);
+  });
+
+  it('rejects missing, ambiguous, and unknown beat references', () => {
+    const issues = validateCompositionDocument({
+      version: '2.0',
+      id: 'bad-beats',
+      scenes: [{
+        type: 'whiteboard',
+        id: 'scene',
+        elements: [],
+        explanation: {
+          cues: [{ id: 'voice', text: '检查结果，然后再次检查结果。' }],
+          beats: [
+            {
+              id: 'ambiguous', cueId: 'voice', anchor: { text: '检查结果' },
+              visuals: [{ targetId: 'missing', action: 'reveal' }],
+            },
+            {
+              id: 'missing', cueId: 'absent', anchor: { text: '不存在' },
+              visuals: [{ targetId: 'scene', action: 'reveal' }],
+            },
+          ],
+        },
+      }],
+    });
+    assert.ok(issues.some((entry) => entry.code === 'ambiguous_beat_anchor'));
+    assert.ok(issues.some((entry) => entry.code === 'unknown_beat_visual_target'));
+    assert.ok(issues.some((entry) => entry.code === 'unknown_explanation_cue'));
   });
 });
 
@@ -166,6 +263,11 @@ describe('compileCompositionDocumentToTsx', () => {
     assert.match(code, /<ArchitectureDiagram/);
     assert.match(code, /<TechnicalScene/);
     assert.match(code, /Welcome to the technical explainer\./);
+    assert.match(code, /"startMs":/);
+    assert.match(code, /"endMs":/);
+    assert.match(code, /pacing: \{ profile: "explainer-v1", highlights:/);
+    assert.match(code, /sceneTimings:/);
+    assert.match(code, /pacingProfile: "explainer-v1"/);
   });
 
   it('converts legacy terminal commands into visible events and steps', () => {
@@ -203,6 +305,85 @@ describe('compileCompositionDocumentToTsx', () => {
     assert.match(code, /"transient": true/);
     assert.match(code, /"label": "Run echo"/);
     assert.doesNotMatch(code, /shell-command-1/);
+  });
+
+  it('refuses removed scene types when validation is bypassed', () => {
+    for (const type of ['chat', 'diff', 'infographic']) {
+      assert.throws(
+        () => compileCompositionDocumentToTsx({
+          version: '2.0',
+          id: `removed-${type}`,
+          scenes: [{ type, id: 'removed' }],
+        }),
+        new RegExp(`Unsupported CompositionDocument scene type: ${type}`),
+      );
+    }
+  });
+
+  it('compiles explanation beats into visual starts and audio metadata', () => {
+    const { code } = compileCompositionDocumentToTsx({
+      version: '2.0',
+      id: 'beat-compile',
+      fps: 30,
+      scenes: [{
+        type: 'whiteboard',
+        id: 'math',
+        elements: [
+          { id: 'first', type: 'text', text: 'First', position: { x: 100, y: 100 }, start: 999 },
+          { id: 'second', type: 'text', text: 'Second', position: { x: 100, y: 200 }, start: 999 },
+        ],
+        explanation: {
+          cues: [{ id: 'voice', text: 'First appears, then second appears.' }],
+          beats: [
+            { id: 'first-beat', cueId: 'voice', anchor: { text: 'First' }, visuals: [{ targetId: 'first', action: 'reveal' }] },
+            { id: 'second-beat', cueId: 'voice', anchor: { text: 'second' }, visuals: [{ targetId: 'second', action: 'reveal' }] },
+          ],
+        },
+      }],
+    });
+    assert.match(code, /"id": "math\.first-beat"/);
+    assert.match(code, /"id": "math\.voice"/);
+    assert.match(code, /"sourceFrame": 0/);
+    assert.match(code, /"sourceFrame": 27/);
+    assert.doesNotMatch(code, /start=\{999\}/);
+    assert.match(code, /start=\{0\}/);
+    assert.match(code, /start=\{27\}/);
+  });
+
+  it('retimes code and diagram steps from explanation targets', () => {
+    const document = {
+      version: '2.0', id: 'technical-beats', fps: 30,
+      scenes: [
+        {
+          type: 'code', id: 'code', language: 'ts', source: 'const x = 1;',
+          steps: [{ id: 'show-line', at: 999, action: 'focus', range: { startLine: 1, endLine: 1 } }],
+          explanation: {
+            cues: [{ id: 'voice', text: 'Now inspect this line.' }],
+            beats: [{
+              id: 'inspect', cueId: 'voice', anchor: { text: 'inspect' },
+              visuals: [{ targetId: 'show-line', action: 'focus' }],
+            }],
+          },
+        },
+        {
+          type: 'diagram', id: 'diagram',
+          nodes: [{ id: 'api', label: 'API' }], edges: [],
+          steps: [{ id: 'show-api', at: 999, action: 'reveal', targetId: 'api' }],
+          explanation: {
+            cues: [{ id: 'voice', text: 'Reveal the API.' }],
+            beats: [{
+              id: 'reveal-api', cueId: 'voice', anchor: { text: 'API' },
+              visuals: [{ targetId: 'show-api', action: 'reveal' }],
+            }],
+          },
+        },
+      ],
+    };
+    assert.deepEqual(validateCompositionDocument(document), []);
+    const { code } = compileCompositionDocumentToTsx(document);
+    assert.doesNotMatch(code, /"at": 999/);
+    assert.match(code, /"id": "show-line",\s+"at": 0/);
+    assert.match(code, /"id": "show-api",\s+"at": 0,\s+"action": "reveal"/);
   });
 });
 

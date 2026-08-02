@@ -14,10 +14,12 @@ import {
   type NarrationCue,
 } from './media-contract';
 import { bundleScene, resolveComponentPath } from './bundle-scene';
-import { getMetaFromPage, loadRenderShell } from './browser-shell';
+import { disposeRenderShell, getMetaFromPage, loadRenderShell } from './browser-shell';
 import {
   buildManifestFromMeta,
   loadAudioManifest,
+  reflowSynthesizedTimeline,
+  resolveSynthesizedCueTiming,
   validateAudioManifest,
 } from './audio/manifest';
 
@@ -147,6 +149,7 @@ async function runExtract(args: Map<string, string | boolean>): Promise<void> {
     fs.mkdirSync(path.dirname(outPath), { recursive: true });
     fs.writeFileSync(outPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
     console.log(`Wrote audio manifest to ${outPath}`);
+    await disposeRenderShell(page);
   } finally {
     await browser.close();
     fs.rmSync(tempDir, { recursive: true, force: true });
@@ -452,7 +455,7 @@ async function runSynthesize(args: Map<string, string | boolean>): Promise<void>
   await ensureProviderReady(provider);
 
   const generatedTracks = [];
-  const resolvedNarration: NarrationCue[] = [];
+  const synthesizedNarration: NarrationCue[] = [];
   let counter = 0;
   fs.mkdirSync(path.join(outDir, 'narration'), { recursive: true });
   let sequentialOffsetMs = 0;
@@ -497,12 +500,12 @@ async function runSynthesize(args: Map<string, string | boolean>): Promise<void>
     }
 
     const probedDurationMs = await probeMediaDurationMs(outPath);
-    const authoredTimes = resolveNarrationCueTimes(cue, fps);
-    const startMs =
-      cue.startMs !== undefined || cue.startFrame !== undefined
-        ? authoredTimes.startMs
-        : sequentialOffsetMs;
-    const endMs = Math.max(startMs + probedDurationMs, authoredTimes.endMs);
+    const { startMs, endMs } = resolveSynthesizedCueTiming(
+      cue,
+      fps,
+      probedDurationMs,
+      sequentialOffsetMs,
+    );
     sequentialOffsetMs = Math.max(sequentialOffsetMs, endMs);
 
     const resolvedCue: NarrationCue = {
@@ -512,7 +515,7 @@ async function runSynthesize(args: Map<string, string | boolean>): Promise<void>
       startFrame: msToFrames(startMs, fps),
       endFrame: msToFrames(endMs, fps),
     };
-    resolvedNarration.push(resolvedCue);
+    synthesizedNarration.push(resolvedCue);
 
     generatedTracks.push({
       id: cue.id,
@@ -523,6 +526,13 @@ async function runSynthesize(args: Map<string, string | boolean>): Promise<void>
     });
     console.log(`Synthesized ${cue.id} with ${provider} -> ${outPath}`);
   }
+
+  const reflowedTimeline = reflowSynthesizedTimeline(manifest, synthesizedNarration, fps);
+  const resolvedNarration = reflowedTimeline.narration;
+  const resolvedTracks = generatedTracks.map((track) => ({
+    ...track,
+    offsetMs: resolvedNarration.find((cue) => cue.id === track.id)?.startMs ?? track.offsetMs,
+  }));
 
   const resolvedCaptions: CaptionCue[] =
     (manifest.captions?.length ?? 0) > 0
@@ -582,15 +592,17 @@ async function runSynthesize(args: Map<string, string | boolean>): Promise<void>
     ...manifest,
     lockToAudio: manifest.lockToAudio ?? true,
     narration: resolvedNarration,
-    tracks: [...(manifest.tracks ?? []), ...generatedTracks],
+    tracks: [...(manifest.tracks ?? []), ...resolvedTracks],
     captions: resolvedCaptions,
+    sceneTimings: reflowedTimeline.sceneTimings,
+    explanationBeats: reflowedTimeline.explanationBeats,
     duration:
-      resolvedNarration.length > 0
+      reflowedTimeline.durationFrames ?? (resolvedNarration.length > 0
         ? msToFrames(
             Math.max(...resolvedNarration.map((cue) => cue.endMs ?? 0)),
             fps
           )
-        : manifest.duration,
+        : manifest.duration),
   };
 
   fs.mkdirSync(path.dirname(outManifestPath), { recursive: true });

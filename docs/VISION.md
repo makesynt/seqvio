@@ -16,10 +16,12 @@ workshops, product walkthroughs, and a QA loop. The agent uses those primitives 
 decide what the viewer should see, hear, and understand next instead of filling a
 generic motion template.
 
-Compositions are authored as React/TSX files and rendered locally to MP4 through a
-Puppeteer + FFmpeg pipeline. Seqvio does not make planning or generation API calls
-from its core; creative decisions belong to the host agent or human author, while
-Seqvio supplies the visual contracts and production workflow.
+`CompositionDocument v2` is the canonical interchange contract for captured and
+agent-authored explainers; it compiles to editable React/TSX, which is rendered
+locally to MP4 through Puppeteer + FFmpeg. Seqvio does not make planning or
+generation API calls from its core; creative decisions belong to the host agent
+or human author, while Seqvio supplies the visual contracts and production
+workflow.
 
 ### Core Promise
 
@@ -48,16 +50,17 @@ closed loop around it. It is everything a closed engine is structurally
 positioned worst to do: reach a real system. The bets below are where value
 lives; the table-stakes ones still ship, they just no longer defend the company:
 
-- **Narration-first timing.** Audio metadata and visual timing live in the same
-  composition, and scene duration follows synthesized narration ("voice is the
-  clock") rather than hand-guessed padding. This is the single most common failure
-  mode of naive generated videos, and Seqvio makes it a contract, not a convention.
+- **Joint explanation timing.** Narration cues, exact spoken phrase anchors,
+  visual actions, and capture evidence live in one ExplanationBeat structure.
+  Synthesized voice resolves the output clock while semantic time maps preserve
+  authored or recorded visual order. This replaces hand-guessed padding with an
+  executable contract.
 - **Explainer-native scene vocabulary.** Hand-drawn whiteboard, sticky-note, and
   product-walkthrough primitives with built-in draw timing — not a blank canvas
   assembled from scratch per video.
-- **A structured plan contract.** Storyboard IR and CompositionDocument that a host
-  agent can generate, validate, repair, and inspect, so agent output is checkable
-  before it becomes code.
+- **A structured plan contract.** CompositionDocument (and retained whiteboard
+  Storyboard input) that a host agent can generate, validate, repair, and inspect,
+  so agent output is checkable before it becomes code.
 - **A verification loop.** Deterministic checks on rendered frames — blank frames,
   overflowing text, unreadable pacing, narration that disagrees with what is on
   screen — so a host agent can iterate to correct output instead of handing a human
@@ -66,7 +69,7 @@ lives; the table-stakes ones still ship, they just no longer defend the company:
 Not all four are equally defensible, and in 2026 the asymmetry has shifted
 further than this document used to claim.
 
-The first two — narration-first timing and explainer-native scene vocabulary —
+The first two — joint explanation timing and explainer-native scene vocabulary —
 are domain knowledge. They are correct, and a competitor could copy both in a
 few hundred lines. The plan contract and the generic verification loop, which
 this document once called the durable pair, have stopped being durable: a
@@ -153,8 +156,10 @@ style is a set of components, never a fork of the pipeline.
 ### In Scope
 
 - Short-form explainer videos, roughly 15 seconds to 3 minutes.
-- Hand-authored or agent-authored TSX compositions as the production surface.
-- Storyboard IR as the structured input contract for host agents and future editors.
+- CompositionDocument v2 as the canonical structured input for captured and
+  agent-authored explainers, compiled to editable TSX.
+- Retained Storyboard IR input for whiteboard-only work and hand-authored TSX for
+  deliberate low-level control.
 - Structured narration, caption, and timing metadata with pluggable TTS providers.
 - Programmatic, deterministic, local rendering to MP4.
 - Multilingual narration and caption variants from one source composition.
