@@ -29,6 +29,8 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Prepare native dependencies
+        run: npm run prepare:native
       - name: Build packages
         run: npm run build
       - name: Verify versions, lifecycle, and scene capabilities
@@ -69,6 +71,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Prepare native dependencies
+        run: npm run prepare:native
 
       - name: Build packages
         run: npm run build
