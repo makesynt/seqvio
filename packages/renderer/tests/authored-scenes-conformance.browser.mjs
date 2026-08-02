@@ -200,6 +200,7 @@ async function comparePixels(page, expected, actual) {
 test('authored scene families share one narration-locked timeline', { timeout: 120_000 }, async (t) => {
   const tempRoot = path.resolve(process.cwd(), '..', '..', 'temp');
   mkdirSync(tempRoot, { recursive: true });
+  if (ARTIFACT_DIR) mkdirSync(ARTIFACT_DIR, { recursive: true });
   const jobDir = mkdtempSync(path.join(tempRoot, 'authored-conformance-'));
   const componentPath = path.join(jobDir, 'authored-conformance.tsx');
   writeScene(componentPath);
@@ -229,7 +230,6 @@ test('authored scene families share one narration-locked timeline', { timeout: 1
     await browser.close();
     rmSync(jobDir, { recursive: true, force: true });
     if (ARTIFACT_DIR) {
-      mkdirSync(ARTIFACT_DIR, { recursive: true });
       if (report.status === 'running') report.status = 'failed';
       writeFileSync(path.join(ARTIFACT_DIR, 'authored-scenes-report.json'), `${JSON.stringify(report, null, 2)}\n`, 'utf8');
     }

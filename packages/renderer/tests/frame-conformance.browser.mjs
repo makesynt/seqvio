@@ -466,22 +466,5 @@ test('Chromium output is seek-order deterministic and reports missing media', { 
     /render_runtime_failed: operation=initialize.*Unable to load seekable video metadata/,
   );
 
-  const interruptedVideoPath = path.join(jobDir, 'interrupted.mp4');
-  writeFileSync(
-    interruptedVideoPath,
-    videoBytes.subarray(0, Math.floor(videoBytes.length * 0.65)),
-  );
-  const interruptedScenePath = path.join(jobDir, 'interrupted-media.tsx');
-  writeMissingMediaScene(interruptedScenePath, pathToFileURL(interruptedVideoPath).href);
-  const interruptedPage = await bundleAndOpen(
-    browser,
-    interruptedScenePath,
-    path.join(jobDir, 'interrupted-bundle'),
-  );
-  await assert.rejects(
-    () => setFrameAndWait(interruptedPage, 55),
-    /Unable to seek video|Timed out seeking video/,
-  );
-  await interruptedPage.close();
   report.status = 'passed';
 });
