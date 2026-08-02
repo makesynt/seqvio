@@ -1,9 +1,9 @@
 {
   "name": "seqvio",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "seqvio": {
     "lifecycle": "internal",
-    "releaseTrain": "0.6"
+    "releaseTrain": "0.7"
   },
   "private": true,
   "description": "A visual language for coding agents to explain ideas with narrated video",

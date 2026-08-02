@@ -1,6 +1,6 @@
 {
   "name": "@seqvio/terminal-narrator",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Pre-stable terminal capture-to-explanation adapter for Seqvio",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -24,10 +24,10 @@
     "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
-    "@seqvio/capture": "0.1.0",
-    "@seqvio/core": "0.6.0",
-    "@seqvio/renderer": "0.6.0",
-    "@seqvio/technical": "0.6.0",
+    "@seqvio/capture": "0.2.0",
+    "@seqvio/core": "0.7.0",
+    "@seqvio/renderer": "0.7.0",
+    "@seqvio/technical": "0.7.0",
     "@xterm/headless": "^6.0.0",
     "node-pty": "^1.0.0"
   },

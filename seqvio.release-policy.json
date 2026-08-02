@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "releaseTrain": {
-    "line": "0.6",
+    "line": "0.7",
     "packages": [
       "@seqvio/core",
       "@seqvio/whiteboard",
