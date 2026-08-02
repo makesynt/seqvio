@@ -39,9 +39,8 @@ console.warn(
   `node-pty is installed without a loadable native module on ${process.platform}/${process.arch}; rebuilding from source.`,
 );
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-const rebuild = spawnSync(npmCommand, ['rebuild', 'node-pty', '--build-from-source'], {
+const rebuild = spawnSync(npmCommand, ['rebuild', 'node-pty'], {
   cwd: root,
-  env: { ...process.env, npm_config_build_from_source: 'true' },
   stdio: 'inherit',
 });
 
