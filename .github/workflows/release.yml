@@ -37,6 +37,9 @@ jobs:
       - name: Upgrade npm
         run: npm install -g npm@latest
 
+      - name: Remove legacy npm auth config
+        run: npm config delete always-auth --location=user
+
       - name: Install dependencies
         run: npm ci
 
