@@ -19,7 +19,6 @@ export function samplePlan(): TerminalNarratorPlan {
           cols: 100,
           rows: 28,
           cwd: process.cwd(),
-          useConpty: false,
         }
       : {
           command: 'bash',
@@ -34,18 +33,21 @@ export function samplePlan(): TerminalNarratorPlan {
             id: 'hello',
             label: '打印 Hello',
             text: 'echo "$([char]27)[32mHello$([char]27)[0m"',
+            waitForPattern: '\u001b\\[32mHello',
             afterMs: 1000,
           },
           {
             id: 'world',
             label: '打印 World',
             text: 'echo "$([char]27)[36mWorld$([char]27)[0m"',
+            waitForPattern: '\u001b\\[36mWorld',
             afterMs: 1000,
           },
           {
             id: 'done',
             label: '结束会话',
             text: 'echo "$([char]27)[35mDone$([char]27)[0m"',
+            waitForPattern: '\u001b\\[35mDone',
             afterMs: 800,
           },
         ]
@@ -71,6 +73,7 @@ export function samplePlan(): TerminalNarratorPlan {
         ],
     finalWaitMs: 1400,
     timeoutMs: 45_000,
+    readyPattern: isWin ? 'PS [^\\r\\n>]*>' : undefined,
   };
 }
 
@@ -126,7 +129,6 @@ export function sampleClaudePlan(options: ClaudeSampleOptions = {}): TerminalNar
       cols: 120,
       rows: 30,
       cwd,
-      useConpty: false,
       env: {
         TERM: 'xterm-256color',
         COLORTERM: 'truecolor',
