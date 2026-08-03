@@ -1,9 +1,9 @@
 {
   "name": "@seqvio/product-demo",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "seqvio": {
     "lifecycle": "public",
-    "releaseTrain": "0.7"
+    "releaseTrain": "0.8"
   },
   "description": "Product walkthrough components for Seqvio",
   "keywords": [
@@ -40,7 +40,7 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@seqvio/core": "0.7.1",
+    "@seqvio/core": "0.8.0",
     "gsap": "^3.12.0",
     "react": "^18.0.0 || ^19.0.0"
   },

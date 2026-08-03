@@ -24,10 +24,12 @@ have a complete compiler, a public required package, and named QA rules.
 
 ## Version Policy
 
-The stable `0.6` release train currently contains core, whiteboard, renderer,
-scatterbrain, product-demo, and technical. Changesets treats them as one fixed
-group. Their major/minor version, `seqvio.releaseTrain` metadata, internal exact
-dependency versions, and the private root release marker must agree.
+The stable release train contains core, whiteboard, renderer, scatterbrain,
+product-demo, and technical. Its current version line is declared only in the
+machine-readable release policy. Changesets treats these packages as one fixed
+group, and `npm run version` derives the release line from their generated
+versions. It then synchronizes `seqvio.releaseTrain` metadata, internal exact
+dependency versions, the lockfile, and the private root release marker.
 
 Capture, Browser Recorder, and Terminal Narrator use independent pre-1.0
 versions. Independent versioning does not weaken dependency checks: references
