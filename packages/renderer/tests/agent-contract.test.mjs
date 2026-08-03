@@ -5,6 +5,7 @@ import {
   formatEditorialPlanningPrompt,
   formatVisualDesignPrompt,
   formatAgentSceneCapabilities,
+  formatExplanationPatternCatalog,
   resolveAgentIrFormat,
 } from '../dist/agent-contract.js';
 
@@ -45,9 +46,20 @@ describe('agent-contract', () => {
     const editorial = formatEditorialPlanningPrompt('Explain HTTP caching', { language: 'en' });
     assert.match(editorial, /Content Decisions/);
     assert.match(editorial, /Make omissions explicit/);
+    assert.match(editorial, /zero to two explanation patterns/);
+    assert.match(editorial, /Patterns are guidance, not templates/);
+    assert.match(editorial, /causal-diagnosis/);
+    assert.match(editorial, /progressive-model/);
     const visual = formatVisualDesignPrompt('Explain HTTP caching', '# Editorial Plan: Cache', { language: 'en' });
     assert.match(visual, /Section Treatments/);
     assert.match(visual, /real\s+capture material/);
+  });
+
+  it('describes all optional editorial patterns without adding scene capabilities', () => {
+    const catalog = formatExplanationPatternCatalog();
+    assert.equal(catalog.split('Suggested arc:').length - 1, 6);
+    assert.match(catalog, /evidence-demonstration/);
+    assert.doesNotMatch(catalog, /terminal:/);
   });
 
   it('refuses final IR planning without both approved authoring artifacts', () => {

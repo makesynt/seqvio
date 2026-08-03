@@ -28,6 +28,14 @@ The core package exports `EditorialPlan`, `validateEditorialPlan()`, and
 `formatEditorialPlanMarkdown()` for tools that need structured authoring data.
 The Markdown artifact remains the normal review surface.
 
+An EditorialPlan may select up to two soft explanation patterns: one primary
+and one supporting pattern. Seqvio provides `causal-diagnosis`,
+`mechanism-trace`, `system-flow`, `evidence-demonstration`,
+`misconception-reframe`, and `progressive-model`. They are optional editorial
+recipes, not executable templates. An agent may adapt their suggested stages or
+omit pattern selection entirely when a custom structure better fits the source.
+Pattern metadata does not change the ExplainerDocument schema or renderer.
+
 ## Visual design brief
 
 `VISUAL-DESIGN.md` records concrete visual decisions: canvas, palette,

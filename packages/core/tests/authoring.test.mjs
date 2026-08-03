@@ -3,6 +3,7 @@ import assert from 'node:assert';
 import {
   formatEditorialPlanMarkdown,
   formatVisualDesignBriefMarkdown,
+  listExplanationPatterns,
   validateEditorialPlan,
   validateAuthoringTrace,
   validateVisualDesignBrief,
@@ -20,6 +21,21 @@ const plan = {
   },
   thesis: 'Blocked install scripts can leave node-pty without a loadable native binary.',
   durationBudgetSec: 60,
+  explanationStrategy: {
+    patterns: [
+      {
+        id: 'causal-diagnosis',
+        role: 'primary',
+        reason: 'The source contains an observed failure, a break point, and a verifiable repair.',
+        adaptations: ['Combine the repair and verification into one concise section.'],
+      },
+      {
+        id: 'evidence-demonstration',
+        role: 'supporting',
+        reason: 'The conclusion depends on distinguishing command output from a loadable artifact.',
+      },
+    ],
+  },
   concepts: [
     {
       id: 'blocked-script',
@@ -77,7 +93,56 @@ describe('human-readable authoring artifacts', () => {
     const markdown = formatEditorialPlanMarkdown(plan);
     assert.match(markdown, /# Editorial Plan:/);
     assert.match(markdown, /Decision: \*\*omit\*\*/);
+    assert.match(markdown, /## Explanation Strategy/);
+    assert.match(markdown, /Causal diagnosis/);
+    assert.match(markdown, /Combine the repair and verification/);
     assert.match(markdown, /## Explanation Structure/);
+  });
+
+  it('exports six optional explanation patterns without requiring one', () => {
+    assert.deepEqual(
+      listExplanationPatterns().map((pattern) => pattern.id),
+      [
+        'causal-diagnosis',
+        'mechanism-trace',
+        'system-flow',
+        'evidence-demonstration',
+        'misconception-reframe',
+        'progressive-model',
+      ],
+    );
+    const customPlan = { ...plan, explanationStrategy: undefined };
+    assert.deepEqual(validateEditorialPlan(customPlan), []);
+    assert.match(formatEditorialPlanMarkdown(customPlan), /Custom structure/);
+  });
+
+  it('validates strategy references but keeps pattern fit advisory', () => {
+    const unknown = {
+      ...plan,
+      explanationStrategy: {
+        patterns: [{ id: 'generic-template', role: 'primary', reason: 'Forced template.' }],
+      },
+    };
+    assert.ok(validateEditorialPlan(unknown).some((issue) => issue.code === 'unknown_explanation_pattern'));
+
+    const broad = {
+      ...plan,
+      explanationStrategy: {
+        patterns: [
+          ...plan.explanationStrategy.patterns,
+          { id: 'system-flow', role: 'supporting', reason: 'A third optional lens.' },
+        ],
+      },
+    };
+    const broadIssues = validateEditorialPlan(broad);
+    assert.ok(broadIssues.some((issue) => issue.code === 'too_many_explanation_patterns' && issue.severity === 'warning'));
+
+    const malformed = {
+      ...plan,
+      explanationStrategy: { patterns: [null, { id: 'causal-diagnosis', role: 'primary' }] },
+    };
+    assert.doesNotThrow(() => validateEditorialPlan(malformed));
+    assert.ok(validateEditorialPlan(malformed).some((issue) => issue.code === 'invalid_explanation_pattern_selection'));
   });
 
   it('rejects an included concept that is missing from the structure', () => {

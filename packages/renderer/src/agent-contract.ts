@@ -5,7 +5,10 @@
  * returned JSON deterministically. This file does not call AI or the network.
  */
 
-import { listAgentAuthorableSceneCapabilities } from '@seqvio/core';
+import {
+  listAgentAuthorableSceneCapabilities,
+  listExplanationPatterns,
+} from '@seqvio/core';
 
 export type AgentLanguage = 'zh' | 'en' | 'auto';
 export type AgentDomain =
@@ -30,6 +33,15 @@ export interface AgentAuthoringContext {
   visualDesignBrief?: string;
 }
 
+export function formatExplanationPatternCatalog(): string {
+  return listExplanationPatterns()
+    .map((pattern) => {
+      const arc = pattern.stages.map((stage) => stage.title).join(' -> ');
+      return `- ${pattern.id}: ${pattern.intent}\n  Suggested arc: ${arc}`;
+    })
+    .join('\n');
+}
+
 export function formatEditorialPlanningPrompt(
   content: string,
   options: AgentPlanningOptions = {}
@@ -48,6 +60,7 @@ The plan must contain these headings:
 - Objective
 - Audience (including prior knowledge and likely misconceptions)
 - Thesis
+- Explanation Strategy
 - Content Decisions (each item: stable id, include/omit, role, reason, prerequisites, time estimate)
 - Explanation Structure (each section: stable id, purpose, concept ids, audience outcome, target seconds)
 
@@ -56,7 +69,15 @@ Rules:
 - Every included essential concept must appear in the explanation structure.
 - Keep the section budget within the intended video length.
 - One section should perform one cognitive job.
+- Select zero to two explanation patterns only when they improve the content.
+- If selected, use exactly one primary pattern, optionally one supporting pattern,
+  and state the reason and any adaptations. Patterns are guidance, not templates:
+  reorder, merge, or omit suggested stages when the source requires it.
+- If none fits, write "Custom structure; no library pattern selected."
 - Return Markdown only, beginning with "# Editorial Plan:".
+
+Available optional explanation patterns:
+${formatExplanationPatternCatalog()}
 
 ${language}
 ${describeDomain(options.domain)}

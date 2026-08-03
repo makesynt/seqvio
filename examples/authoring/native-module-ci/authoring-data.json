@@ -17,6 +17,23 @@
     },
     "thesis": "The rebuild command can succeed while npm blocks the install script that produces pty.node, so verification must test both the artifact and the import.",
     "durationBudgetSec": 75,
+    "explanationStrategy": {
+      "patterns": [
+        {
+          "id": "causal-diagnosis",
+          "role": "primary",
+          "reason": "The source contains an observed failure, an expected install path, a break point, a root cause, and a verifiable repair.",
+          "adaptations": [
+            "Combine repair and verification into the final section to stay within the duration budget."
+          ]
+        },
+        {
+          "id": "evidence-demonstration",
+          "role": "supporting",
+          "reason": "The conclusion must be supported by checking the native artifact and importing the module, not by trusting the rebuild message."
+        }
+      ]
+    },
     "concepts": [
       {
         "id": "success-is-not-artifact",

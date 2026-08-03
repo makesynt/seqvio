@@ -4,6 +4,7 @@ import {
   type EditorialPlan,
   type VisualDesignBrief,
 } from './schema';
+import { isExplanationPatternId } from './patterns';
 import {
   EXPLAINER_DOCUMENT_DEFAULTS,
   type ExplainerDocument,
@@ -30,6 +31,49 @@ export function validateEditorialPlan(plan: EditorialPlan): AuthoringIssue[] {
   }
   if (!Number.isFinite(plan.durationBudgetSec) || plan.durationBudgetSec <= 0) {
     issues.push({ severity: 'error', path: 'durationBudgetSec', code: 'invalid_duration_budget', message: 'Duration budget must be greater than zero.' });
+  }
+
+  const strategy = plan.explanationStrategy;
+  if (strategy) {
+    if (!Array.isArray(strategy.patterns) || strategy.patterns.length === 0) {
+      issues.push({ severity: 'warning', path: 'explanationStrategy.patterns', code: 'empty_explanation_strategy', message: 'Omit explanationStrategy when no library pattern improves the plan.' });
+    } else {
+      const selections = strategy.patterns as unknown[];
+      if (strategy.patterns.length > 2) {
+        issues.push({ severity: 'warning', path: 'explanationStrategy.patterns', code: 'too_many_explanation_patterns', message: 'More than two patterns usually weakens the editorial focus; keep only patterns that materially shape the explanation.' });
+      }
+      const ids = selections.map((selection) => (
+        selection && typeof selection === 'object' && 'id' in selection
+          ? String((selection as { id?: unknown }).id)
+          : ''
+      ));
+      for (const id of duplicateIds(ids)) {
+        issues.push({ severity: 'error', path: 'explanationStrategy.patterns', code: 'duplicate_explanation_pattern', message: `Explanation pattern "${id}" is selected more than once.` });
+      }
+      const primaryCount = selections.filter((selection) => (
+        selection && typeof selection === 'object' && (selection as { role?: unknown }).role === 'primary'
+      )).length;
+      if (primaryCount !== 1) {
+        issues.push({ severity: 'error', path: 'explanationStrategy.patterns', code: 'invalid_primary_pattern_count', message: 'A selected strategy must contain exactly one primary pattern.' });
+      }
+      selections.forEach((rawSelection, index) => {
+        const selectionPath = `explanationStrategy.patterns[${index}]`;
+        if (!rawSelection || typeof rawSelection !== 'object') {
+          issues.push({ severity: 'error', path: selectionPath, code: 'invalid_explanation_pattern_selection', message: 'Pattern selection must be an object.' });
+          return;
+        }
+        const selection = rawSelection as { id?: unknown; role?: unknown; reason?: unknown };
+        if (!isExplanationPatternId(selection.id)) {
+          issues.push({ severity: 'error', path: `${selectionPath}.id`, code: 'unknown_explanation_pattern', message: `Unknown explanation pattern "${String(selection.id)}".` });
+        }
+        if (selection.role !== 'primary' && selection.role !== 'supporting') {
+          issues.push({ severity: 'error', path: `${selectionPath}.role`, code: 'invalid_explanation_pattern_role', message: 'Pattern role must be primary or supporting.' });
+        }
+        if (typeof selection.reason !== 'string' || !selection.reason.trim()) {
+          issues.push({ severity: 'warning', path: `${selectionPath}.reason`, code: 'missing_explanation_pattern_reason', message: 'Explain why this pattern fits the source, or remove the selection.' });
+        }
+      });
+    }
   }
 
   for (const id of duplicateIds(plan.concepts.map((concept) => concept.id))) {

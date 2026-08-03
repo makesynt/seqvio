@@ -1,6 +1,31 @@
 export const EDITORIAL_PLAN_FORMAT = 'seqvio-editorial-plan' as const;
 export const VISUAL_DESIGN_BRIEF_FORMAT = 'seqvio-visual-design' as const;
 
+export const EXPLANATION_PATTERN_IDS = [
+  'causal-diagnosis',
+  'mechanism-trace',
+  'system-flow',
+  'evidence-demonstration',
+  'misconception-reframe',
+  'progressive-model',
+] as const;
+
+export type ExplanationPatternId = (typeof EXPLANATION_PATTERN_IDS)[number];
+export type ExplanationPatternRole = 'primary' | 'supporting';
+
+export interface ExplanationPatternSelection {
+  id: ExplanationPatternId;
+  role: ExplanationPatternRole;
+  reason: string;
+  /** Explicit departures from the suggested pattern arc. */
+  adaptations?: string[];
+}
+
+export interface EditorialExplanationStrategy {
+  /** Omit explanationStrategy entirely when a custom structure is better. */
+  patterns: ExplanationPatternSelection[];
+}
+
 export type EditorialConceptRole =
   | 'essential'
   | 'evidence'
@@ -28,6 +53,8 @@ export interface EditorialPlan {
   };
   thesis: string;
   durationBudgetSec: number;
+  /** Optional, composable structural guidance. It does not constrain executable IR. */
+  explanationStrategy?: EditorialExplanationStrategy;
   concepts: Array<{
     id: string;
     claim: string;
