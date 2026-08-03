@@ -28,6 +28,22 @@ Node.js maintainers who understand npm and CI but do not routinely debug native 
 
 The rebuild command can succeed while npm blocks the install script that produces pty.node, so verification must test both the artifact and the import.
 
+## Explanation Strategy
+
+### Causal diagnosis
+
+- ID: `causal-diagnosis`
+- Role: **primary**
+- Reason: The source contains an observed failure, an expected install path, a break point, a root cause, and a verifiable repair.
+- Adaptations:
+  - Combine repair and verification into the final section to stay within the duration budget.
+
+### Evidence demonstration
+
+- ID: `evidence-demonstration`
+- Role: **supporting**
+- Reason: The conclusion must be supported by checking the native artifact and importing the module, not by trusting the rebuild message.
+
 ## Content Decisions
 
 ### Command success and native artifact existence are different conditions.

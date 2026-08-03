@@ -1,9 +1,19 @@
 import type { EditorialPlan, VisualDesignBrief } from './schema';
+import { getExplanationPattern } from './patterns';
 
 function bullets(values: string[] | undefined, empty = 'None declared.'): string {
   return values?.length ? values.map((value) => `- ${value}`).join('\n') : empty;
 }
 export function formatEditorialPlanMarkdown(plan: EditorialPlan): string {
+  const strategy = plan.explanationStrategy?.patterns.length
+    ? plan.explanationStrategy.patterns.map((selection) => {
+        const pattern = getExplanationPattern(selection.id);
+        const adaptations = selection.adaptations?.length
+          ? `\n- Adaptations:\n${selection.adaptations.map((item) => `  - ${item}`).join('\n')}`
+          : '';
+        return `### ${pattern.name}\n\n- ID: \`${selection.id}\`\n- Role: **${selection.role}**\n- Reason: ${selection.reason}${adaptations}`;
+      }).join('\n\n')
+    : 'Custom structure; no library pattern selected.';
   const concepts = plan.concepts.map((concept) => {
     const lines = [
       `### ${concept.claim}`,
@@ -31,7 +41,7 @@ export function formatEditorialPlanMarkdown(plan: EditorialPlan): string {
     return lines.join('\n');
   }).join('\n\n');
 
-  return `---\nformat: ${plan.format}\nid: ${plan.id}\nduration_budget_sec: ${plan.durationBudgetSec}\n---\n\n# Editorial Plan: ${plan.title}\n\n## Objective\n\n${plan.objective}\n\n## Audience\n\n${plan.audience.description}\n\n### Prior Knowledge\n\n${bullets(plan.audience.priorKnowledge)}\n\n### Likely Misconceptions\n\n${bullets(plan.audience.likelyMisconceptions)}\n\n## Thesis\n\n${plan.thesis}\n\n## Content Decisions\n\n${concepts}\n\n## Explanation Structure\n\n${sections}\n`;
+  return `---\nformat: ${plan.format}\nid: ${plan.id}\nduration_budget_sec: ${plan.durationBudgetSec}\n---\n\n# Editorial Plan: ${plan.title}\n\n## Objective\n\n${plan.objective}\n\n## Audience\n\n${plan.audience.description}\n\n### Prior Knowledge\n\n${bullets(plan.audience.priorKnowledge)}\n\n### Likely Misconceptions\n\n${bullets(plan.audience.likelyMisconceptions)}\n\n## Thesis\n\n${plan.thesis}\n\n## Explanation Strategy\n\n${strategy}\n\n## Content Decisions\n\n${concepts}\n\n## Explanation Structure\n\n${sections}\n`;
 }
 
 export function formatVisualDesignBriefMarkdown(brief: VisualDesignBrief): string {
