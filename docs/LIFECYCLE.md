@@ -31,6 +31,13 @@ group, and `npm run version` derives the release line from their generated
 versions. It then synchronizes `seqvio.releaseTrain` metadata, internal exact
 dependency versions, the lockfile, and the private root release marker.
 
+The release command builds the complete workspace once in dependency order,
+verifies each package's dry-run tarball without lifecycle scripts, and then
+publishes through Changesets with npm lifecycle scripts disabled. This avoids
+concurrent `prepack` or `prepublishOnly` builds clearing a dependency's `dist`
+directory while another package is compiling. Package lifecycle builds remain
+available for standalone developer packing and publishing.
+
 Capture, Browser Recorder, and Terminal Narrator use independent pre-1.0
 versions. Independent versioning does not weaken dependency checks: references
 to another local Seqvio package must still use its exact current version.
