@@ -13,8 +13,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
 import { compileBrowserCapture } from '@seqvio/browser-recorder';
-import { compileCaptureManifestToCompositionDocument } from '@seqvio/capture';
-import { compileCompositionDocumentToTsx, resolveScenePacing } from '@seqvio/core';
+import { compileCaptureManifestToExplainerDocument } from '@seqvio/capture';
+import { compileExplainerDocumentToTsx, resolveScenePacing } from '@seqvio/core';
 import { compileTerminalCapture } from '@seqvio/terminal-narrator';
 import puppeteer from 'puppeteer';
 import {
@@ -287,13 +287,13 @@ async function runPipeline(kind, smokeTempRoot, artifactDir) {
     const capture = await createCapture(kind, workDir);
     await writeFile(capturePath, `${JSON.stringify(capture.manifest, null, 2)}\n`);
 
-    const seed = await compileCaptureManifestToCompositionDocument(capture.manifest, {
+    const seed = await compileCaptureManifestToExplainerDocument(capture.manifest, {
       jobDir: workDir,
       narration: { async narrate(step) { return capture.narrate(step); } },
       compilers: { [kind]: capture.compiler },
     });
     if (!seed.audioManifestPath) throw new Error(`${kind} compiler did not emit audio manifest.`);
-    await writeFile(componentPath, compileCompositionDocumentToTsx(seed.document).code);
+    await writeFile(componentPath, compileExplainerDocumentToTsx(seed.document).code);
 
     const sourceAudio = JSON.parse(await readFile(seed.audioManifestPath, 'utf8'));
     const scene = seed.document.scenes[0];

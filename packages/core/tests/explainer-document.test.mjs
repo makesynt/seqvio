@@ -1,17 +1,17 @@
 /**
- * CompositionDocument v2 tests — run against compiled dist.
+ * ExplainerDocument tests — run against compiled dist.
  * Build core first: `npm run build -w @seqvio/core`.
  */
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import {
-  validateCompositionDocument,
-  compileCompositionDocumentToTsx,
-  storyboardToCompositionV2,
+  validateExplainerDocument,
+  compileExplainerDocumentToTsx,
+  storyboardToExplainerDocument,
   validateIr,
   compileIr,
-  detectIrVersion,
+  detectIrFormat,
   SCENE_CAPABILITIES,
   SCENE_TYPES,
   listAgentAuthorableSceneCapabilities,
@@ -22,7 +22,7 @@ describe('scene capability registry', () => {
     assert.deepStrictEqual(SCENE_TYPES, ['whiteboard', 'code', 'diagram', 'terminal', 'browser']);
     for (const type of SCENE_TYPES) {
       const capability = SCENE_CAPABILITIES[type];
-      assert.strictEqual(capability.schemaVersion, '2.0');
+      assert.strictEqual(capability.schemaVersion, '1.0');
       assert.strictEqual(capability.compiler, 'complete');
       assert.strictEqual(capability.lifecycle, 'public');
       assert.ok(capability.requiredPackage.startsWith('@seqvio/'));
@@ -35,8 +35,9 @@ describe('scene capability registry', () => {
   });
 });
 
-const mixedV2 = {
-  version: '2.0',
+const mixedExplainer = {
+  format: 'seqvio-explainer',
+  schemaVersion: '1.0',
   id: 'technical-demo',
   scenes: [
     {
@@ -88,27 +89,27 @@ const mixedV2 = {
   ],
 };
 
-describe('detectIrVersion', () => {
-  it('detects composition v2', () => {
-    assert.strictEqual(detectIrVersion(mixedV2), 'composition-v2');
+describe('detectIrFormat', () => {
+  it('detects an explainer document', () => {
+    assert.strictEqual(detectIrFormat(mixedExplainer), 'explainer');
   });
 
   it('detects storyboard v1', () => {
     assert.strictEqual(
-      detectIrVersion({ id: 'demo', scenes: [{ id: 's', elements: [] }] }),
-      'storyboard-v1'
+      detectIrFormat({ id: 'demo', scenes: [{ id: 's', elements: [] }] }),
+      'storyboard'
     );
   });
 });
 
-describe('validateCompositionDocument', () => {
+describe('validateExplainerDocument', () => {
   it('accepts a mixed whiteboard + technical document', () => {
-    assert.deepStrictEqual(validateCompositionDocument(mixedV2), []);
+    assert.deepStrictEqual(validateExplainerDocument(mixedExplainer), []);
   });
 
   it('rejects unknown annotation targets', () => {
-    const issues = validateCompositionDocument({
-      ...mixedV2,
+    const issues = validateExplainerDocument({
+      ...mixedExplainer,
       scenes: [
         {
           type: 'whiteboard',
@@ -131,8 +132,8 @@ describe('validateCompositionDocument', () => {
   });
 
   it('rejects chapter references to unknown scenes', () => {
-    const issues = validateCompositionDocument({
-      version: '2.0',
+    const issues = validateExplainerDocument({
+      format: 'seqvio-explainer', schemaVersion: '1.0',
       id: 'x',
       scenes: [{ type: 'code', id: 'c', language: 'js', source: '', steps: [] }],
       chapters: [{ id: 'ch', sceneIds: ['missing'] }],
@@ -141,16 +142,16 @@ describe('validateCompositionDocument', () => {
   });
 
   it('rejects unknown pacing profiles', () => {
-    const issues = validateCompositionDocument({
-      version: '2.0', id: 'x', pacingProfile: 'future-v9',
+    const issues = validateExplainerDocument({
+      format: 'seqvio-explainer', schemaVersion: '1.0', id: 'x', pacingProfile: 'future-v9',
       scenes: [{ type: 'code', id: 'c', language: 'js', source: '', steps: [] }],
     });
     assert.ok(issues.some((issue) => issue.code === 'unsupported_pacing_profile'));
   });
 
   it('rejects a terminal scene with neither events nor commands', () => {
-    const issues = validateCompositionDocument({
-      version: '2.0',
+    const issues = validateExplainerDocument({
+      format: 'seqvio-explainer', schemaVersion: '1.0',
       id: 'x',
       scenes: [{ type: 'terminal', id: 'shell' }],
     });
@@ -158,8 +159,8 @@ describe('validateCompositionDocument', () => {
   });
 
   it('rejects a terminal event with an invalid kind', () => {
-    const issues = validateCompositionDocument({
-      version: '2.0',
+    const issues = validateExplainerDocument({
+      format: 'seqvio-explainer', schemaVersion: '1.0',
       id: 'x',
       scenes: [
         {
@@ -178,8 +179,8 @@ describe('validateCompositionDocument', () => {
       { type: 'diff', id: 'change', before: 'old', after: 'new' },
       { type: 'infographic', id: 'summary', panels: [{ id: 'total', label: 'Total' }] },
     ]) {
-      const issues = validateCompositionDocument({
-        version: '2.0',
+      const issues = validateExplainerDocument({
+        format: 'seqvio-explainer', schemaVersion: '1.0',
         id: `removed-${scene.type}`,
         scenes: [scene],
       });
@@ -191,8 +192,8 @@ describe('validateCompositionDocument', () => {
   });
 
   it('accepts a jointly authored explanation beat and visual target', () => {
-    const issues = validateCompositionDocument({
-      version: '2.0',
+    const issues = validateExplainerDocument({
+      format: 'seqvio-explainer', schemaVersion: '1.0',
       id: 'beat-demo',
       scenes: [{
         type: 'whiteboard',
@@ -213,8 +214,8 @@ describe('validateCompositionDocument', () => {
   });
 
   it('rejects missing, ambiguous, and unknown beat references', () => {
-    const issues = validateCompositionDocument({
-      version: '2.0',
+    const issues = validateExplainerDocument({
+      format: 'seqvio-explainer', schemaVersion: '1.0',
       id: 'bad-beats',
       scenes: [{
         type: 'whiteboard',
@@ -241,20 +242,21 @@ describe('validateCompositionDocument', () => {
   });
 });
 
-describe('storyboardToCompositionV2', () => {
+describe('storyboardToExplainerDocument', () => {
   it('wraps whiteboard scenes with type whiteboard', () => {
-    const migrated = storyboardToCompositionV2({
+    const migrated = storyboardToExplainerDocument({
       id: 'demo',
       scenes: [{ id: 'intro', elements: [{ type: 'text', text: 'Hi', position: { x: 1, y: 1 } }] }],
     });
-    assert.strictEqual(migrated.version, '2.0');
+    assert.strictEqual(migrated.format, 'seqvio-explainer');
+    assert.strictEqual(migrated.schemaVersion, '1.0');
     assert.strictEqual(migrated.scenes[0].type, 'whiteboard');
   });
 });
 
-describe('compileCompositionDocumentToTsx', () => {
+describe('compileExplainerDocumentToTsx', () => {
   it('emits whiteboard and technical components', () => {
-    const { code } = compileCompositionDocumentToTsx(mixedV2);
+    const { code } = compileExplainerDocumentToTsx(mixedExplainer);
     assert.match(code, /from '@seqvio\/core'/);
     assert.match(code, /from '@seqvio\/whiteboard'/);
     assert.match(code, /from '@seqvio\/technical'/);
@@ -271,8 +273,8 @@ describe('compileCompositionDocumentToTsx', () => {
   });
 
   it('converts legacy terminal commands into visible events and steps', () => {
-    const { code } = compileCompositionDocumentToTsx({
-      version: '2.0',
+    const { code } = compileExplainerDocumentToTsx({
+      format: 'seqvio-explainer', schemaVersion: '1.0',
       id: 'terminal-legacy',
       scenes: [
         {
@@ -295,8 +297,8 @@ describe('compileCompositionDocumentToTsx', () => {
       { timeMs: 500, kind: 'stdout', text: 'hi\n' },
     ];
     const steps = [{ id: 's1', label: 'Run echo', timeMs: 0 }];
-    const { code } = compileCompositionDocumentToTsx({
-      version: '2.0',
+    const { code } = compileExplainerDocumentToTsx({
+      format: 'seqvio-explainer', schemaVersion: '1.0',
       id: 'terminal-explicit',
       scenes: [{ type: 'terminal', id: 'shell', events, steps }],
     });
@@ -310,19 +312,19 @@ describe('compileCompositionDocumentToTsx', () => {
   it('refuses removed scene types when validation is bypassed', () => {
     for (const type of ['chat', 'diff', 'infographic']) {
       assert.throws(
-        () => compileCompositionDocumentToTsx({
-          version: '2.0',
+        () => compileExplainerDocumentToTsx({
+          format: 'seqvio-explainer', schemaVersion: '1.0',
           id: `removed-${type}`,
           scenes: [{ type, id: 'removed' }],
         }),
-        new RegExp(`Unsupported CompositionDocument scene type: ${type}`),
+        new RegExp(`Unsupported ExplainerDocument scene type: ${type}`),
       );
     }
   });
 
   it('compiles explanation beats into visual starts and audio metadata', () => {
-    const { code } = compileCompositionDocumentToTsx({
-      version: '2.0',
+    const { code } = compileExplainerDocumentToTsx({
+      format: 'seqvio-explainer', schemaVersion: '1.0',
       id: 'beat-compile',
       fps: 30,
       scenes: [{
@@ -352,7 +354,7 @@ describe('compileCompositionDocumentToTsx', () => {
 
   it('retimes code and diagram steps from explanation targets', () => {
     const document = {
-      version: '2.0', id: 'technical-beats', fps: 30,
+      format: 'seqvio-explainer', schemaVersion: '1.0', id: 'technical-beats', fps: 30,
       scenes: [
         {
           type: 'code', id: 'code', language: 'ts', source: 'const x = 1;',
@@ -379,24 +381,24 @@ describe('compileCompositionDocumentToTsx', () => {
         },
       ],
     };
-    assert.deepEqual(validateCompositionDocument(document), []);
-    const { code } = compileCompositionDocumentToTsx(document);
+    assert.deepEqual(validateExplainerDocument(document), []);
+    const { code } = compileExplainerDocumentToTsx(document);
     assert.doesNotMatch(code, /"at": 999/);
     assert.match(code, /"id": "show-line",\s+"at": 0/);
     assert.match(code, /"id": "show-api",\s+"at": 0,\s+"action": "reveal"/);
   });
 });
 
-describe('technical-explainer-v2 reference IR', () => {
+describe('technical explainer reference IR', () => {
   it('validates the full 3-5 minute reference document', async () => {
     const { readFileSync } = await import('node:fs');
     const { fileURLToPath } = await import('node:url');
     const { dirname, join } = await import('node:path');
     const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
     const ir = JSON.parse(
-      readFileSync(join(root, 'examples', 'ir', 'technical-explainer-v2.json'), 'utf8')
+      readFileSync(join(root, 'examples', 'ir', 'technical-explainer.explainer.json'), 'utf8')
     );
-    const issues = validateCompositionDocument(ir);
+    const issues = validateExplainerDocument(ir);
     assert.deepStrictEqual(issues, []);
     assert.strictEqual(ir.scenes.length, 9);
     assert.strictEqual(ir.chapters.length, 5);
@@ -409,13 +411,13 @@ describe('technical-explainer-v2 reference IR', () => {
 });
 
 describe('validateIr / compileIr', () => {
-  it('routes v2 documents through the composition pipeline', () => {
-    assert.deepStrictEqual(validateIr(mixedV2), []);
-    const { code } = compileIr(mixedV2);
-    assert.match(code, /CompositionDocument v2/);
+  it('routes explainer documents through the explainer pipeline', () => {
+    assert.deepStrictEqual(validateIr(mixedExplainer), []);
+    const { code } = compileIr(mixedExplainer);
+    assert.match(code, /ExplainerDocument/);
   });
 
-  it('still routes v1 storyboards through the storyboard pipeline', () => {
+  it('still routes storyboards through the storyboard pipeline', () => {
     const v1 = {
       id: 'demo',
       scenes: [{ id: 's', elements: [{ type: 'text', text: 'Hi', position: { x: 1, y: 1 } }] }],

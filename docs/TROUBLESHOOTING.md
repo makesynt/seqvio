@@ -116,7 +116,7 @@ If durations still look wrong, inspect the resolved manifest and confirm:
 
 ### Visual actions drift from the spoken explanation
 
-For CompositionDocument v2, treat `scene.explanation.cues` and
+For ExplainerDocument, treat `scene.explanation.cues` and
 `scene.explanation.beats` as one contract. Do not repair drift by independently
 moving visual frames after synthesis.
 

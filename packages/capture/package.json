@@ -5,7 +5,7 @@
     "lifecycle": "experimental",
     "versionPolicy": "independent"
   },
-  "description": "Capture-session contract and manifest->CompositionDocument compiler for Seqvio",
+  "description": "Capture-session contract and manifest-to-ExplainerDocument compiler for Seqvio",
   "keywords": [
     "seqvio",
     "capture",

@@ -96,11 +96,11 @@ Audio and captions:
 - `--captions <path>` — caption JSON file
 - `--burnCaptions` — optional hard-coded subtitle overlay (off by default; see [audio-workflow.md](audio-workflow.md#caption-burn-in-optional))
 
-Chapter render / resume (CompositionDocument v2):
+Chapter render / resume (ExplainerDocument):
 
 - `--renderPlan <path>` — chapter render plan JSON from `seqvio-generate render-plan`
 - `--chapterDir <path>` — directory for per-chapter MP4s and hash cache
-- `--ir <path>` — source CompositionDocument; re-syncs plan hashes before render
+- `--ir <path>` — source ExplainerDocument; re-syncs plan hashes before render
 - `--onlyChapters <id,id>` — render/stitch only listed chapter ids
 - `--resume` — skip chapters whose content/settings hash still matches cache
 
@@ -140,20 +140,20 @@ See [audio-workflow.md](audio-workflow.md) for provider selection and manifest d
 
 ## Chapter render (long technical videos)
 
-Build a plan from CompositionDocument v2, then render with resume:
+Build a plan from ExplainerDocument, then render with resume:
 
 ```bash
 node packages/renderer/dist/generate-cli.js render-plan \
-  --ir examples/ir/technical-explainer-v2.json \
-  --out examples/ir/technical-explainer-v2.render-plan.json \
+  --ir examples/ir/technical-explainer.explainer.json \
+  --out examples/ir/technical-explainer.render-plan.json \
   --force
 
 node packages/renderer/dist/cli.js \
-  --component examples/compositions/technical-explainer-v2.tsx \
+  --component examples/compositions/technical-explainer.tsx \
   --output output/technical-explainer.mp4 \
-  --renderPlan examples/ir/technical-explainer-v2.render-plan.json \
+  --renderPlan examples/ir/technical-explainer.render-plan.json \
   --chapterDir output/chapters/technical-explainer \
-  --ir examples/ir/technical-explainer-v2.json \
+  --ir examples/ir/technical-explainer.explainer.json \
   --preset preview \
   --resume
 ```
@@ -162,11 +162,11 @@ Iterate on one chapter:
 
 ```bash
 node packages/renderer/dist/cli.js \
-  --component examples/compositions/technical-explainer-v2.tsx \
+  --component examples/compositions/technical-explainer.tsx \
   --output output/recap-only.mp4 \
-  --renderPlan examples/ir/technical-explainer-v2.render-plan.json \
+  --renderPlan examples/ir/technical-explainer.render-plan.json \
   --chapterDir output/chapters/technical-explainer \
-  --ir examples/ir/technical-explainer-v2.json \
+  --ir examples/ir/technical-explainer.explainer.json \
   --onlyChapters recap \
   --preset preview \
   --resume

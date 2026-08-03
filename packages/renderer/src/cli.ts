@@ -62,7 +62,7 @@ Options:
                          whiteboard content in the lower third.
   --renderPlan <path>   Chapter render plan JSON (from seqvio-generate render-plan)
   --chapterDir <path>   Directory for chapter MP4 outputs and render-report.json
-  --ir <path>           CompositionDocument v2 JSON; refreshes hashes/frame ranges
+  --ir <path>           ExplainerDocument JSON; refreshes hashes/frame ranges
   --onlyChapters <ids>  Comma-separated chapter ids to render (stitch still uses full plan)
   --resume              Skip chapters whose content/settings hash already rendered
   --chapters            Auto-generate render plan from composition + manifest and

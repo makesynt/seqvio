@@ -214,7 +214,7 @@ export interface PipelineResult {
   castPath: string;
   componentPath?: string;
   captureManifestPath?: string;
-  compositionDocumentPath?: string;
+  explainerDocumentPath?: string;
   audioManifestPath?: string;
   resolvedAudioManifestPath?: string;
   qaReportPath?: string;

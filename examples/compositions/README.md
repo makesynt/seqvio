@@ -2,7 +2,7 @@
 
 Handwritten or compiled video compositions for `seqvio-render`. Each file exports
 a default React component and `export const meta` with `duration` and `fps`.
-For new technical explainers, author `CompositionDocument v2` under
+For new technical explainers, review `EDITORIAL.md` and `VISUAL-DESIGN.md`, then author `ExplainerDocument` under
 `examples/ir/` and compile it here so narration and visual ExplanationBeats are
 designed together.
 
@@ -49,5 +49,5 @@ node packages/renderer/dist/cli.js \
 
 More single-scene samples: `packages/whiteboard/examples/`.
 
-CompositionDocument examples: `examples/ir/`. Timing details:
+ExplainerDocument examples: `examples/ir/`. Timing details:
 [`docs/EXPLANATION-BEAT-TIMING.md`](../../docs/EXPLANATION-BEAT-TIMING.md).

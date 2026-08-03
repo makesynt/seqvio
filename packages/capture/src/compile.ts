@@ -1,5 +1,5 @@
 /**
- * Compile a CaptureManifest into a CompositionDocument IR.
+ * Compile a CaptureManifest into an ExplainerDocument IR.
  *
  * This is a dispatcher: per-kind compilers are injected via `options.compilers`
  * because they carry kind-specific dependencies (terminal needs @xterm/headless
@@ -17,7 +17,7 @@ import type {
   CaptureKind,
   CaptureManifest,
   CompileOptions,
-  CompositionDocumentSeed,
+  ExplainerDocumentSeed,
 } from './types';
 
 type CaptureManifestFor<K extends CaptureKind> = Extract<CaptureManifest, { kind: K }>;
@@ -25,7 +25,7 @@ type CaptureManifestFor<K extends CaptureKind> = Extract<CaptureManifest, { kind
 export type CaptureCompiler<K extends CaptureKind> = (
   manifest: CaptureManifestFor<K>,
   options?: CompileOptions
-) => Promise<CompositionDocumentSeed>;
+) => Promise<ExplainerDocumentSeed>;
 
 export type CompilerMap = {
   [K in CaptureKind]?: CaptureCompiler<K>;
@@ -36,10 +36,10 @@ export interface CompileCaptureOptions extends CompileOptions {
   compilers?: CompilerMap;
 }
 
-export async function compileCaptureManifestToCompositionDocument(
+export async function compileCaptureManifestToExplainerDocument(
   manifest: CaptureManifest,
   options?: CompileCaptureOptions
-): Promise<CompositionDocumentSeed> {
+): Promise<ExplainerDocumentSeed> {
   const missingCompiler = (): never => {
     throw new Error(
       `No compiler registered for capture kind "${manifest.kind}". ` +

@@ -3,9 +3,9 @@
  */
 
 import {
-  COMPOSITION_DOCUMENT_DEFAULTS,
+  EXPLAINER_DOCUMENT_DEFAULTS,
   type ChapterSpec,
-  type CompositionDocument,
+  type ExplainerDocument,
   type RenderPlanManifest,
   type SceneSpec,
 } from './schema';
@@ -27,14 +27,14 @@ export interface DocumentTimeline {
   totalFrames: number;
 }
 
-export function sceneDurationFrames(scene: SceneSpec, fps: number = COMPOSITION_DOCUMENT_DEFAULTS.fps): number {
+export function sceneDurationFrames(scene: SceneSpec, fps: number = EXPLAINER_DOCUMENT_DEFAULTS.fps): number {
   return resolveScenePacing(scene, fps).durationFrames;
 }
 
-export function computeDocumentTimeline(doc: CompositionDocument): DocumentTimeline {
+export function computeDocumentTimeline(doc: ExplainerDocument): DocumentTimeline {
   const transitionDuration =
-    doc.transitionDuration ?? COMPOSITION_DOCUMENT_DEFAULTS.transitionDuration;
-  const fps = doc.fps ?? COMPOSITION_DOCUMENT_DEFAULTS.fps;
+    doc.transitionDuration ?? EXPLAINER_DOCUMENT_DEFAULTS.transitionDuration;
+  const fps = doc.fps ?? EXPLAINER_DOCUMENT_DEFAULTS.fps;
   let cursor = 0;
   const scenes: DocumentTimelineScene[] = [];
   const pacingPolicy = resolvePacingProfile(doc.pacingProfile).policy;
@@ -51,21 +51,21 @@ export function computeDocumentTimeline(doc: CompositionDocument): DocumentTimel
   });
 
   return {
-    fps: doc.fps ?? COMPOSITION_DOCUMENT_DEFAULTS.fps,
+    fps: doc.fps ?? EXPLAINER_DOCUMENT_DEFAULTS.fps,
     transitionDuration,
     scenes,
     totalFrames: cursor,
   };
 }
 
-function sceneIndexById(doc: CompositionDocument): Map<string, number> {
+function sceneIndexById(doc: ExplainerDocument): Map<string, number> {
   const map = new Map<string, number>();
   doc.scenes.forEach((scene, index) => map.set(scene.id, index));
   return map;
 }
 
 export function chapterFrameRange(
-  doc: CompositionDocument,
+  doc: ExplainerDocument,
   chapter: ChapterSpec,
   chapterIndex: number,
   chapters: ChapterSpec[],
@@ -106,13 +106,14 @@ export function hashStableJson(value: unknown): string {
 }
 
 export function chapterContentHash(
-  doc: CompositionDocument,
+  doc: ExplainerDocument,
   chapter: ChapterSpec
 ): string {
   const sceneById = new Map(doc.scenes.map((scene) => [scene.id, scene]));
   const payload = {
     compositionId: doc.id,
-    version: doc.version,
+    format: doc.format,
+    schemaVersion: doc.schemaVersion,
     width: doc.width,
     height: doc.height,
     fps: doc.fps,
@@ -123,7 +124,7 @@ export function chapterContentHash(
   return hashStableJson(payload);
 }
 
-export function buildRenderPlanFromDocument(doc: CompositionDocument): RenderPlanManifest {
+export function buildRenderPlanFromDocument(doc: ExplainerDocument): RenderPlanManifest {
   const timeline = computeDocumentTimeline(doc);
   const chapters =
     doc.chapters && doc.chapters.length > 0
@@ -156,7 +157,7 @@ export interface SyncRenderPlanResult {
  */
 export function syncRenderPlanWithDocument(
   plan: RenderPlanManifest,
-  doc: CompositionDocument
+  doc: ExplainerDocument
 ): SyncRenderPlanResult {
   const fresh = buildRenderPlanFromDocument(doc);
   const previous = new Map(plan.chapters.map((chapter) => [chapter.id, chapter]));

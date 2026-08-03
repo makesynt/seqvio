@@ -7,12 +7,13 @@ Seqvio itself does not call AI, OpenAI, or illustration APIs.
 
 ```text
 article / prompt / notes
-  -> seqvio-generate plan-agent writes a host-agent task
-  -> host agent returns IR JSON
+  -> plan-editorial -> reviewed EDITORIAL.md
+  -> plan-visual -> reviewed VISUAL-DESIGN.md
+  -> plan-agent -> host agent returns IR JSON
   -> seqvio-generate validate --json
   -> host agent repairs IR if needed
   -> seqvio-generate compile
-  -> optional: seqvio-generate render-plan   # CompositionDocument v2 only
+  -> optional: seqvio-generate render-plan   # ExplainerDocument only
   -> seqvio-render [--renderPlan --chapterDir --resume]
 ```
 
@@ -20,37 +21,44 @@ article / prompt / notes
 
 | Domain | Default IR |
 | --- | --- |
-| `history` / `science` / `auto` | Storyboard v1 (whiteboard) |
-| `programming` / `ai` / `devops` | CompositionDocument v2 |
+| `history` / `science` / `auto` | Storyboard (whiteboard) |
+| `programming` / `ai` / `devops` | ExplainerDocument |
 
-Force a format with `--ir-format storyboard-v1|composition-v2|auto`.
+Force a format with `--ir-format storyboard|explainer|auto`.
 
 ## Commands
 
-### Whiteboard storyboard (v1)
+### Human-readable authoring stages
 
 ```bash
-seqvio-generate plan-agent \
+seqvio-generate plan-editorial \
   --input article.txt \
-  --write-prompt task.md \
+  --write-prompt editorial-task.md \
   --language auto \
   --domain history \
   --max-scenes 5
+
+seqvio-generate plan-visual \
+  --input article.txt \
+  --editorial EDITORIAL.md \
+  --write-prompt visual-task.md
 ```
 
-### Technical composition (v2)
+Review both Markdown artifacts, then generate the executable IR task:
 
 ```bash
 seqvio-generate plan-agent \
   --input brief.txt \
   --write-prompt task.md \
+  --editorial EDITORIAL.md \
+  --visual-design VISUAL-DESIGN.md \
   --language en \
   --domain programming \
-  --ir-format composition-v2 \
+  --ir-format explainer \
   --max-scenes 7
 ```
 
-Validate the returned IR (auto-detects v1 vs v2):
+Validate the returned IR (auto-detects Storyboard vs ExplainerDocument):
 
 ```bash
 seqvio-generate validate --ir storyboard.json --json
@@ -69,8 +77,8 @@ For long technical videos, build a chapter render plan:
 
 ```bash
 seqvio-generate render-plan \
-  --ir examples/ir/technical-explainer-v2.json \
-  --out examples/ir/technical-explainer-v2.render-plan.json \
+  --ir examples/ir/technical-explainer.explainer.json \
+  --out examples/ir/technical-explainer.render-plan.json \
   --force
 ```
 
@@ -78,11 +86,11 @@ Render with chapter resume:
 
 ```bash
 seqvio-render \
-  --component examples/compositions/technical-explainer-v2.tsx \
+  --component examples/compositions/technical-explainer.tsx \
   --output output/technical-explainer.mp4 \
-  --renderPlan examples/ir/technical-explainer-v2.render-plan.json \
+  --renderPlan examples/ir/technical-explainer.render-plan.json \
   --chapterDir output/chapters/technical-explainer \
-  --ir examples/ir/technical-explainer-v2.json \
+  --ir examples/ir/technical-explainer.explainer.json \
   --preset preview \
   --resume
 ```
@@ -91,11 +99,11 @@ Render only one chapter while iterating:
 
 ```bash
 seqvio-render \
-  --component examples/compositions/technical-explainer-v2.tsx \
+  --component examples/compositions/technical-explainer.tsx \
   --output output/recap-only.mp4 \
-  --renderPlan examples/ir/technical-explainer-v2.render-plan.json \
+  --renderPlan examples/ir/technical-explainer.render-plan.json \
   --chapterDir output/chapters/technical-explainer \
-  --ir examples/ir/technical-explainer-v2.json \
+  --ir examples/ir/technical-explainer.explainer.json \
   --onlyChapters recap \
   --preset preview \
   --resume
@@ -110,7 +118,7 @@ When validation fails, use the JSON diagnostics directly:
 - `suggestion` gives the repair intent.
 - `expected` and `received` help preserve nearby valid fields.
 
-Common CompositionDocument v2 codes:
+Common ExplainerDocument codes:
 
 - `unknown_annotation_target`
 - `duplicate_addressable_id`
@@ -125,7 +133,7 @@ Repair the IR in place, then run `seqvio-generate validate --json` again.
 
 ## IR Expectations
 
-### Storyboard v1
+### Storyboard
 
 - `style: "whiteboard"` or omit `style`.
 - `scenes[].narration` contains full spoken sentences.
@@ -133,9 +141,9 @@ Repair the IR in place, then run `seqvio-generate validate --json` again.
 - `scenes[].elements` contains `text`, `shape`, `image`, and `icon` drawables.
 - Use explicit `position`, `from`, and `to` coordinates inside the target frame.
 
-### CompositionDocument v2
+### ExplainerDocument
 
-- `"version": "2.0"`.
+- `"format": "seqvio-explainer"` and `"schemaVersion": "1.0"`.
 - Scene types: `whiteboard`, `code`, `diagram`, `terminal`, and `browser`.
 - Unique ids for scenes, visual elements, Code/Diagram steps, diagram nodes/edges, and annotation targets.
 - Prefer semantic code/diagram steps over hand-authored pixel coordinates.

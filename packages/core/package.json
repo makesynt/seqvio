@@ -42,7 +42,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "node ../../scripts/clean-package-dist.mjs && tsc",
     "dev": "tsc --watch",
     "test": "node --test tests/*.test.mjs",
     "prepublishOnly": "npm run build"

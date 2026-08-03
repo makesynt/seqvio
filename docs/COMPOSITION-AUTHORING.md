@@ -2,11 +2,11 @@
 
 Seqvio renders **React/TSX** compositions to MP4 by mounting them in headless Chromium and capturing one screenshot per frame.
 
-TSX is the final production source: it is what gets bundled, rendered, reviewed, and hand-edited. For new agent-authored technical explainers, the recommended source contract is `CompositionDocument v2`; `seqvio-generate` validates and compiles it into TSX. Storyboard v1 remains a whiteboard-oriented input. Seqvio does not call AI or planner APIs itself.
+TSX is the final production source: it is what gets bundled, rendered, reviewed, and hand-edited. For new agent-authored explainers, review `EDITORIAL.md` and `VISUAL-DESIGN.md` first, then produce the executable `ExplainerDocument`; `seqvio-generate` validates and compiles it into TSX. Storyboard remains a whiteboard-oriented input. Seqvio does not call AI or planner APIs itself.
 
-## Recommended CompositionDocument path
+## Recommended ExplainerDocument path
 
-For narrated CompositionDocument scenes, design speech and visuals together in
+For narrated ExplainerDocument scenes, design speech and visuals together in
 `explanation`. Do not independently author a scene-level `narration` string and
 visual timestamps for the same scene.
 
@@ -182,13 +182,17 @@ Options: `--width`, `--height`, `--fps`, `--quality low|medium|high|4k`, `--pixe
 IR helpers:
 
 ```bash
-seqvio-generate plan-agent --input article.md --write-prompt task.md
+seqvio-generate plan-editorial --input article.md --write-prompt editorial-task.md
+seqvio-generate plan-visual --input article.md --editorial EDITORIAL.md --write-prompt visual-task.md
+seqvio-generate plan-agent --input article.md --editorial EDITORIAL.md --visual-design VISUAL-DESIGN.md --write-prompt ir-task.md
 seqvio-generate validate --ir storyboard.json --json
 seqvio-generate compile --ir storyboard.json --out examples/compositions/generated/storyboard.tsx
 ```
 
 For `programming`, `ai`, and `devops`, `plan-agent` defaults to
-CompositionDocument v2 and asks the host agent to emit ExplanationBeats. Run
+ExplainerDocument and asks the host agent to emit ExplanationBeats. The two
+human-readable authoring artifacts are required inputs so approved content
+omissions and visual direction are not reopened during IR generation. Run
 audio extraction and synthesis after compilation, then render with the resolved
 manifest:
 
@@ -203,7 +207,9 @@ seqvio-render --component generated.tsx --audioManifest output/audio/audio-manif
 
 ```mermaid
 flowchart LR
-  IR[CompositionDocument cues + Beats] --> TSX[generated/editable TSX]
+  Editorial[EDITORIAL.md] --> Design[VISUAL-DESIGN.md]
+  Design --> IR[ExplainerDocument cues + Beats]
+  IR --> TSX[generated/editable TSX]
   TSX --> Audio[TTS + semantic time map]
   Audio --> QA[QA]
   QA --> Bundle[esbuild bundle]

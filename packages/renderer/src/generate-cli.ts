@@ -2,7 +2,9 @@
 /**
  * seqvio-generate — deterministic Storyboard IR pipeline.
  *
- *   seqvio-generate plan-agent --input article.md --write-prompt task.md
+ *   seqvio-generate plan-editorial --input article.md --write-prompt editorial-task.md
+ *   seqvio-generate plan-visual --input article.md --editorial EDITORIAL.md --write-prompt visual-task.md
+ *   seqvio-generate plan-agent --input article.md --editorial EDITORIAL.md --visual-design VISUAL-DESIGN.md --write-prompt task.md
  *   seqvio-generate validate --ir story.json
  *   seqvio-generate compile --ir story.json --out scene.tsx
  */
@@ -12,16 +14,23 @@ import * as path from 'path';
 import {
   buildRenderPlanFromDocument,
   compileIr,
-  isCompositionDocumentV2,
+  isExplainerDocument,
   validateIr,
 } from '@seqvio/core';
-import { formatAgentPlanningPrompt, type AgentPlanningOptions } from './agent-contract';
+import {
+  formatAgentPlanningPrompt,
+  formatEditorialPlanningPrompt,
+  formatVisualDesignPrompt,
+  type AgentPlanningOptions,
+} from './agent-contract';
 
-type CommandName = 'compile' | 'validate' | 'plan-agent' | 'frame-spec' | 'render-plan';
+type CommandName = 'compile' | 'validate' | 'plan-editorial' | 'plan-visual' | 'plan-agent' | 'frame-spec' | 'render-plan';
 
 function printUsage(): void {
   console.log(`Usage:
-  seqvio-generate plan-agent --input <path> --write-prompt <path.md>
+  seqvio-generate plan-editorial --input <path> --write-prompt <path.md>
+  seqvio-generate plan-visual --input <path> --editorial <EDITORIAL.md> --write-prompt <path.md>
+  seqvio-generate plan-agent --input <path> --editorial <EDITORIAL.md> --visual-design <VISUAL-DESIGN.md> --write-prompt <path.md>
   seqvio-generate validate --ir <path>
   seqvio-generate compile --ir <path> --out <path.tsx>
   seqvio-generate render-plan --ir <path> --out <path.json>
@@ -31,11 +40,13 @@ function printUsage(): void {
 Options:
   --input <path>                  Source content for plan-agent
   --write-prompt <path>           Write host-agent task markdown
-  --ir <path>                     Path to storyboard IR or CompositionDocument v2 JSON
+  --editorial <path>              Approved human-readable editorial plan
+  --visual-design <path>          Approved human-readable visual design brief
+  --ir <path>                     Path to storyboard IR or ExplainerDocument JSON
   --out <path>                    Output TSX or FRAME.md path
   --language <code>               zh | en | auto (default: auto)
   --domain <name>                 history | science | programming | ai | devops | auto
-  --ir-format <name>              storyboard-v1 | composition-v2 | auto (default: auto)
+  --ir-format <name>              storyboard | explainer | auto (default: auto)
   --max-scenes <n>                Target scene count for the host agent (default: 5)
   --json                          Print validation issues as JSON
   --force                         Overwrite an existing output file
@@ -59,6 +70,8 @@ function parseArgs(argv: string[]): {
   if (
     maybeCommand === 'validate' ||
     maybeCommand === 'compile' ||
+    maybeCommand === 'plan-editorial' ||
+    maybeCommand === 'plan-visual' ||
     maybeCommand === 'plan-agent' ||
     maybeCommand === 'render-plan'
   ) {
@@ -114,6 +127,14 @@ function loadStoryboard(irPath: string): unknown {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(`Storyboard JSON is not valid JSON: ${message}`);
   }
+}
+
+function readRequiredFile(args: Map<string, string | boolean>, key: string): string {
+  const filePath = path.resolve(requireString(args, key));
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`${key} file not found: ${filePath}`);
+  }
+  return fs.readFileSync(filePath, 'utf8');
 }
 
 function writeOutput(outPath: string, content: string, force: boolean): void {
@@ -416,24 +437,34 @@ async function main(): Promise<void> {
     return;
   }
 
-  if (command === 'plan-agent') {
+  if (command === 'plan-editorial' || command === 'plan-visual' || command === 'plan-agent') {
     const inputPath = path.resolve(requireString(args, 'input'));
     const promptPath = path.resolve(requireString(args, 'write-prompt'));
     if (!fs.existsSync(inputPath)) {
       throw new Error(`Input not found: ${inputPath}`);
     }
     const content = fs.readFileSync(inputPath, 'utf8');
-    const prompt = formatAgentPlanningPrompt(content, planningOptions(args));
+    const options = planningOptions(args);
+    const prompt = command === 'plan-editorial'
+      ? formatEditorialPlanningPrompt(content, options)
+      : command === 'plan-visual'
+        ? formatVisualDesignPrompt(content, readRequiredFile(args, 'editorial'), options)
+        : formatAgentPlanningPrompt(content, options, {
+            editorialPlan: readRequiredFile(args, 'editorial'),
+            visualDesignBrief: readRequiredFile(args, 'visual-design'),
+          });
     writeOutput(promptPath, prompt, Boolean(args.get('force')));
     console.log(`Wrote host-agent planning task to ${promptPath}`);
-    console.log('Run the task in your agent, then validate and compile the returned IR.');
+    console.log(command === 'plan-agent'
+      ? 'Run the task in your agent, then validate and compile the returned IR.'
+      : 'Run the task in your agent, review the Markdown artifact, then continue to the next authoring stage.');
     return;
   }
 
   if (command === 'render-plan') {
     const ir = loadStoryboard(requireString(args, 'ir'));
-    if (!isCompositionDocumentV2(ir)) {
-      throw new Error('render-plan requires a CompositionDocument v2 IR (version "2.0").');
+    if (!isExplainerDocument(ir)) {
+      throw new Error('render-plan requires an ExplainerDocument IR (format "seqvio-explainer").');
     }
     const plan = buildRenderPlanFromDocument(ir);
     const outPath = path.resolve(requireString(args, 'out'));

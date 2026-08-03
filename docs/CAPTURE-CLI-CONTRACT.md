@@ -73,7 +73,7 @@ directory has been created. Paths inside it are relative to the job directory.
 | `plan.json` | yes | yes |
 | `recording-manifest.json` | yes | yes |
 | `capture-manifest.json` | yes | yes |
-| `composition-document.json` | yes | yes |
+| `explainer.json` | yes | yes |
 | `composition.tsx` | yes | yes |
 | `audio-manifest.json` | yes | yes |
 | `audio-manifest.resolved.json` | with audio | with audio |

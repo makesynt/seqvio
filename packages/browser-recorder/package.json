@@ -13,7 +13,7 @@
     "lifecycle": "experimental",
     "adapterLifecycle": "pre-stable",
     "versionPolicy": "independent",
-    "cliContractVersion": "1.0",
+    "cliContractVersion": "2.0",
     "artifactManifestVersion": "1.0"
   },
   "files": [

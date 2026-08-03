@@ -34,7 +34,7 @@ test('writeCaptureArtifacts dispatches terminal capture through IR to TSX', asyn
   assert.equal(artifacts.componentPath, path.join(jobDir, 'composition.tsx'));
   assert.equal(artifacts.audioManifestPath, path.join(jobDir, 'audio-manifest.json'));
   assert.equal(fs.existsSync(artifacts.captureManifestPath), true);
-  assert.equal(fs.existsSync(artifacts.compositionDocumentPath), true);
+  assert.equal(fs.existsSync(artifacts.explainerDocumentPath), true);
 
   const source = fs.readFileSync(artifacts.componentPath, 'utf8');
   assert.match(source, /TerminalXtermDemo/);

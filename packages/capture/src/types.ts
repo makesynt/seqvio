@@ -5,12 +5,12 @@
  * the UI) and explains it (generates narration from what actually happened, not
  * from the plan). The contract unifies terminal, browser, git, CI, and trace
  * capture sources behind a single CaptureSession interface, compiled to a
- * CompositionDocument IR so narration, groundTruth, and CI-diffability all
+ * ExplainerDocument IR so narration, groundTruth, and CI-diffability all
  * attach in one place.
  */
 
 import type {
-  CompositionDocument,
+  ExplainerDocument,
   TerminalRenderOptions,
   TimedPoint,
   RecordedFocusTarget,
@@ -127,7 +127,7 @@ export interface NarrationProvider {
   narrate(step: CaptureStep, manifest: CaptureManifest): Promise<string>;
 }
 
-// === Compile: manifest -> CompositionDocument IR ===
+// === Compile: manifest -> ExplainerDocument IR ===
 
 export interface CompileOptions {
   /** AI explain: if provided, narration is generated per step from capturedState. */
@@ -136,7 +136,7 @@ export interface CompileOptions {
   jobDir?: string;
 }
 
-export interface CompositionDocumentSeed {
-  document: CompositionDocument;
+export interface ExplainerDocumentSeed {
+  document: ExplainerDocument;
   audioManifestPath?: string;
 }

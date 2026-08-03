@@ -20,7 +20,7 @@ clear, narrated technical explanation:
 real system activity
   -> CaptureSession
   -> CaptureManifest
-  -> CompositionDocument
+  -> ExplainerDocument
   -> ExplanationBeat cues + visual actions + capture evidence
   -> TTS-resolved semantic time map
   -> supported explainer scenes
@@ -40,8 +40,8 @@ failures without relying on manual inspection.
 - `@seqvio/capture` defines a shared `CaptureSession -> CaptureManifest`
   contract for terminal and browser sources.
 - Terminal and browser production pipelines currently compile through
-  `CompositionDocument v2` before generating TSX.
-- `CompositionDocument v2` has complete compiler paths for `whiteboard`, `code`,
+  `ExplainerDocument` before generating TSX.
+- `ExplainerDocument` has complete compiler paths for `whiteboard`, `code`,
   `diagram`, `terminal`, and `browser` scenes.
 - ExplanationBeat authoring joins narration cues, exact phrase anchors, visual
   actions, and capture evidence. The compiler creates logical source timing;
@@ -85,7 +85,7 @@ These decisions constrain all phases of this plan.
 
 1. **Capture-to-explanation is the primary product path.** Hand-authored TSX
    remains supported, but new product investment starts from captured evidence.
-2. **`CompositionDocument` is the canonical interchange contract.** Generated
+2. **`ExplainerDocument` is the canonical interchange contract.** Generated
    TSX is a compilation target, not a second planning model.
 3. **Only complete scene types are public.** A valid document must never silently
    produce a placeholder in a release build.
@@ -152,14 +152,14 @@ Deliverables:
   required package, lifecycle state, and QA rules. Use it to drive validation and
   agent-facing capability descriptions.
 - Make capture adapters call the shared
-  `compileCaptureManifestToCompositionDocument` dispatcher rather than invoking
+  `compileCaptureManifestToExplainerDocument` dispatcher rather than invoking
   adapter compilers through parallel orchestration code.
-- Persist `CaptureManifest`, `CompositionDocument`, resolved timeline, generated
+- Persist `CaptureManifest`, `ExplainerDocument`, resolved timeline, generated
   TSX, and audio manifest as named artifacts for every pipeline run.
-- Treat CompositionDocument changes as explicitly breaking until the first
+- Treat ExplainerDocument changes as explicitly breaking until the first
   stable IR release; do not build migrations for temporary pre-stable documents.
 - Keep Storyboard v1 as an isolated whiteboard input while it remains useful. It
-  is not a CompositionDocument migration path and creates no compatibility work.
+  is not an ExplainerDocument migration path and creates no compatibility work.
 
 Exit criteria:
 
@@ -286,7 +286,7 @@ Progress as of 2026-08-01:
   promotion are implemented in the renderer QA CLI. Screenshot masking remains
   intentionally deferred.
 - A deterministic release smoke gate now covers both terminal and browser
-  capture manifests -> capture compiler -> `CompositionDocument` -> generated
+  capture manifests -> capture compiler -> `ExplainerDocument` -> generated
   TSX -> locally generated narration -> scene reflow -> capture QA -> MP4 render
   -> full FFmpeg decode. The browser fixture additionally exercises local media
   validation and time-mapped video seeking. CI and the npm release workflow run
@@ -442,7 +442,7 @@ contracts; otherwise each adapter will create another special-case pipeline.
 - An internal planner or mandatory model provider.
 - Feature parity with general-purpose code-to-video engines.
 - New capture adapters before the shared terminal/browser contract is stable.
-- Pre-stable CompositionDocument migrations or compatibility fixtures.
+- Pre-stable ExplainerDocument migrations or compatibility fixtures.
 
 ## 10. First Implementation Slice
 

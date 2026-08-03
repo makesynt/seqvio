@@ -90,14 +90,14 @@ for (const name of fixedGroup) {
 
 let capabilities;
 try {
-  capabilities = require('../packages/core/dist/composition-document/capabilities.js');
+  capabilities = require('../packages/core/dist/explainer-document/capabilities.js');
 } catch (error) {
   fail(`Build @seqvio/core before contract verification: ${error.message}`);
 }
 if (capabilities) {
   const snapshot = readJson('docs/scene-capabilities.json');
   const actual = {
-    schemaVersion: '2.0',
+    schemaVersion: capabilities.SCENE_CAPABILITIES[capabilities.SCENE_TYPES[0]].schemaVersion,
     scenes: capabilities.SCENE_TYPES.map((type) => {
       const capability = capabilities.SCENE_CAPABILITIES[type];
       return {

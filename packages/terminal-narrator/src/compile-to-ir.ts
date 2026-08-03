@@ -1,5 +1,5 @@
 /**
- * Compile a TerminalCaptureManifest into a CompositionDocument IR.
+ * Compile a TerminalCaptureManifest into an ExplainerDocument IR.
  *
  * Applies the terminal timing pipeline (mergeTerminalEvents ->
  * buildTerminalSnapshotEvents -> scheduleTerminalSnapshotEvents) but produces a
@@ -15,14 +15,14 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import type {
-  CompositionDocument,
+  ExplainerDocument,
   TerminalSceneSpec,
   NarrationCue,
   CaptionCue,
 } from '@seqvio/core';
 import type {
   CompileOptions,
-  CompositionDocumentSeed,
+  ExplainerDocumentSeed,
   TerminalCaptureManifest,
 } from '@seqvio/capture';
 import { buildTerminalSnapshotEvents, scheduleTerminalSnapshotEvents } from './terminal-state';
@@ -68,7 +68,7 @@ function mapEventsToSchema(events: TerminalEvent[]): TerminalSceneSpec['events']
 export async function compileTerminalCapture(
   manifest: TerminalCaptureManifest,
   options?: CompileOptions
-): Promise<CompositionDocumentSeed> {
+): Promise<ExplainerDocumentSeed> {
   // 1. Timing: compress -> snapshot -> schedule.
   const events = manifest.events as unknown as TerminalEvent[];
   const compressed = mergeTerminalEvents(events, 1100);
@@ -147,9 +147,10 @@ export async function compileTerminalCapture(
       : undefined,
   };
 
-  // 5. CompositionDocument.
-  const document: CompositionDocument = {
-    version: '2.0',
+  // 5. Executable explainer IR.
+  const document: ExplainerDocument = {
+    format: 'seqvio-explainer',
+    schemaVersion: '1.0',
     id: `terminal-capture-${manifest.name}`,
     width: manifest.viewport.width,
     height: manifest.viewport.height,

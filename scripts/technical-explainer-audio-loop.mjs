@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Extract + synthesize narration for technical-explainer-v2, then render with
+ * Extract + synthesize narration for technical-explainer, then render with
  * the resolved audio manifest (lockToAudio).
  *
  * Usage:
@@ -17,11 +17,11 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, '..');
-const component = 'examples/compositions/technical-explainer-v2.tsx';
-const outDir = path.join(root, 'output', 'technical-explainer-v2-audio');
+const component = 'examples/compositions/technical-explainer.tsx';
+const outDir = path.join(root, 'output', 'technical-explainer-audio');
 const manifest = path.join(outDir, 'audio-manifest.json');
 const resolved = path.join(outDir, 'audio-manifest.resolved.json');
-const mp4 = path.join(root, 'output', 'technical-explainer-v2.mp4');
+const mp4 = path.join(root, 'output', 'technical-explainer.mp4');
 
 const args = new Set(process.argv.slice(2));
 const synthesizeOnly = args.has('--synthesize-only');
@@ -81,7 +81,7 @@ const renderArgs = [
   '--component',
   component,
   '--output',
-  smoke ? path.join(root, 'output', 'technical-explainer-v2-smoke.mp4') : mp4,
+  smoke ? path.join(root, 'output', 'technical-explainer-smoke.mp4') : mp4,
   '--audioManifest',
   resolved,
   '--preset',
@@ -93,4 +93,4 @@ if (smoke) {
 }
 
 run('node', renderArgs);
-console.log(`\nDone. Output: ${smoke ? 'output/technical-explainer-v2-smoke.mp4' : 'output/technical-explainer-v2.mp4'}`);
+console.log(`\nDone. Output: ${smoke ? 'output/technical-explainer-smoke.mp4' : 'output/technical-explainer.mp4'}`);

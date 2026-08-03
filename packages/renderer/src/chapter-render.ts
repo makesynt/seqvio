@@ -8,9 +8,9 @@ import { promisify } from 'node:util';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import {
-  isCompositionDocumentV2,
+  isExplainerDocument,
   syncRenderPlanWithDocument,
-  type CompositionDocument,
+  type ExplainerDocument,
   type RenderPlanManifest,
   type ChapterRenderPlanEntry,
 } from '@seqvio/core';
@@ -26,7 +26,7 @@ export interface ChapterRenderOptions extends RenderOptions {
   chapterDir: string;
   resume?: boolean;
   presetName?: string;
-  /** CompositionDocument v2 IR used to refresh hashes and frame ranges. */
+  /** ExplainerDocument IR used to refresh hashes and frame ranges. */
   documentPath?: string;
   /** Render only these chapter ids (useful for dev iteration). */
   onlyChapters?: string[];
@@ -71,14 +71,14 @@ export function loadRenderPlan(planPath: string): RenderPlanManifest {
   return JSON.parse(fs.readFileSync(resolved, 'utf8')) as RenderPlanManifest;
 }
 
-export function loadCompositionDocument(documentPath: string): CompositionDocument {
+export function loadExplainerDocument(documentPath: string): ExplainerDocument {
   const resolved = path.resolve(documentPath);
   if (!fs.existsSync(resolved)) {
-    throw new Error(`Composition document not found: ${resolved}`);
+    throw new Error(`Explainer document not found: ${resolved}`);
   }
   const parsed = JSON.parse(fs.readFileSync(resolved, 'utf8'));
-  if (!isCompositionDocumentV2(parsed)) {
-    throw new Error('documentPath must point to a CompositionDocument v2 IR (version "2.0")');
+  if (!isExplainerDocument(parsed)) {
+    throw new Error('documentPath must point to an ExplainerDocument IR (format "seqvio-explainer")');
   }
   return parsed;
 }
@@ -173,7 +173,7 @@ export async function renderChapters(
   let changedChapterIds: string[] = [];
 
   if (options.documentPath) {
-    const doc = loadCompositionDocument(options.documentPath);
+    const doc = loadExplainerDocument(options.documentPath);
     const synced = syncRenderPlanWithDocument(plan, doc);
     plan = synced.plan;
     changedChapterIds = synced.changedChapterIds;

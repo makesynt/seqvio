@@ -1,5 +1,5 @@
 /**
- * CompositionDocument v2 -> TSX compiler.
+ * ExplainerDocument -> TSX compiler.
  *
  * Whiteboard scenes compile to @seqvio/whiteboard components.
  * Technical scenes compile to @seqvio/technical components.
@@ -15,10 +15,10 @@ import {
   pascalId,
 } from '../storyboard/compile-helpers';
 import {
-  COMPOSITION_DOCUMENT_DEFAULTS,
+  EXPLAINER_DOCUMENT_DEFAULTS,
   type AnnotationSpec,
   type CodeSceneSpec,
-  type CompositionDocument,
+  type ExplainerDocument,
   type DiagramSceneSpec,
   type SceneSpec,
 } from './schema';
@@ -30,16 +30,16 @@ import {
   resolveScenePacing,
 } from '../pacing';
 
-function resolved(doc: CompositionDocument) {
+function resolved(doc: ExplainerDocument) {
   return {
     id: doc.id,
-    width: doc.width ?? COMPOSITION_DOCUMENT_DEFAULTS.width,
-    height: doc.height ?? COMPOSITION_DOCUMENT_DEFAULTS.height,
-    fps: doc.fps ?? COMPOSITION_DOCUMENT_DEFAULTS.fps,
-    backgroundColor: doc.backgroundColor ?? COMPOSITION_DOCUMENT_DEFAULTS.backgroundColor,
-    lockToAudio: doc.lockToAudio ?? COMPOSITION_DOCUMENT_DEFAULTS.lockToAudio,
+    width: doc.width ?? EXPLAINER_DOCUMENT_DEFAULTS.width,
+    height: doc.height ?? EXPLAINER_DOCUMENT_DEFAULTS.height,
+    fps: doc.fps ?? EXPLAINER_DOCUMENT_DEFAULTS.fps,
+    backgroundColor: doc.backgroundColor ?? EXPLAINER_DOCUMENT_DEFAULTS.backgroundColor,
+    lockToAudio: doc.lockToAudio ?? EXPLAINER_DOCUMENT_DEFAULTS.lockToAudio,
     transitionDuration:
-      doc.transitionDuration ?? COMPOSITION_DOCUMENT_DEFAULTS.transitionDuration,
+      doc.transitionDuration ?? EXPLAINER_DOCUMENT_DEFAULTS.transitionDuration,
     texture: STORYBOARD_DEFAULTS.texture,
     styleId: STORYBOARD_DEFAULTS.styleId,
   };
@@ -219,7 +219,7 @@ function compileBrowserScene(
 
 function unsupportedSceneType(scene: never): never {
   const type = (scene as { type?: unknown }).type;
-  throw new Error(`Unsupported CompositionDocument scene type: ${String(type)}`);
+  throw new Error(`Unsupported ExplainerDocument scene type: ${String(type)}`);
 }
 
 function compileSceneComponent(
@@ -251,8 +251,8 @@ export interface CompileCompositionResult {
   code: string;
 }
 
-export function compileCompositionDocumentToTsx(
-  doc: CompositionDocument
+export function compileExplainerDocumentToTsx(
+  doc: ExplainerDocument
 ): CompileCompositionResult {
   const pacingProfile = resolvePacingProfile(doc.pacingProfile);
   const pacedDoc = resolveCompositionPacing(doc, pacingProfile.policy);
@@ -380,7 +380,7 @@ const STYLE = getSeqvioStylePreset(STYLE_ID) ?? {
 };`
     : '';
 
-  const code = `// AUTO-GENERATED from a Seqvio CompositionDocument v2. Safe to edit by hand.
+  const code = `// AUTO-GENERATED from a Seqvio ExplainerDocument. Safe to edit by hand.
 import React from 'react';
 import type { RenderableMeta } from '@seqvio/core';
 import { VideoComposition, Scene, Transition } from '@seqvio/core';

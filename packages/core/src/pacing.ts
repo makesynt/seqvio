@@ -1,4 +1,4 @@
-import type { CompositionDocument, SceneSpec } from './composition-document/schema';
+import type { ExplainerDocument, SceneSpec } from './explainer-document/schema';
 import type { ExplanationBeatTiming } from './audio';
 
 export interface PacingPolicy {
@@ -335,9 +335,9 @@ export function resolveScenePacing(
 }
 
 export function resolveCompositionPacing(
-  doc: CompositionDocument,
+  doc: ExplainerDocument,
   policy: PacingPolicy = DEFAULT_PACING_POLICY,
-): CompositionDocument {
+): ExplainerDocument {
   const fps = doc.fps ?? 30;
   return { ...doc, scenes: doc.scenes.map((scene) => resolveScenePacing(scene, fps, policy).scene) };
 }

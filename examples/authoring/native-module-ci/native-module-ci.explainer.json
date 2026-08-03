@@ -1,0 +1,211 @@
+{
+  "format": "seqvio-explainer",
+  "schemaVersion": "1.0",
+  "id": "native-module-ci",
+  "width": 1280,
+  "height": 720,
+  "fps": 30,
+  "backgroundColor": "#f7f8fa",
+  "lockToAudio": true,
+  "transitionDuration": 12,
+  "pacingProfile": "explainer-v1",
+  "chapters": [
+    { "id": "diagnosis", "sceneIds": ["symptom", "install-path", "root-cause"] },
+    { "id": "resolution", "sceneIds": ["repair"] }
+  ],
+  "scenes": [
+    {
+      "type": "whiteboard",
+      "id": "symptom",
+      "duration": 360,
+      "elements": [
+        {
+          "id": "success-message",
+          "type": "text",
+          "text": "rebuilt dependencies successfully",
+          "position": { "x": 640, "y": 230 },
+          "fontSize": 42,
+          "align": "center",
+          "start": 0,
+          "duration": 30
+        },
+        {
+          "id": "not-equal",
+          "type": "text",
+          "text": "does not prove",
+          "position": { "x": 640, "y": 345 },
+          "fontSize": 30,
+          "align": "center",
+          "start": 45,
+          "duration": 24
+        },
+        {
+          "id": "missing-artifact",
+          "type": "text",
+          "text": "pty.node exists and can load",
+          "position": { "x": 640, "y": 465 },
+          "fontSize": 42,
+          "align": "center",
+          "start": 75,
+          "duration": 30
+        }
+      ],
+      "explanation": {
+        "cues": [
+          {
+            "id": "voice",
+            "text": "The rebuild command reports success, but pty.node is still absent. A successful command and a loadable artifact are different conditions."
+          }
+        ],
+        "beats": [
+          {
+            "id": "show-success",
+            "cueId": "voice",
+            "anchor": { "text": "reports success" },
+            "visuals": [{ "targetId": "success-message", "action": "reveal" }]
+          },
+          {
+            "id": "show-missing",
+            "cueId": "voice",
+            "anchor": { "text": "still absent" },
+            "visuals": [{ "targetId": "missing-artifact", "action": "reveal", "minHoldMs": 1500 }]
+          }
+        ]
+      }
+    },
+    {
+      "type": "diagram",
+      "id": "install-path",
+      "duration": 540,
+      "nodes": [
+        { "id": "package", "label": "Package installed" },
+        { "id": "install-script", "label": "Install script" },
+        { "id": "native-build", "label": "Native build" },
+        { "id": "binary", "label": "pty.node" }
+      ],
+      "edges": [
+        { "id": "package-to-script", "from": "package", "to": "install-script" },
+        { "id": "script-to-build", "from": "install-script", "to": "native-build" },
+        { "id": "build-to-binary", "from": "native-build", "to": "binary" }
+      ],
+      "steps": [
+        { "id": "show-package", "at": 0, "action": "reveal", "targetId": "package" },
+        { "id": "show-script", "at": 45, "action": "reveal", "targetId": "install-script" },
+        { "id": "trace-build", "at": 90, "action": "trace", "edgeId": "script-to-build" },
+        { "id": "show-binary", "at": 135, "action": "reveal", "targetId": "binary" }
+      ],
+      "explanation": {
+        "cues": [
+          {
+            "id": "voice",
+            "text": "The expected path has four parts. npm installs the package, runs its install script, builds the platform-specific addon, and produces pty.node."
+          }
+        ],
+        "beats": [
+          {
+            "id": "start-path",
+            "cueId": "voice",
+            "anchor": { "text": "installs the package" },
+            "visuals": [{ "targetId": "show-package", "action": "reveal" }]
+          },
+          {
+            "id": "run-script",
+            "cueId": "voice",
+            "anchor": { "text": "runs its install script" },
+            "visuals": [{ "targetId": "show-script", "action": "focus" }]
+          },
+          {
+            "id": "produce-binary",
+            "cueId": "voice",
+            "anchor": { "text": "produces pty.node" },
+            "visuals": [{ "targetId": "show-binary", "action": "reveal", "minHoldMs": 1500 }]
+          }
+        ]
+      }
+    },
+    {
+      "type": "diagram",
+      "id": "root-cause",
+      "duration": 480,
+      "nodes": [
+        { "id": "configured-package", "label": "node-pty" },
+        { "id": "allow-scripts-gate", "label": "allowScripts gate" },
+        { "id": "blocked-build", "label": "Build never runs" },
+        { "id": "absent-binary", "label": "No pty.node" }
+      ],
+      "edges": [
+        { "id": "package-to-gate", "from": "configured-package", "to": "allow-scripts-gate" },
+        { "id": "gate-to-build", "from": "allow-scripts-gate", "to": "blocked-build", "label": "blocked" },
+        { "id": "build-to-absence", "from": "blocked-build", "to": "absent-binary" }
+      ],
+      "steps": [
+        { "id": "show-gate", "at": 0, "action": "reveal", "targetId": "allow-scripts-gate" },
+        { "id": "emphasize-gate", "at": 45, "action": "emphasize", "targetId": "allow-scripts-gate" },
+        { "id": "trace-block", "at": 90, "action": "trace", "edgeId": "gate-to-build" },
+        { "id": "show-absence", "at": 135, "action": "reveal", "targetId": "absent-binary" }
+      ],
+      "explanation": {
+        "cues": [
+          {
+            "id": "voice",
+            "text": "The npm warning identifies the broken link. allowScripts blocks the install script, the native build never runs, and the binary remains missing."
+          }
+        ],
+        "beats": [
+          {
+            "id": "identify-gate",
+            "cueId": "voice",
+            "anchor": { "text": "allowScripts blocks the install script" },
+            "visuals": [{ "targetId": "emphasize-gate", "action": "focus", "minHoldMs": 1500 }]
+          },
+          {
+            "id": "show-causal-result",
+            "cueId": "voice",
+            "anchor": { "text": "binary remains missing" },
+            "visuals": [{ "targetId": "show-absence", "action": "reveal" }]
+          }
+        ]
+      }
+    },
+    {
+      "type": "code",
+      "id": "repair",
+      "duration": 600,
+      "language": "bash",
+      "source": "npm pkg set 'allowScripts.node-pty=true'\nnpm rebuild node-pty\nnode -e \"require('node-pty'); console.log('loadable')\"\n",
+      "steps": [
+        { "id": "allow-script", "at": 0, "action": "focus", "range": { "startLine": 1, "endLine": 1 } },
+        { "id": "rebuild", "at": 60, "action": "focus", "range": { "startLine": 2, "endLine": 2 } },
+        { "id": "verify-import", "at": 120, "action": "focus", "range": { "startLine": 3, "endLine": 3 } }
+      ],
+      "explanation": {
+        "cues": [
+          {
+            "id": "voice",
+            "text": "Allow the node-pty install script, rebuild once, and then verify the condition that matters: importing node-pty must succeed."
+          }
+        ],
+        "beats": [
+          {
+            "id": "repair-policy",
+            "cueId": "voice",
+            "anchor": { "text": "Allow the node-pty install script" },
+            "visuals": [{ "targetId": "allow-script", "action": "focus" }]
+          },
+          {
+            "id": "run-rebuild",
+            "cueId": "voice",
+            "anchor": { "text": "rebuild once" },
+            "visuals": [{ "targetId": "rebuild", "action": "focus" }]
+          },
+          {
+            "id": "verify-loadability",
+            "cueId": "voice",
+            "anchor": { "text": "importing node-pty must succeed" },
+            "visuals": [{ "targetId": "verify-import", "action": "focus", "minHoldMs": 1800 }]
+          }
+        ]
+      }
+    }
+  ]
+}

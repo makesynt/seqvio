@@ -2,7 +2,7 @@ import type { CaptionCue } from './captions';
 import type {
   ExplanationBeatAnchorSpec,
   VisualBeatAction,
-} from './composition-document/schema';
+} from './explainer-document/schema';
 
 export type AudioTrackKind = 'narration' | 'music' | 'sfx';
 

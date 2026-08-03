@@ -26,7 +26,8 @@ export type {
   TargetRect,
 } from './annotation';
 export * from './storyboard';
-export * from './composition-document';
+export * from './authoring';
+export * from './explainer-document';
 export * from './seekable';
 export * from './adapters';
 export * from './clock';

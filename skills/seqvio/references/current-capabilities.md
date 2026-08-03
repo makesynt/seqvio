@@ -6,7 +6,7 @@ This reference describes what Seqvio supports today in this repository. Treat pl
 
 ```text
 content or CaptureManifest
-  -> CompositionDocument v2 (cues + ExplanationBeats + capture evidence)
+  -> ExplainerDocument (cues + ExplanationBeats + capture evidence)
   -> TSX with logical source timing
   -> audio manifest -> TTS
   -> resolved Beats + semantic scene timeMap
@@ -14,7 +14,7 @@ content or CaptureManifest
 ```
 
 For new technical explainers, jointly author narration cues and visual actions in
-CompositionDocument v2. Do not assign the final video clock independently: TTS
+ExplainerDocument. Do not assign the final video clock independently: TTS
 resolves phrase anchors to output frames, and the scene `timeMap` keeps recorded
 or authored visual actions in semantic order.
 
@@ -34,7 +34,7 @@ Seqvio does not call AI or planner APIs. The host agent creates the IR; Seqvio v
 - Timing is in frames, not seconds
 - Single-scene whiteboard compositions via `@seqvio/whiteboard`
 - Multi-scene compositions via `@seqvio/core`
-- Technical scenes via `@seqvio/technical` (hand-authored TSX or compiled from CompositionDocument v2)
+- Technical scenes via `@seqvio/technical` (hand-authored TSX or compiled from ExplainerDocument)
 
 ## Whiteboard components
 
@@ -72,7 +72,7 @@ From `@seqvio/core`:
 - `VideoComposition`
 - `Scene`
 - `Transition`
-- CompositionDocument v2 schema, validate, compile, migrate, render-plan helpers
+- ExplainerDocument schema, validate, compile, Storyboard adapter, and render-plan helpers
 - ExplanationBeat cues, exact phrase anchors, visual actions, capture evidence,
   logical source timing, and post-TTS semantic time maps
 
@@ -85,10 +85,10 @@ Unknown transition names fall back to `fade`.
 From `@seqvio/renderer`:
 
 - `seqvio-generate plan-agent` — write a host-agent task for IR generation
-- `seqvio-generate validate` — Storyboard v1 or CompositionDocument v2 validation
+- `seqvio-generate validate` — Storyboard or ExplainerDocument validation
 - `seqvio-generate validate --json` — agent-friendly validation diagnostics
 - `seqvio-generate compile` — IR to TSX
-- `seqvio-generate render-plan` — CompositionDocument v2 → chapter render plan JSON
+- `seqvio-generate render-plan` — ExplainerDocument → chapter render plan JSON
 - `seqvio-render` — TSX to MP4
 - `seqvio-render --renderPlan --chapterDir [--ir] [--onlyChapters] [--resume]` — chapter render / resume / stitch
 - `seqvio-audio extract` — narration manifest extraction
@@ -126,7 +126,7 @@ Credentials come from environment variables. The CLI does not auto-load `.env`.
 Supported today:
 
 - `meta.audio.narration` cue lists
-- CompositionDocument `explanation.cues` + `explanation.beats` joint authoring
+- ExplainerDocument `explanation.cues` + `explanation.beats` joint authoring
 - phrase resolution from TTS chunk timing or whole-cue character fallback
 - resolved `explanationBeats` and `sceneTimings[].timeMap`
 - QA errors for unresolved/reversed Beats and warnings for low-confidence timing
@@ -150,10 +150,10 @@ Preferred starting points:
 | `examples/compositions/seqvio-overview-zh.tsx` | Narrated Chinese product overview |
 | `examples/compositions/seqvio-audio-demo.tsx` | Audio and caption metadata |
 | `examples/compositions/seqvio-intro.tsx` | Multi-scene framework intro |
-| `examples/compositions/technical-demo-v2.tsx` | Short technical smoke (whiteboard + code + diagram) |
-| `examples/compositions/technical-explainer-v2.tsx` | ~4.5 min technical reference composition (`lockToAudio`) |
-| `examples/ir/technical-demo-v2.json` | Short CompositionDocument v2 IR |
-| `examples/ir/technical-explainer-v2.json` | Full CompositionDocument v2 IR + chapters |
+| `examples/compositions/technical-demo.tsx` | Short technical smoke (whiteboard + code + diagram) |
+| `examples/compositions/technical-explainer.tsx` | ~4.5 min technical reference composition (`lockToAudio`) |
+| `examples/ir/technical-demo.explainer.json` | Short ExplainerDocument IR |
+| `examples/ir/technical-explainer.explainer.json` | Full ExplainerDocument IR + chapters |
 | `packages/whiteboard/examples/` | Single-scene whiteboard samples |
 
 Narrated technical reference loop:
@@ -184,7 +184,7 @@ Local render intermediates belong in `output/` / `.media/` and are gitignored.
 | `packages/terminal-narrator` | Pre-stable terminal capture adapter |
 | `packages/browser-recorder` | Pre-stable browser capture adapter |
 | `examples/compositions/` | Renderable compositions |
-| `examples/ir/` | Storyboard / CompositionDocument JSON examples |
+| `examples/ir/` | Storyboard / ExplainerDocument JSON examples |
 | `skills/seqvio/` | Agent skill and references |
 | `docs/` | Human-facing docs |
 

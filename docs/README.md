@@ -10,6 +10,7 @@ If you are trying to use Seqvio today, read these first:
 | --- | --- |
 | [`../README.md`](../README.md) | Top-level overview, skill-first quick start, and current capabilities |
 | [`../skills/seqvio/SKILL.md`](../skills/seqvio/SKILL.md) | Agent production loop for authoring, narration, and rendering |
+| [`AUTHORING-ARTIFACTS.md`](./AUTHORING-ARTIFACTS.md) | Human-readable editorial and visual design stages before executable IR |
 | [`COMPOSITION-AUTHORING.md`](./COMPOSITION-AUTHORING.md) | Canonical TSX authoring and rendering contract |
 | [`EXPLANATION-BEAT-TIMING.md`](./EXPLANATION-BEAT-TIMING.md) | Joint narration/visual authoring and post-TTS alignment contract |
 | [`RENDER-LIFECYCLE.md`](./RENDER-LIFECYCLE.md) | Deterministic adapter stages, readiness barriers, timeouts, disposal, and diagnostics |
@@ -27,6 +28,7 @@ These docs describe the repository as it exists today:
 
 | File | Scope |
 | --- | --- |
+| [`AUTHORING-ARTIFACTS.md`](./AUTHORING-ARTIFACTS.md) | EditorialPlan, VisualDesignBrief, and ExplainerDocument boundaries |
 | [`COMPOSITION-AUTHORING.md`](./COMPOSITION-AUTHORING.md) | TSX authoring model, render contract, transitions, and timing rules |
 | [`EXPLANATION-BEAT-TIMING.md`](./EXPLANATION-BEAT-TIMING.md) | ExplanationBeat schema, scene integration, timing resolution, and QA repair |
 | [`RENDER-LIFECYCLE.md`](./RENDER-LIFECYCLE.md) | Stateful/asynchronous render lifecycle and timeout contract |

@@ -1,5 +1,5 @@
 /**
- * CompositionDocument v2 — versioned, scene-oriented IR for mixed explainer
+ * ExplainerDocument — scene-oriented execution IR for mixed explainer
  * families (whiteboard, code, diagram, and future technical scenes).
  *
  * Pure data (JSON). Types only — no React or style-package imports.
@@ -13,9 +13,10 @@ import type {
 } from '../storyboard/schema';
 export { SCENE_TYPES, type SceneType } from './capabilities';
 
-export const COMPOSITION_DOCUMENT_VERSION = '2.0' as const;
+export const EXPLAINER_DOCUMENT_FORMAT = 'seqvio-explainer' as const;
+export const EXPLAINER_DOCUMENT_SCHEMA_VERSION = '1.0' as const;
 
-export type CompositionDocumentVersion = typeof COMPOSITION_DOCUMENT_VERSION;
+export type ExplainerDocumentSchemaVersion = typeof EXPLAINER_DOCUMENT_SCHEMA_VERSION;
 
 export type AnnotationKind =
   | 'arrow'
@@ -289,8 +290,9 @@ export interface ChapterSpec {
   sceneIds: string[];
 }
 
-export interface CompositionDocument {
-  version: CompositionDocumentVersion;
+export interface ExplainerDocument {
+  format: typeof EXPLAINER_DOCUMENT_FORMAT;
+  schemaVersion: ExplainerDocumentSchemaVersion;
   id: string;
   width?: number;
   height?: number;
@@ -306,7 +308,7 @@ export interface CompositionDocument {
   annotations?: AnnotationSpec[];
 }
 
-export const COMPOSITION_DOCUMENT_DEFAULTS = {
+export const EXPLAINER_DOCUMENT_DEFAULTS = {
   width: 1280,
   height: 720,
   fps: 30,

@@ -96,7 +96,7 @@ sitting behind is gone.
 
 Promote `browser-recorder` and `terminal-narrator` from pre-stable to a
 single capture-adapter contract: `CaptureSession -> CaptureManifest ->
-CompositionDocument`. Both production pipelines now invoke their adapter
+ExplainerDocument`. Both production pipelines now invoke their adapter
 compiler through the shared capture dispatcher before generating TSX. Canonical
 artifact tests cover the IR, TSX, and audio-manifest outputs, and the legacy
 `writeComposition` paths are removed. CLI contract `1.0` now fixes direct
@@ -199,7 +199,7 @@ Restating, because roadmap pressure is where scope erodes:
 ## Long-Lived Assets
 
 1. **Versioned contracts.** IR schema and the frame contract need explicit
-   versions and explicit breaking-change notes. Pre-stable CompositionDocument
+   versions and explicit breaking-change notes. Pre-stable ExplainerDocument
    migrations are intentionally outside the current plan.
 
 ## If Only One Thing Ships
