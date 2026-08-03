@@ -14,7 +14,7 @@ test('publish environment disables npm lifecycle scripts without dropping creden
   assert.equal(environment.CUSTOM, 'value');
 });
 
-test('publish wrapper passes the safe environment to the Changesets child process', () => {
+test('publish wrapper passes the safe environment to the Changesets child process', async () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'seqvio-publish-wrapper-'));
   const output = path.join(root, 'child.json');
   const cli = path.join(root, 'fake-changeset.mjs');
@@ -27,15 +27,64 @@ test('publish wrapper passes the safe environment to the Changesets child proces
     "}));",
   ].join('\n'));
 
-  publishPackages({
+  let inspections = 0;
+  await publishPackages({
     cliPath: cli,
     cwd: root,
+    npmCli: process.env.npm_execpath,
+    packages: [{ name: '@seqvio/test', version: '1.0.0' }],
+    inspectState: () => ({
+      complete: inspections++ > 0, missingVersions: ['@seqvio/test@1.0.0'], missingTags: [],
+    }),
+    postconditionDelayMs: 0,
     environment: { TEST_OUTPUT: output, NODE_AUTH_TOKEN: 'test-token' },
     stdio: 'pipe',
   });
   assert.deepEqual(JSON.parse(fs.readFileSync(output, 'utf8')), {
     command: 'publish', ignoreScripts: 'true', token: 'test-token',
   });
+});
+
+test('publish wrapper accepts a nonzero child only after complete postconditions', async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'seqvio-publish-postcondition-'));
+  const cli = path.join(root, 'failing-changeset.mjs');
+  fs.writeFileSync(cli, 'process.exitCode = 1;\n');
+  let inspections = 0;
+
+  await publishPackages({
+    cliPath: cli,
+    cwd: root,
+    npmCli: process.env.npm_execpath,
+    packages: [{ name: '@seqvio/test', version: '1.0.0' }],
+    inspectState: () => inspections++ === 0
+      ? { complete: false, missingVersions: ['@seqvio/test@1.0.0'], missingTags: [] }
+      : { complete: true, missingVersions: [], missingTags: [] },
+    postconditionDelayMs: 0,
+    environment: {},
+    stdio: 'pipe',
+  });
+});
+
+test('publish wrapper rejects a zero exit when release postconditions are incomplete', async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'seqvio-publish-incomplete-'));
+  const cli = path.join(root, 'successful-changeset.mjs');
+  fs.writeFileSync(cli, 'process.exitCode = 0;\n');
+
+  await assert.rejects(publishPackages({
+    cliPath: cli,
+    cwd: root,
+    npmCli: process.env.npm_execpath,
+    packages: [{ name: '@seqvio/test', version: '1.0.0' }],
+    inspectState: () => ({
+      complete: false,
+      missingVersions: ['@seqvio/test@1.0.0'],
+      missingTags: ['@seqvio/test@1.0.0'],
+    }),
+    postconditionAttempts: 2,
+    postconditionDelayMs: 0,
+    environment: {},
+    stdio: 'pipe',
+  }), /release is incomplete.*missing npm versions.*missing git tags/);
 });
 
 test('publish artifact requirements cover entrypoints, bins, and conditional exports', () => {
