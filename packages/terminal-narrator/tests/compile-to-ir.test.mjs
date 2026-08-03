@@ -3,7 +3,7 @@ import assert from 'node:assert';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { compileTerminalCapture } from '../dist/compile-to-ir.js';
-import { compileCompositionDocumentToTsx, validateCompositionDocument } from '@seqvio/core';
+import { compileExplainerDocumentToTsx, validateExplainerDocument } from '@seqvio/core';
 
 test('compileTerminalCapture produces a terminal IR scene from a manifest', async () => {
   const manifest = {
@@ -33,7 +33,8 @@ test('compileTerminalCapture produces a terminal IR scene from a manifest', asyn
   const seed = await compileTerminalCapture(manifest, { jobDir });
 
   // IR document
-  assert.equal(seed.document.version, '2.0');
+  assert.equal(seed.document.format, 'seqvio-explainer');
+  assert.equal(seed.document.schemaVersion, '1.0');
   assert.equal(seed.document.id, 'terminal-capture-smoke');
   assert.equal(seed.document.scenes.length, 1);
   const scene = seed.document.scenes[0];
@@ -44,7 +45,7 @@ test('compileTerminalCapture produces a terminal IR scene from a manifest', asyn
   assert.equal(scene.steps[0].id, 's1');
   assert.equal(scene.explanation.cues[0].id, 's1');
   assert.equal(scene.explanation.beats[0].evidence.captureStepId, 's1');
-  assert.deepEqual(validateCompositionDocument(seed.document), []);
+  assert.deepEqual(validateExplainerDocument(seed.document), []);
 
   // audio manifest written
   assert.ok(seed.audioManifestPath);
@@ -84,9 +85,10 @@ test('compileTerminalCapture uses NarrationProvider for AI explain', async () =>
   );
 });
 
-test('compileCompositionDocumentToTsx emits TerminalXtermDemo with renderOptions', () => {
+test('compileExplainerDocumentToTsx emits TerminalXtermDemo with renderOptions', () => {
   const doc = {
-    version: '2.0',
+    format: 'seqvio-explainer',
+    schemaVersion: '1.0',
     id: 'render-options',
     width: 1280,
     height: 720,
@@ -113,7 +115,7 @@ test('compileCompositionDocumentToTsx emits TerminalXtermDemo with renderOptions
       },
     ],
   };
-  const { code } = compileCompositionDocumentToTsx(doc);
+  const { code } = compileExplainerDocumentToTsx(doc);
   assert.ok(code.includes('TerminalXtermDemo'), 'tsx should include TerminalXtermDemo');
   assert.ok(code.includes('maxZoom={2.5}'), 'tsx should pass maxZoom');
   assert.ok(code.includes('zoomOnInput={true}'), 'tsx should pass zoomOnInput');

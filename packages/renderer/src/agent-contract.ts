@@ -15,14 +15,99 @@ export type AgentDomain =
   | 'ai'
   | 'devops'
   | 'auto';
-export type AgentIrFormat = 'storyboard-v1' | 'composition-v2' | 'auto';
+export type AgentIrFormat = 'storyboard' | 'explainer' | 'auto';
 
 export interface AgentPlanningOptions {
   language?: AgentLanguage;
   maxScenes?: number;
   domain?: AgentDomain;
-  /** IR format. auto: technical domains → composition-v2, else storyboard-v1. */
+  /** IR format. auto: technical domains -> explainer, else storyboard. */
   irFormat?: AgentIrFormat;
+}
+
+export interface AgentAuthoringContext {
+  editorialPlan?: string;
+  visualDesignBrief?: string;
+}
+
+export function formatEditorialPlanningPrompt(
+  content: string,
+  options: AgentPlanningOptions = {}
+): string {
+  const language = options.language === 'en'
+    ? 'Write the plan in English.'
+    : options.language === 'zh'
+      ? 'Write the plan in Chinese.'
+      : 'Match the language of the source.';
+  return `# Seqvio Editorial Planning Task
+
+Create the human-readable editorial plan that will govern a narrated explainer.
+Do not write scenes, animation code, or the final JSON IR yet.
+
+The plan must contain these headings:
+- Objective
+- Audience (including prior knowledge and likely misconceptions)
+- Thesis
+- Content Decisions (each item: stable id, include/omit, role, reason, prerequisites, time estimate)
+- Explanation Structure (each section: stable id, purpose, concept ids, audience outcome, target seconds)
+
+Rules:
+- Make omissions explicit; do not merely summarize everything in the source.
+- Every included essential concept must appear in the explanation structure.
+- Keep the section budget within the intended video length.
+- One section should perform one cognitive job.
+- Return Markdown only, beginning with "# Editorial Plan:".
+
+${language}
+${describeDomain(options.domain)}
+Target ${options.maxScenes ?? 5} explanation sections.
+
+Source:
+${content}
+`;
+}
+
+export function formatVisualDesignPrompt(
+  content: string,
+  editorialPlan: string,
+  options: AgentPlanningOptions = {}
+): string {
+  const language = options.language === 'en'
+    ? 'Write the brief in English.'
+    : options.language === 'zh'
+      ? 'Write the brief in Chinese.'
+      : 'Match the language of the source and editorial plan.';
+  return `# Seqvio Visual Design Task
+
+Create a human-readable visual design brief for the approved editorial plan.
+Do not write the final JSON IR or implementation code.
+
+The brief must contain these headings:
+- Direction
+- Canvas
+- Palette
+- Typography
+- Layout Rules
+- Motion Rules
+- Section Treatments
+- Avoid
+
+For every editorial section, choose one supported visual form: whiteboard, code,
+diagram, terminal, or browser. Terminal/browser may only be selected when real
+capture material exists; otherwise choose a truthful authored fallback.
+Specify hierarchy, composition, emphasis, and motion behavior rather than vague
+mood words. Return Markdown only, beginning with "# Visual Design Brief:".
+
+${language}
+
+## Source
+
+${content}
+
+## Approved Editorial Plan
+
+${editorialPlan}
+`;
 }
 
 export function formatAgentSceneCapabilities(): string {
@@ -77,13 +162,13 @@ Minimal example:
   ]
 }`;
 
-export const COMPOSITION_V2_AGENT_SYSTEM_PROMPT = `You are a Seqvio CompositionDocument v2 agent for technical explainers.
-In a single response, convert the user's content into one CompositionDocument JSON.
+export const EXPLAINER_AGENT_SYSTEM_PROMPT = `You are a Seqvio ExplainerDocument agent for technical explainers.
+Convert the approved editorial plan and visual design brief into one executable ExplainerDocument JSON.
 Do not call external APIs or defer planning to another step.
 
 Rules:
 - Output ONLY valid JSON. No markdown fences, no commentary.
-- Set "version": "2.0".
+- Set "format": "seqvio-explainer" and "schemaVersion": "1.0".
 - Set "pacingProfile": "explainer-v1" so authoring and release QA use the same versioned thresholds.
 - Prefer 4 to 9 scenes. Mix whiteboard, code, and diagram scenes when useful.
 - Every scene needs a unique ASCII id. Every diagram node/edge/panel needs a unique id across the whole document.
@@ -107,7 +192,8 @@ their event streams or media in a hand-authored plan.
 
 Minimal example:
 {
-  "version": "2.0",
+  "format": "seqvio-explainer",
+  "schemaVersion": "1.0",
   "id": "api-request-explainer",
   "pacingProfile": "explainer-v1",
   "width": 1280,
@@ -219,15 +305,15 @@ export const STORYBOARD_AGENT_JSON_SCHEMA = {
 
 export function resolveAgentIrFormat(
   options: AgentPlanningOptions = {}
-): 'storyboard-v1' | 'composition-v2' {
-  if (options.irFormat === 'storyboard-v1' || options.irFormat === 'composition-v2') {
+): 'storyboard' | 'explainer' {
+  if (options.irFormat === 'storyboard' || options.irFormat === 'explainer') {
     return options.irFormat;
   }
   const domain = options.domain ?? 'auto';
   if (domain === 'programming' || domain === 'ai' || domain === 'devops') {
-    return 'composition-v2';
+    return 'explainer';
   }
-  return 'storyboard-v1';
+  return 'storyboard';
 }
 
 function describeDomain(domain: AgentDomain | undefined): string {
@@ -249,7 +335,8 @@ function describeDomain(domain: AgentDomain | undefined): string {
 
 export function formatAgentPlanningPrompt(
   content: string,
-  options: AgentPlanningOptions = {}
+  options: AgentPlanningOptions = {},
+  context: AgentAuthoringContext = {}
 ): string {
   const language =
     options.language === 'zh'
@@ -260,18 +347,24 @@ export function formatAgentPlanningPrompt(
 
   const irFormat = resolveAgentIrFormat(options);
   const systemPrompt =
-    irFormat === 'composition-v2'
-      ? COMPOSITION_V2_AGENT_SYSTEM_PROMPT
+    irFormat === 'explainer'
+      ? EXPLAINER_AGENT_SYSTEM_PROMPT
       : STORYBOARD_AGENT_SYSTEM_PROMPT;
   const formatLabel =
-    irFormat === 'composition-v2'
-      ? 'CompositionDocument v2 JSON (version "2.0")'
+    irFormat === 'explainer'
+      ? 'ExplainerDocument JSON (format "seqvio-explainer")'
       : 'whiteboard Storyboard IR JSON';
+
+  if (!context.editorialPlan || !context.visualDesignBrief) {
+    throw new Error('IR planning requires both an editorial plan and a visual design brief.');
+  }
+
+  const approvedAuthoring = `\n## Approved Editorial Plan\n\n${context.editorialPlan}\n\n## Approved Visual Design Brief\n\n${context.visualDesignBrief}\n`;
 
   return `# Seqvio Agent Planning Task
 
-Use this single agent turn to produce the complete ${formatLabel}.
-Seqvio itself will only validate and compile the JSON; all creative planning happens here.
+Use this agent turn to translate the approved authoring artifacts into the complete ${formatLabel}.
+Seqvio itself will validate and compile the JSON; do not reopen approved content omissions or visual direction.
 
 ## System
 
@@ -279,11 +372,12 @@ ${systemPrompt}
 
 ## User
 
-Plan a complete ${irFormat === 'composition-v2' ? 'technical composition' : 'whiteboard storyboard'} for the content below.
+Plan a complete ${irFormat === 'explainer' ? 'technical explainer' : 'whiteboard storyboard'} for the content below.
 ${language}
 ${describeDomain(options.domain)}
 Target ${options.maxScenes ?? 5} scenes.
 IR format: ${irFormat}.
+${approvedAuthoring}
 
 Return ONLY the JSON object.
 

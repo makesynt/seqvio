@@ -9,9 +9,9 @@ English | [简体中文](./README.zh-CN.md)
 
 **A visual language for coding agents to explain ideas.**
 
-Seqvio gives coding agents a capture-to-explanation path for turning real terminal/browser activity and technical ideas into clear narrated videos. `CompositionDocument v2` can author spoken cues and visual actions together as `ExplanationBeat`s, then resolve them against measured TTS timing before local QA and MP4 rendering.
+Seqvio gives coding agents a capture-to-explanation path for turning real terminal/browser activity and technical ideas into clear narrated videos. Human-readable `EDITORIAL.md` and `VISUAL-DESIGN.md` artifacts make content choices and visual direction reviewable before the executable `ExplainerDocument` IR binds spoken cues to visual actions with `ExplanationBeat`s.
 
-> **Current status:** The repository supports explicit React/TSX compositions and `CompositionDocument v2` with complete `whiteboard`, `code`, `diagram`, `terminal`, and `browser` compiler paths. Phrase-anchored ExplanationBeats drive logical visual timing, post-TTS semantic time maps, speech/highlight QA, and deterministic local rendering. Terminal and browser production pipelines use the shared capture dispatcher, compile real recorded steps through the IR, run capture QA for every job, and pass a 1280x720 release smoke gate. Capture CLI contract `1.0` fixes commands, JSON results, exit codes, progress, audio/caption options, and artifact layout; a Windows/Linux/macOS host matrix is configured before lifecycle promotion.
+> **Current status:** The repository supports explicit React/TSX compositions and `ExplainerDocument` with complete `whiteboard`, `code`, `diagram`, `terminal`, and `browser` compiler paths. Phrase-anchored ExplanationBeats drive logical visual timing, post-TTS semantic time maps, speech/highlight QA, and deterministic local rendering. Terminal and browser pipelines compile real recorded steps through the same IR. Capture CLI contract `2.0` names the canonical IR artifact `explainer.json`.
 
 ## Demo
 
@@ -95,7 +95,7 @@ See [`.env.example`](./.env.example). The CLI reads process environment variable
 
 After steps 1 and 2, try a prompt like:
 
-> Using `/seqvio`, create a 4-scene Chinese technical explainer as CompositionDocument v2. Jointly author narration cues and phrase-anchored visual Beats, synthesize with ElevenLabs, run QA, and render the final MP4.
+> Using `/seqvio`, first create and review an editorial plan and visual design brief, then compile them into a 4-scene Chinese ExplainerDocument with phrase-anchored visual Beats, run QA, and render the final MP4.
 
 The skill guides the agent through: pick an example composition, edit TSX, extract narration metadata, synthesize audio, and run `seqvio-render`.
 
@@ -114,7 +114,7 @@ When using a local repo checkout, run the built CLI with `node packages/renderer
 
 ### Browser capture adapter
 
-The local [`@seqvio/browser-recorder`](./packages/browser-recorder) workspace executes a validated Chromium action plan and records video, cursor/focus metadata, and exact action start times. Its compiler emits a Browser scene, narration cues, capture-backed ExplanationBeats, and an audio manifest through `CompositionDocument v2`:
+The local [`@seqvio/browser-recorder`](./packages/browser-recorder) workspace executes a validated Chromium action plan and records video, cursor/focus metadata, and exact action start times. Its compiler emits a Browser scene, narration cues, capture-backed ExplanationBeats, and an audio manifest through `ExplainerDocument`:
 
 ```bash
 node packages/browser-recorder/dist/cli.js serve --port 4175
@@ -150,15 +150,17 @@ Start from examples:
 | [`seqvio-product-demo-preview.tsx`](./examples/compositions/seqvio-product-demo-preview.tsx) | Product walkthrough components demo |
 | [`seqvio-scatterbrain.tsx`](./examples/compositions/seqvio-scatterbrain.tsx) | Sticky-note / workshop style demo |
 | [`loop-engineering-explainer.tsx`](./examples/compositions/loop-engineering-explainer.tsx) | Long-form narrated explainer composition |
-| [`technical-explainer-v2.tsx`](./examples/compositions/technical-explainer-v2.tsx) | Technical explainer with code walkthrough and architecture diagram |
-| [`technical-demo-v2.tsx`](./examples/compositions/technical-demo-v2.tsx) | Terminal demo and ANSI rendering showcase |
+| [`technical-explainer.tsx`](./examples/compositions/technical-explainer.tsx) | Technical explainer with code walkthrough and architecture diagram |
+| [`technical-demo.tsx`](./examples/compositions/technical-demo.tsx) | Terminal demo and ANSI rendering showcase |
 | [`packages/whiteboard/examples/`](./packages/whiteboard/examples/) | Single-scene whiteboard samples |
 
 ## How It Works
 
 ```text
 content or real capture
-  -> CompositionDocument v2 (cues + ExplanationBeats + visual targets)
+  -> EDITORIAL.md (objective, content choices, explanation structure)
+  -> VISUAL-DESIGN.md (hierarchy, layout, motion, section treatments)
+  -> ExplainerDocument (cues + ExplanationBeats + visual targets)
   -> TSX + logical source timeline
   -> TTS synthesis + phrase-anchor resolution
   -> semantic scene timeMap
@@ -166,11 +168,12 @@ content or real capture
   -> seqvio-render -> MP4
 ```
 
-1. Produce or capture a `CompositionDocument v2` scene using stable visual and capture-step ids.
-2. Author `explanation.cues` and `explanation.beats` together; the compiler emits narration, visual timing, highlights, and scene metadata.
-3. Extract and synthesize audio with `seqvio-audio`. Measured audio resolves Beat `outputFrame`s and semantic scene time maps.
-4. Run `seqvio-qa`; unresolved/reversed Beats are errors, while low-confidence whole-cue alignment is reported as a warning.
-5. Render frames and mux narration with `seqvio-render --audioManifest ...`.
+1. Review the human-readable editorial plan and visual design brief.
+2. Produce or capture an `ExplainerDocument` scene using stable visual and capture-step ids. Its `schemaVersion` is an implementation compatibility marker, not part of the product name.
+3. Author `explanation.cues` and `explanation.beats` together; the compiler emits narration, visual timing, highlights, and scene metadata.
+4. Extract and synthesize audio with `seqvio-audio`. Measured audio resolves Beat `outputFrame`s and semantic scene time maps.
+5. Run `seqvio-qa`; unresolved/reversed Beats are errors, while low-confidence whole-cue alignment is reported as a warning.
+6. Render frames and mux narration with `seqvio-render --audioManifest ...`.
 
 Hand-authored TSX remains supported as the lower-level production surface and may declare `meta.audio.narration` directly.
 
@@ -220,7 +223,7 @@ Seqvio is the visual language for coding agents that need to explain, not merely
 - Browser scene support with recorded video, cursor/focus/click metadata, exact action clocks, and time-mapped media seeking
 - `ExplanationBeat` cues, exact phrase anchors, visual actions, capture evidence, post-TTS `outputFrame`s, and semantic `sceneTimings[].timeMap`
 - `@seqvio/core` scene and transition primitives: `VideoComposition`, `Scene`, `Transition`
-- CompositionDocument v2 and retained Storyboard IR schema, validation, pacing,
+- ExplainerDocument and retained Storyboard IR schema, validation, pacing,
   and TSX compilation helpers
 - `seqvio-render` CLI for TSX-to-MP4 rendering
 - `seqvio-audio` CLI for audio/caption manifest extraction and TTS synthesis
@@ -314,7 +317,7 @@ If documentation conflicts with code, treat the code and [`docs/COMPOSITION-AUTH
 
 Full phase ordering and the reasoning behind it: [`docs/ROADMAP.md`](./docs/ROADMAP.md). In short:
 
-1. **Singular capture/IR path** - shared dispatcher routing and legacy writer removal are complete; stabilize adapter CLIs around `CaptureSession -> CompositionDocument`.
+1. **Singular capture/IR path** - shared dispatcher routing and legacy writer removal are complete; stabilize adapter CLIs around `CaptureSession -> ExplainerDocument`.
 2. **ExplanationBeat timing** - now implemented across all stable scenes, including capture evidence and post-TTS phrase alignment.
 3. **Release QA** - baseline/capture profiles now cover visual, pacing, audio, media, and semantic Beat failures; screenshot privacy masking remains deferred.
 4. **Packaging and promotion** - CLI/artifact contract `1.0` is implemented; verify supported npm/runtime hosts before lifecycle promotion. Screenshot privacy remains deferred.

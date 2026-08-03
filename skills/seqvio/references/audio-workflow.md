@@ -15,7 +15,7 @@ Hard-coded subtitle burn-in (`--burnCaptions`) is **not** part of the default na
 
 ## Authoring contract
 
-For CompositionDocument v2, author voice and visuals together in each scene:
+For ExplainerDocument, author voice and visuals together in each scene:
 
 1. declare spoken text in `explanation.cues`
 2. anchor `explanation.beats` to exact phrases in those cues
@@ -145,7 +145,7 @@ pnpm --filter @seqvio/renderer exec seqvio-render \
 - Prefer one narration cue per scene or coherent spoken passage.
 - Set `sceneId` on each cue in multi-scene compositions.
 - After changing narration text, re-run extract and synthesize before rendering.
-- CompositionDocument `ExplanationBeat` timing is resolved automatically after
+- ExplainerDocument `ExplanationBeat` timing is resolved automatically after
   synthesis. Inspect `explanationBeats`, `sceneTimings[].timeMap`, and QA rather
   than manually redistributing element frames.
 - Every resolved Beat must have `outputFrame`; `resolutionError` means the anchor

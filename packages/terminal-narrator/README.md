@@ -1,7 +1,7 @@
 # @seqvio/terminal-narrator
 
 把 coding agent / shell 的终端会话录成讲解视频：捕获 TTY 流 → xterm
-状态回放 → `CompositionDocument v2` → ExplanationBeat 音画对齐 → 可选 TTS
+状态回放 → `ExplainerDocument` → ExplanationBeat 音画对齐 → 可选 TTS
 旁白 → QA / MP4。
 
 当前 CLI 属于 pre-stable；生产管线已经使用 manifest → shared capture
@@ -56,7 +56,7 @@ node packages/terminal-narrator/dist/cli.js record --sample --withAudio --provid
 - `plan.json`
 - `recording-manifest.json` — Seqvio 内部时间轴
 - `capture-manifest.json` — shared capture contract
-- `composition-document.json` — canonical IR
+- `explainer.json` — canonical ExplainerDocument IR
 - `session.cast` — asciinema v2（可用 `asciinema play`）
 - `composition.tsx` — 从 TerminalSceneSpec 编译的 TerminalXtermDemo
 - `audio-manifest.json` — 每步 narration cue、ExplanationBeat、capture evidence 和 scene timing

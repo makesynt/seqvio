@@ -1,4 +1,4 @@
-// AUTO-GENERATED from a Seqvio CompositionDocument v2. Safe to edit by hand.
+// AUTO-GENERATED from a Seqvio ExplainerDocument. Safe to edit by hand.
 import React from 'react';
 import type { RenderableMeta } from '@seqvio/core';
 import { VideoComposition, Scene, Transition } from '@seqvio/core';

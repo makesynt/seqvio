@@ -10,7 +10,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
 import puppeteer from 'puppeteer';
 
-import { compileCompositionDocumentToTsx, computeDocumentTimeline } from '../packages/core/dist/index.js';
+import { compileExplainerDocumentToTsx, computeDocumentTimeline } from '../packages/core/dist/index.js';
 import { render } from '../packages/renderer/dist/index.js';
 
 const execFileAsync = promisify(execFile);
@@ -177,7 +177,7 @@ function fixtures(browserVideo) {
 
 function documents(browserVideo) {
   const scene = fixtures(browserVideo);
-  const base = { version: '2.0', width, height, fps, lockToAudio: false, backgroundColor: '#ffffff' };
+  const base = { format: 'seqvio-explainer', schemaVersion: '1.0', width, height, fps, lockToAudio: false, backgroundColor: '#ffffff' };
   const definitions = [
     { name: 'code-720p', document: { ...base, id: 'benchmark-code', scenes: [scene.code] } },
     { name: 'terminal-720p', document: { ...base, id: 'benchmark-terminal', scenes: [scene.terminal] } },
@@ -246,7 +246,7 @@ async function environment() {
 async function runCase(definition, workDir, runIndex) {
   const component = path.join(workDir, `${definition.name}.tsx`);
   const output = path.join(workDir, `${definition.name}-run-${runIndex}.mp4`);
-  await writeFile(component, compileCompositionDocumentToTsx(definition.document).code, 'utf8');
+  await writeFile(component, compileExplainerDocumentToTsx(definition.document).code, 'utf8');
   const stopMemorySampler = startMemorySampler();
   const result = await render({
     component, output, width, height, fps, duration: definition.frames,

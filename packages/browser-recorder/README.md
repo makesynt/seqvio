@@ -2,7 +2,7 @@
 
 A local, pre-stable browser walkthrough adapter that executes a validated action
 plan, captures the page, records cursor/focus/click metadata and exact action
-start times, then compiles the capture through `CompositionDocument v2`.
+start times, then compiles the capture through `ExplainerDocument`.
 
 ```text
 BrowserRecordingPlan
@@ -21,7 +21,7 @@ before it is marked complete.
 
 The production pipeline has one composition path. The former direct
 `writeComposition` writer has been removed; `composition.tsx` and
-`audio-manifest.json` are generated from the dispatched CompositionDocument.
+`audio-manifest.json` are generated from the dispatched ExplainerDocument.
 
 ## Run
 
@@ -48,7 +48,7 @@ node packages/browser-recorder/dist/cli.js record --plan plan.json --jobId narra
 - `raw.mp4` — unframed browser capture
 - `recording-manifest.json` — cursor, click, focus, and exact action timing
 - `capture-manifest.json` — shared capture contract
-- `composition-document.json` — canonical IR
+- `explainer.json` — canonical ExplainerDocument IR
 - `audio-manifest.json` — per-step narration cues, capture-backed Beats, and scene timing
 - `composition.tsx` — generated Seqvio composition compiled from IR
 - `final.mp4` — smooth-focus result

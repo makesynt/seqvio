@@ -16,7 +16,7 @@ workshops, product walkthroughs, and a QA loop. The agent uses those primitives 
 decide what the viewer should see, hear, and understand next instead of filling a
 generic motion template.
 
-`CompositionDocument v2` is the canonical interchange contract for captured and
+`ExplainerDocument` is the canonical interchange contract for captured and
 agent-authored explainers; it compiles to editable React/TSX, which is rendered
 locally to MP4 through Puppeteer + FFmpeg. Seqvio does not make planning or
 generation API calls from its core; creative decisions belong to the host agent
@@ -58,7 +58,7 @@ lives; the table-stakes ones still ship, they just no longer defend the company:
 - **Explainer-native scene vocabulary.** Hand-drawn whiteboard, sticky-note, and
   product-walkthrough primitives with built-in draw timing — not a blank canvas
   assembled from scratch per video.
-- **A structured plan contract.** CompositionDocument (and retained whiteboard
+- **A structured execution contract.** ExplainerDocument (and retained whiteboard
   Storyboard input) that a host agent can generate, validate, repair, and inspect,
   so agent output is checkable before it becomes code.
 - **A verification loop.** Deterministic checks on rendered frames — blank frames,
@@ -142,7 +142,7 @@ each visual style is a package.
   for product walkthroughs.
 - `@seqvio/technical` — code walkthroughs (Shiki-highlighted), architecture
   diagrams (dagre), terminal demos with ANSI rendering, and semantic annotation
-  targets. The primary compilation target for CompositionDocument v2 and the
+  targets. The primary compilation target for ExplainerDocument and the
   natural home for developer-facing technical content; where new investment goes.
 
 Depth beats breadth. `whiteboard` is the contract reference; `technical` is the
@@ -156,7 +156,7 @@ style is a set of components, never a fork of the pipeline.
 ### In Scope
 
 - Short-form explainer videos, roughly 15 seconds to 3 minutes.
-- CompositionDocument v2 as the canonical structured input for captured and
+- ExplainerDocument as the canonical structured input for captured and
   agent-authored explainers, compiled to editable TSX.
 - Retained Storyboard IR input for whiteboard-only work and hand-authored TSX for
   deliberate low-level control.

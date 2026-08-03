@@ -1,5 +1,5 @@
 /**
- * Shared helpers for storyboard and composition-document compilers.
+ * Shared helpers for storyboard and explainer-document compilers.
  */
 
 import type { StoryboardElement, StoryboardScene } from './schema';

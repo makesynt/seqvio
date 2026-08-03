@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
-export const CAPTURE_CLI_CONTRACT_VERSION = '1.0' as const;
+export const CAPTURE_CLI_CONTRACT_VERSION = '2.0' as const;
 export const CAPTURE_ADAPTER_LIFECYCLE = 'pre-stable' as const;
 export const CAPTURE_ARTIFACT_MANIFEST_VERSION = '1.0' as const;
 
@@ -32,7 +32,7 @@ export type CaptureArtifactKind =
   | 'plan'
   | 'recordingManifest'
   | 'captureManifest'
-  | 'compositionDocument'
+  | 'explainerDocument'
   | 'component'
   | 'audioManifest'
   | 'resolvedAudioManifest'
@@ -108,7 +108,7 @@ export function collectCaptureArtifacts(
     plan: path.join(jobDir, 'plan.json'),
     recordingManifest: path.join(jobDir, 'recording-manifest.json'),
     captureManifest: path.join(jobDir, 'capture-manifest.json'),
-    compositionDocument: path.join(jobDir, 'composition-document.json'),
+    explainerDocument: path.join(jobDir, 'explainer.json'),
     component: path.join(jobDir, 'composition.tsx'),
     audioManifest: path.join(jobDir, 'audio-manifest.json'),
     resolvedAudioManifest: path.join(jobDir, 'audio-manifest.resolved.json'),

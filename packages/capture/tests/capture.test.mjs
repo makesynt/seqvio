@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { compileCaptureManifestToCompositionDocument } from '../dist/compile.js';
+import { compileCaptureManifestToExplainerDocument } from '../dist/compile.js';
 import { validateCaptureManifest } from '../dist/validate.js';
 import { scanCaptureManifestForSecrets } from '../dist/security.js';
 
@@ -18,9 +18,9 @@ const terminalManifest = {
 
 test('dispatcher calls the compiler registered for the manifest kind', async () => {
   const compiler = async (m) => ({
-    document: { version: '2.0', id: m.name, width: 1280, height: 720, fps: 30, scenes: [] },
+    document: { format: 'seqvio-explainer', schemaVersion: '1.0', id: m.name, width: 1280, height: 720, fps: 30, scenes: [] },
   });
-  const seed = await compileCaptureManifestToCompositionDocument(terminalManifest, {
+  const seed = await compileCaptureManifestToExplainerDocument(terminalManifest, {
     compilers: { terminal: compiler },
   });
   assert.equal(seed.document.id, 't');
@@ -28,7 +28,7 @@ test('dispatcher calls the compiler registered for the manifest kind', async () 
 
 test('dispatcher throws when no compiler is registered for the kind', async () => {
   await assert.rejects(
-    () => compileCaptureManifestToCompositionDocument(terminalManifest, { compilers: {} }),
+    () => compileCaptureManifestToExplainerDocument(terminalManifest, { compilers: {} }),
     /No compiler registered for capture kind "terminal"/
   );
 });
@@ -37,10 +37,10 @@ test('dispatcher passes options through to the compiler', async () => {
   let receivedOpts;
   const compiler = async (m, opts) => {
     receivedOpts = opts;
-    return { document: { version: '2.0', id: 'x', scenes: [] } };
+    return { document: { format: 'seqvio-explainer', schemaVersion: '1.0', id: 'x', scenes: [] } };
   };
   const narration = { narrate: async () => 'n' };
-  await compileCaptureManifestToCompositionDocument(terminalManifest, {
+  await compileCaptureManifestToExplainerDocument(terminalManifest, {
     compilers: { terminal: compiler },
     narration,
     jobDir: '/tmp/job',

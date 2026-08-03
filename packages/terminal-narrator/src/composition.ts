@@ -1,8 +1,8 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { compileCompositionDocumentToTsx, type CompositionDocument } from '@seqvio/core';
+import { compileExplainerDocumentToTsx, type ExplainerDocument } from '@seqvio/core';
 import {
-  compileCaptureManifestToCompositionDocument,
+  compileCaptureManifestToExplainerDocument,
   type TerminalCaptureManifest,
 } from '@seqvio/capture';
 import { compileTerminalCapture } from './compile-to-ir';
@@ -11,8 +11,8 @@ export interface CaptureCompositionArtifacts {
   componentPath: string;
   audioManifestPath?: string;
   captureManifestPath: string;
-  compositionDocumentPath: string;
-  document: CompositionDocument;
+  explainerDocumentPath: string;
+  document: ExplainerDocument;
 }
 
 export async function writeCaptureArtifacts(
@@ -22,15 +22,15 @@ export async function writeCaptureArtifacts(
   fs.mkdirSync(jobDir, { recursive: true });
   const captureManifestPath = path.join(jobDir, 'capture-manifest.json');
   fs.writeFileSync(captureManifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
-  const seed = await compileCaptureManifestToCompositionDocument(manifest, {
+  const seed = await compileCaptureManifestToExplainerDocument(manifest, {
     jobDir,
     compilers: { terminal: compileTerminalCapture },
   });
   const componentPath = path.join(jobDir, 'composition.tsx');
-  const compositionDocumentPath = path.join(jobDir, 'composition-document.json');
-  const tsx = compileCompositionDocumentToTsx(seed.document);
+  const explainerDocumentPath = path.join(jobDir, 'explainer.json');
+  const tsx = compileExplainerDocumentToTsx(seed.document);
   fs.writeFileSync(
-    compositionDocumentPath,
+    explainerDocumentPath,
     `${JSON.stringify(seed.document, null, 2)}\n`,
     'utf8'
   );
@@ -39,7 +39,7 @@ export async function writeCaptureArtifacts(
     componentPath,
     audioManifestPath: seed.audioManifestPath,
     captureManifestPath,
-    compositionDocumentPath,
+    explainerDocumentPath,
     document: seed.document,
   };
 }

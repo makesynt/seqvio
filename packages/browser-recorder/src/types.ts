@@ -84,7 +84,7 @@ export interface BrowserPipelineResult {
   planPath: string;
   manifestPath: string;
   captureManifestPath: string;
-  compositionDocumentPath: string;
+  explainerDocumentPath: string;
   componentPath: string;
   audioManifestPath?: string;
   resolvedAudioManifestPath?: string;

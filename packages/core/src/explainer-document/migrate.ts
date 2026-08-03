@@ -1,13 +1,13 @@
 /**
- * Migrate Storyboard IR v1 to CompositionDocument v2.
+ * Adapt a whiteboard Storyboard to an ExplainerDocument.
  */
 
 import type { Storyboard, StoryboardScene } from '../storyboard/schema';
 import type {
-  CompositionDocument,
+  ExplainerDocument,
   WhiteboardSceneSpec,
 } from './schema';
-import { COMPOSITION_DOCUMENT_VERSION } from './schema';
+import { EXPLAINER_DOCUMENT_FORMAT, EXPLAINER_DOCUMENT_SCHEMA_VERSION } from './schema';
 
 function toWhiteboardScene(scene: StoryboardScene): WhiteboardSceneSpec {
   return {
@@ -22,9 +22,10 @@ function toWhiteboardScene(scene: StoryboardScene): WhiteboardSceneSpec {
   };
 }
 
-export function storyboardToCompositionV2(board: Storyboard): CompositionDocument {
+export function storyboardToExplainerDocument(board: Storyboard): ExplainerDocument {
   return {
-    version: COMPOSITION_DOCUMENT_VERSION,
+    format: EXPLAINER_DOCUMENT_FORMAT,
+    schemaVersion: EXPLAINER_DOCUMENT_SCHEMA_VERSION,
     id: board.id,
     width: board.width,
     height: board.height,

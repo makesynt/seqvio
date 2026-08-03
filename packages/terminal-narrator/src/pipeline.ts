@@ -79,7 +79,7 @@ export async function runPipeline(
     castPath: recorded.castPath,
     componentPath,
     captureManifestPath: artifacts.captureManifestPath,
-    compositionDocumentPath: artifacts.compositionDocumentPath,
+    explainerDocumentPath: artifacts.explainerDocumentPath,
     audioManifestPath,
     resolvedAudioManifestPath,
     qaReportPath: qa.reportPath,

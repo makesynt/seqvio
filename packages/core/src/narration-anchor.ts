@@ -1,5 +1,5 @@
 import type { NarrationCue } from './audio';
-import type { ExplanationBeatAnchorSpec } from './composition-document/schema';
+import type { ExplanationBeatAnchorSpec } from './explainer-document/schema';
 import { resolveNarrationCueTimes } from './time';
 
 export type NarrationAnchorMethod = 'chunk-character' | 'cue-character';

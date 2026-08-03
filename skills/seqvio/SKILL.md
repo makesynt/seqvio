@@ -1,6 +1,6 @@
 ---
 name: seqvio
-description: Create or edit Seqvio explainer video compositions in TSX and render them to MP4 with optional narration and captions. Use when working in this repository on whiteboard animations, technical explainers (code walkthrough / architecture diagram), CompositionDocument v2 IR, storyboard IR planning, seqvio-generate plan-agent, chapter render/resume, scene timing, transitions, seqvio-render, or seqvio-audio workflows. Covers @seqvio/whiteboard, @seqvio/technical, @seqvio/core, examples/compositions, examples/ir, and the current deterministic authoring/rendering contract.
+description: Create or edit Seqvio explainer video compositions in TSX and render them to MP4 with optional narration and captions. Use when working in this repository on editorial planning, visual design briefs, ExplainerDocument IR, whiteboard animations, technical explainers, storyboard planning, chapter render/resume, scene timing, transitions, seqvio-render, or seqvio-audio workflows.
 ---
 
 # Seqvio
@@ -8,7 +8,7 @@ description: Create or edit Seqvio explainer video compositions in TSX and rende
 Seqvio turns structured content into narrated explainer videos. Preferred production loop for **new topics**:
 
 1. write a host-agent task with `seqvio-generate plan-agent`
-2. let the host agent produce CompositionDocument v2 with narration cues and ExplanationBeats authored together
+2. review human-readable editorial and visual design artifacts, then let the host agent produce ExplainerDocument with narration cues and ExplanationBeats authored together
 3. validate + compile the IR to TSX with logical source timing
 4. for long technical videos, optionally `seqvio-generate render-plan` then chapter-render with `--resume`
 5. extract and synthesize with `seqvio-audio`, which resolves phrase anchors and semantic scene time maps
@@ -27,7 +27,7 @@ Manual TSX authoring is still valid for polish:
 4. extract and synthesize narration with `seqvio-audio` when needed
 5. render with `seqvio-render`
 
-When CompositionDocument narration and visuals must align, author them together:
+When ExplainerDocument narration and visuals must align, author them together:
 
 1. add `scene.explanation.cues` with the spoken text
 2. add `scene.explanation.beats` with exact phrase anchors and visual target ids
@@ -36,7 +36,7 @@ When CompositionDocument narration and visuals must align, author them together:
 
 Then use the **resolved-audio workflow**:
 
-1. compile the CompositionDocument; Seqvio emits narration, Beats, highlights, and logical source frames together
+1. compile the ExplainerDocument; Seqvio emits narration, Beats, highlights, and logical source frames together
 2. run `seqvio-audio extract` then `seqvio-audio synthesize`
 3. verify every Beat has `outputFrame` and no `resolutionError`
 4. render with `--audioManifest .../audio-manifest.resolved.json`
@@ -88,9 +88,9 @@ The skill alone does not install npm packages or render MP4 output.
 ## Example Prompts
 
 - "Using `/seqvio`, write a plan-agent task for a Chinese history explainer, then validate and compile the returned IR."
-- "Using `/seqvio`, plan a CompositionDocument v2 programming explainer about HTTP caching with code and architecture scenes."
+- "Using `/seqvio`, create and review an editorial plan and visual design brief, then produce an ExplainerDocument programming explainer about HTTP caching."
 - "Using `/seqvio`, create a 4-scene Chinese product overview with whiteboard visuals and ElevenLabs narration."
-- "Edit `examples/compositions/technical-demo-v2.tsx` then render with chapter resume for only the code scene."
+- "Edit `examples/compositions/technical-demo.tsx` then render with chapter resume for only the code scene."
 - "Fix timing in this composition so each scene aligns with its narration cue after synthesis."
 - "Render a silent whiteboard title card from a new single-scene TSX file."
 
@@ -102,7 +102,7 @@ The skill alone does not install npm packages or render MP4 output.
 - For narration extraction, synthesis, and muxing, read [references/audio-workflow.md](references/audio-workflow.md).
 - For production craft rules from real narrated explainer work, read [references/production-techniques.md](references/production-techniques.md).
 - When making blackboard or whiteboard explainers, use the visual metaphor and takeaway-container guidance in [references/production-techniques.md](references/production-techniques.md) to avoid repetitive rectangle-only layouts.
-- For host-agent IR planning (Storyboard v1 and CompositionDocument v2), read [references/planning-workflow.md](references/planning-workflow.md).
+- For host-agent planning (EditorialPlan, VisualDesignBrief, Storyboard, and ExplainerDocument), read [references/planning-workflow.md](references/planning-workflow.md).
 
 ### Visual styles
 
@@ -110,7 +110,7 @@ Pick style packages per scene — do not mix unrelated component families carele
 
 - **Whiteboard** (`@seqvio/whiteboard`) — SVG hand-drawn animation; `WhiteboardScene` / `DrawText` / `DrawShape` / `DrawImage` / `DrawIcon` / `Hand`. Themes select the look (default, pin-and-paper, studio, field-note, …). For the Pin & Paper theme, read [references/pin-and-paper-theme.md](references/pin-and-paper-theme.md).
 - **Scatterbrain** (`@seqvio/scatterbrain`) — div/CSS sticky-note / cork-board look; `ScatterScene` / `StickyNote` / `Scrawl` / `PinnedList` / `Doodle` / `Polaroid`. Read [references/scatterbrain-style.md](references/scatterbrain-style.md).
-- **Technical** (`@seqvio/technical`) — code walkthrough, architecture diagrams, semantic annotations; usually compiled from CompositionDocument v2.
+- **Technical** (`@seqvio/technical`) — code walkthrough, architecture diagrams, semantic annotations; usually compiled from ExplainerDocument.
 
 ## Working Model
 
@@ -157,7 +157,7 @@ Each scene usually wraps its own `WhiteboardScene`. Scene-local draw timings sta
   - a default React component
   - `meta` with at least `duration` and `fps`
 - All timing is in **frames**, not seconds.
-- For CompositionDocument audio alignment, use `explanation.cues` and phrase-anchored `explanation.beats`; do not independently tune narration and visual timestamps.
+- For ExplainerDocument audio alignment, use `explanation.cues` and phrase-anchored `explanation.beats`; do not independently tune narration and visual timestamps.
 - For hand-authored TSX, prefer one narration cue per scene or beat and set `sceneId` on each cue.
 - For narrated videos, **voice is the clock**: do not pad scenes with silence to hit a target duration. If the video must be longer, expand the script and synthesize more narration.
 - After synthesis or audio editing, check for long silent spans before handoff. Use FFmpeg `silencedetect` or an equivalent audio QA step; visual timing must adapt to the final audio, not the other way around.

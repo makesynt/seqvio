@@ -59,8 +59,8 @@ const CASES = [
     frames: [0, 24, 60],
   },
   {
-    name: 'technical-demo-v2',
-    component: 'examples/compositions/technical-demo-v2.tsx',
+    name: 'technical-demo',
+    component: 'examples/compositions/technical-demo.tsx',
     width: 1280,
     height: 720,
     // hook whiteboard, code walkthrough, architecture diagram

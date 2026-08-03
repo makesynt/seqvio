@@ -8,9 +8,9 @@
 
 **让 coding agent 拥有解释想法的视觉语言。**
 
-Seqvio 为 coding agent 提供从真实系统捕获到讲解视频的完整路径。`CompositionDocument v2` 可以用 `ExplanationBeat` 同时设计旁白短语和视觉动作，再依据实际 TTS 时长完成语义对齐、QA 和本地 MP4 渲染。
+Seqvio 为 coding agent 提供从真实系统捕获到讲解视频的完整路径。人类可读的 `EDITORIAL.md` 与 `VISUAL-DESIGN.md` 先让内容取舍和视觉方向可审阅，再由正式 `ExplainerDocument` IR 通过 `ExplanationBeat` 绑定旁白短语与视觉动作。
 
-> **当前状态：** 仓库支持显式 React/TSX composition，以及拥有完整 `whiteboard`、`code`、`diagram`、`terminal`、`browser` 编译路径的 `CompositionDocument v2`。短语锚定的 ExplanationBeat 会驱动逻辑视觉时间、TTS 后语义 timeMap、语速/高亮 QA 和确定性本地渲染。Terminal 与 Browser 生产管线已经统一经过 shared capture dispatcher，把真实步骤经 IR 编译，每个作业都会运行 capture QA，并通过 1280x720 release smoke。Capture CLI contract `1.0` 已固定命令、JSON 结果、退出码、音频/字幕选项、进度和产物布局；生命周期晋级前由 Windows/Linux/macOS 主机矩阵验证。
+> **当前状态：** 仓库支持显式 React/TSX composition，以及拥有完整 `whiteboard`、`code`、`diagram`、`terminal`、`browser` 编译路径的 `ExplainerDocument`。短语锚定的 ExplanationBeat 驱动逻辑视觉时间、TTS 后语义 timeMap、语速/高亮 QA 和确定性本地渲染。Capture CLI contract `2.0` 将正式 IR 产物统一命名为 `explainer.json`。
 
 ## Demo
 
@@ -94,7 +94,7 @@ export ELEVENLABS_API_KEY=your_key
 
 完成步骤 1 和 2 后，可尝试如下 prompt：
 
-> 使用 `/seqvio`，用 CompositionDocument v2 制作 4 场景中文技术讲解，同时设计旁白 cue 和短语锚定的视觉 Beat，使用 ElevenLabs 合成，运行 QA 后渲染 MP4。
+> 使用 `/seqvio`，先生成并审阅讲解策划与视觉设计说明，再编译成 4 场景中文 ExplainerDocument，加入短语锚定视觉 Beat，运行 QA 后渲染 MP4。
 
 Skill 会引导 agent：选示例 composition、改 TSX、提取旁白元数据、合成音频、运行 `seqvio-render`。
 
@@ -113,7 +113,7 @@ seqvio-render \
 
 ### Browser 捕获适配器
 
-本地 [`@seqvio/browser-recorder`](./packages/browser-recorder) workspace 会执行经过校验的 Chromium action plan，记录视频、光标/聚焦元数据和准确动作开始时间，并通过 `CompositionDocument v2` 生成 Browser 场景、旁白 cue、基于捕获证据的 ExplanationBeat 与音频 manifest：
+本地 [`@seqvio/browser-recorder`](./packages/browser-recorder) workspace 会执行经过校验的 Chromium action plan，记录视频、光标/聚焦元数据和准确动作开始时间，并通过 `ExplainerDocument` 生成 Browser 场景、旁白 cue、基于捕获证据的 ExplanationBeat 与音频 manifest：
 
 ```bash
 node packages/browser-recorder/dist/cli.js serve --port 4175
@@ -149,15 +149,17 @@ node packages/browser-recorder/dist/cli.js record --plan plan.json --jobId demo 
 | [`seqvio-product-demo-preview.tsx`](./examples/compositions/seqvio-product-demo-preview.tsx) | 产品 walkthrough 组件示例 |
 | [`seqvio-scatterbrain.tsx`](./examples/compositions/seqvio-scatterbrain.tsx) | 便签 / workshop 风格示例 |
 | [`loop-engineering-explainer.tsx`](./examples/compositions/loop-engineering-explainer.tsx) | 长篇旁白讲解 composition |
-| [`technical-explainer-v2.tsx`](./examples/compositions/technical-explainer-v2.tsx) | 技术讲解：代码走读与架构图 |
-| [`technical-demo-v2.tsx`](./examples/compositions/technical-demo-v2.tsx) | 终端演示与 ANSI 渲染展示 |
+| [`technical-explainer.tsx`](./examples/compositions/technical-explainer.tsx) | 技术讲解：代码走读与架构图 |
+| [`technical-demo.tsx`](./examples/compositions/technical-demo.tsx) | 终端演示与 ANSI 渲染展示 |
 | [`packages/whiteboard/examples/`](./packages/whiteboard/examples/) | 单场景白板示例 |
 
 ## 工作原理
 
 ```text
 内容或真实捕获
-  -> CompositionDocument v2（cue + ExplanationBeat + 视觉目标）
+  -> EDITORIAL.md（目标、内容取舍、讲解结构）
+  -> VISUAL-DESIGN.md（层级、布局、运动、分段处理）
+  -> ExplainerDocument（cue + ExplanationBeat + 视觉目标）
   -> TSX + 逻辑源时间轴
   -> TTS + 短语锚点解析
   -> 语义 scene timeMap
@@ -165,11 +167,12 @@ node packages/browser-recorder/dist/cli.js record --plan plan.json --jobId demo 
   -> seqvio-render -> MP4
 ```
 
-1. 生成或捕获 `CompositionDocument v2`，为视觉元素和捕获步骤设置稳定 ID。
-2. 同时编写 `explanation.cues` 与 `explanation.beats`；编译器统一生成旁白、视觉时间、高亮和场景元数据。
-3. 用 `seqvio-audio` 提取并合成音频；实际音频时长会解析 Beat `outputFrame` 和语义 timeMap。
-4. 运行 `seqvio-qa`；无法解析或倒序的 Beat 是错误，整段字符比例对齐的低置信度会形成警告。
-5. 使用 `seqvio-render --audioManifest ...` 渲染并混流旁白。
+1. 审阅人类可读的讲解策划与视觉设计说明。
+2. 生成或捕获 `ExplainerDocument`，为视觉元素和捕获步骤设置稳定 ID；其中 `schemaVersion` 只是实现兼容标记，不属于产品名称。
+3. 同时编写 `explanation.cues` 与 `explanation.beats`；编译器统一生成旁白、视觉时间、高亮和场景元数据。
+4. 用 `seqvio-audio` 提取并合成音频；实际音频时长会解析 Beat `outputFrame` 和语义 timeMap。
+5. 运行 `seqvio-qa`；无法解析或倒序的 Beat 是错误，整段字符比例对齐的低置信度会形成警告。
+6. 使用 `seqvio-render --audioManifest ...` 渲染并混流旁白。
 
 手写 TSX 仍是受支持的低层生产接口，也可以直接维护 `meta.audio.narration`。
 
@@ -219,7 +222,7 @@ Seqvio 是 coding agent 用来解释想法的视觉语言，而不只是一个�
 - Browser 场景支持录制视频、光标/聚焦/点击元数据、真实动作时钟和 time-mapped 媒体 seek
 - `ExplanationBeat` cue、精确短语锚点、视觉动作、捕获证据、TTS 后 `outputFrame` 和语义 `sceneTimings[].timeMap`
 - `@seqvio/core`：`VideoComposition`、`Scene`、`Transition`
-- CompositionDocument v2 与保留的 Storyboard IR schema、validation、pacing 和 TSX compile helpers
+- ExplainerDocument 与保留的 Storyboard IR schema、validation、pacing 和 TSX compile helpers
 - `seqvio-render`：TSX 到 MP4
 - `seqvio-audio`：manifest 提取与 TTS 合成
 - `seqvio-qa`：baseline/capture profile、稳定音频/时序/媒体诊断、警告升级和关键帧视觉检查
@@ -314,7 +317,7 @@ node packages/renderer/dist/cli.js \
 
 完整的阶段划分和取舍理由见 [`docs/ROADMAP.md`](./docs/ROADMAP.md)。方向概要：
 
-1. **统一捕获/IR 路径** -- shared dispatcher 路由与 legacy writer 移除已经完成，下一步围绕 `CaptureSession -> CompositionDocument` 稳定适配器 CLI。
+1. **统一捕获/IR 路径** -- shared dispatcher 路由与 legacy writer 移除已经完成，下一步围绕 `CaptureSession -> ExplainerDocument` 稳定适配器 CLI。
 2. **ExplanationBeat 时间模型** -- 已覆盖所有稳定场景，包括捕获证据和 TTS 后短语对齐。
 3. **发布 QA** -- baseline/capture profile 已覆盖视觉、节奏、音频、媒体和语义 Beat 故障；截图隐私 masking 暂缓。
 4. **打包与晋级** -- CLI/产物 contract `1.0` 已完成；验证支持的 npm/runtime 主机后再晋级生命周期。截图隐私仍暂缓。

@@ -13,7 +13,7 @@ describe('buildRenderPlanFromDocument', () => {
     const { fileURLToPath } = await import('node:url');
     const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
     const doc = JSON.parse(
-      readFileSync(join(root, 'examples', 'ir', 'technical-explainer-v2.json'), 'utf8')
+      readFileSync(join(root, 'examples', 'ir', 'technical-explainer.explainer.json'), 'utf8')
     );
     const timeline = computeDocumentTimeline(doc);
     const plan = buildRenderPlanFromDocument(doc);
@@ -43,7 +43,7 @@ describe('buildRenderPlanFromDocument', () => {
     const { syncRenderPlanWithDocument } = await import('../dist/index.js');
     const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
     const doc = JSON.parse(
-      readFileSync(join(root, 'examples', 'ir', 'technical-explainer-v2.json'), 'utf8')
+      readFileSync(join(root, 'examples', 'ir', 'technical-explainer.explainer.json'), 'utf8')
     );
     const plan = buildRenderPlanFromDocument(doc);
     plan.chapters[0].status = 'complete';

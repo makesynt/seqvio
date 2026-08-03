@@ -10,7 +10,7 @@ export type FeatureLifecycle = (typeof FEATURE_LIFECYCLES)[number];
 
 export interface SceneCapability {
   type: string;
-  schemaVersion: '2.0';
+  schemaVersion: '1.0';
   compiler: 'complete';
   requiredPackage: string;
   lifecycle: FeatureLifecycle;
@@ -22,31 +22,31 @@ export interface SceneCapability {
 
 export const SCENE_CAPABILITIES = {
   whiteboard: {
-    type: 'whiteboard', schemaVersion: '2.0', compiler: 'complete',
+    type: 'whiteboard', schemaVersion: '1.0', compiler: 'complete',
     requiredPackage: '@seqvio/whiteboard', lifecycle: 'public', agentAuthoring: true,
     authoringSummary: 'elements = text | shape | image | icon',
     qaRules: ['visual-layout', 'pacing', 'audio-timeline', 'explanation-beats'],
   },
   code: {
-    type: 'code', schemaVersion: '2.0', compiler: 'complete',
+    type: 'code', schemaVersion: '1.0', compiler: 'complete',
     requiredPackage: '@seqvio/technical', lifecycle: 'public', agentAuthoring: true,
     authoringSummary: 'language, source, steps = type | focus | insert | replace | delete | annotate',
     qaRules: ['visual-layout', 'pacing', 'audio-timeline', 'explanation-beats'],
   },
   diagram: {
-    type: 'diagram', schemaVersion: '2.0', compiler: 'complete',
+    type: 'diagram', schemaVersion: '1.0', compiler: 'complete',
     requiredPackage: '@seqvio/technical', lifecycle: 'public', agentAuthoring: true,
     authoringSummary: 'nodes, edges, steps = reveal | connect | trace | emphasize',
     qaRules: ['visual-layout', 'pacing', 'audio-timeline', 'explanation-beats'],
   },
   terminal: {
-    type: 'terminal', schemaVersion: '2.0', compiler: 'complete',
+    type: 'terminal', schemaVersion: '1.0', compiler: 'complete',
     requiredPackage: '@seqvio/technical', lifecycle: 'public', agentAuthoring: false,
     authoringSummary: 'capture-derived PTY events, xterm snapshots, and recorded steps',
     qaRules: ['visual-layout', 'capture-state', 'pacing', 'audio-timeline', 'explanation-beats'],
   },
   browser: {
-    type: 'browser', schemaVersion: '2.0', compiler: 'complete',
+    type: 'browser', schemaVersion: '1.0', compiler: 'complete',
     requiredPackage: '@seqvio/product-demo', lifecycle: 'public', agentAuthoring: false,
     authoringSummary: 'capture-derived video, cursor, focus, click, and recorded steps',
     qaRules: ['visual-layout', 'capture-state', 'capture-media', 'pacing', 'audio-timeline', 'explanation-beats'],

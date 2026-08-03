@@ -1,5 +1,5 @@
 /**
- * Runtime validation for CompositionDocument v2.
+ * Runtime validation for ExplainerDocument.
  */
 
 import { validateStoryboard, type StoryboardIssue } from '../storyboard/validate';
@@ -8,7 +8,9 @@ import {
   type AnnotationSpec,
   type ChapterSpec,
   type CodeSceneSpec,
-  type CompositionDocument,
+  EXPLAINER_DOCUMENT_FORMAT,
+  EXPLAINER_DOCUMENT_SCHEMA_VERSION,
+  type ExplainerDocument,
   type DiagramSceneSpec,
   type SceneExplanationSpec,
   type SceneSpec,
@@ -772,7 +774,7 @@ function validateChapters(
   });
 }
 
-export function validateCompositionDocument(input: unknown): CompositionIssue[] {
+export function validateExplainerDocument(input: unknown): CompositionIssue[] {
   const issues: CompositionIssue[] = [];
 
   if (!isObject(input)) {
@@ -780,26 +782,39 @@ export function validateCompositionDocument(input: unknown): CompositionIssue[] 
       severity: 'error',
       path: '$',
       code: 'expected_composition_object',
-      message: 'CompositionDocument must be a JSON object',
+      message: 'ExplainerDocument must be a JSON object',
       expected: 'object',
       received: input,
       repairable: true,
-      suggestion: 'Return one JSON object with version "2.0", id, and scenes.',
+      suggestion: 'Return one JSON object with format "seqvio-explainer", schemaVersion "1.0", id, and scenes.',
     }];
   }
 
-  const doc = input as Partial<CompositionDocument> & Record<string, unknown>;
+  const doc = input as Partial<ExplainerDocument> & Record<string, unknown>;
 
-  if (doc.version !== '2.0') {
+  if (doc.format !== EXPLAINER_DOCUMENT_FORMAT) {
     issue(issues, {
       severity: 'error',
-      path: 'version',
-      code: 'unsupported_document_version',
-      message: 'version must be "2.0"',
-      expected: '"2.0"',
-      received: doc.version,
+      path: 'format',
+      code: 'unsupported_document_format',
+      message: `format must be "${EXPLAINER_DOCUMENT_FORMAT}"`,
+      expected: `"${EXPLAINER_DOCUMENT_FORMAT}"`,
+      received: doc.format,
       repairable: true,
-      suggestion: 'Set version to "2.0" for CompositionDocument IR.',
+      suggestion: 'Set format to "seqvio-explainer" for ExplainerDocument IR.',
+    });
+  }
+
+  if (doc.schemaVersion !== EXPLAINER_DOCUMENT_SCHEMA_VERSION) {
+    issue(issues, {
+      severity: 'error',
+      path: 'schemaVersion',
+      code: 'unsupported_schema_version',
+      message: `schemaVersion must be "${EXPLAINER_DOCUMENT_SCHEMA_VERSION}"`,
+      expected: `"${EXPLAINER_DOCUMENT_SCHEMA_VERSION}"`,
+      received: doc.schemaVersion,
+      repairable: true,
+      suggestion: 'Set schemaVersion to "1.0". This field is an implementation compatibility marker, not the product name.',
     });
   }
 
@@ -994,14 +1009,14 @@ export function validateCompositionDocument(input: unknown): CompositionIssue[] 
   return issues;
 }
 
-export function assertValidCompositionDocument(
+export function assertValidExplainerDocument(
   input: unknown
-): asserts input is CompositionDocument {
-  const issues = validateCompositionDocument(input);
+): asserts input is ExplainerDocument {
+  const issues = validateExplainerDocument(input);
   const errors = issues.filter((issue) => issue.severity === 'error');
   if (errors.length > 0) {
     throw new Error(
-      `Invalid composition document:\n${errors.map((e) => ` - ${e.message}`).join('\n')}`
+      `Invalid explainer document:\n${errors.map((e) => ` - ${e.message}`).join('\n')}`
     );
   }
 }

@@ -1,7 +1,7 @@
 /**
- * CompositionDocument v2 IR: schema, validation, compilation, and migration.
+ * ExplainerDocument IR: schema, validation, compilation, and Storyboard adapter.
  *
- *   prompt/document -> CompositionDocument v2 (JSON) -> TSX -> MP4
+ *   authoring artifacts -> ExplainerDocument (JSON) -> TSX -> MP4
  */
 
 export * from './schema';

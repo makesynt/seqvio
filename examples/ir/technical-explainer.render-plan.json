@@ -8,7 +8,7 @@
       "endFrame": 1223,
       "contentHash": "449cf3ba",
       "status": "complete",
-      "outputPath": "D:\\video-agent\\seqvio\\output\\chapters\\technical-explainer-v2\\hook.mp4",
+      "outputPath": "D:\\video-agent\\seqvio\\output\\chapters\\technical-explainer\\hook.mp4",
       "settingsHash": "5731467e12750652",
       "previewComplete": true,
       "finalComplete": false
@@ -19,7 +19,7 @@
       "endFrame": 2315,
       "contentHash": "4b3d3db5",
       "status": "complete",
-      "outputPath": "D:\\video-agent\\seqvio\\output\\chapters\\technical-explainer-v2\\model.mp4",
+      "outputPath": "D:\\video-agent\\seqvio\\output\\chapters\\technical-explainer\\model.mp4",
       "settingsHash": "5731467e12750652",
       "previewComplete": true,
       "finalComplete": false
@@ -30,7 +30,7 @@
       "endFrame": 6191,
       "contentHash": "ad727ca6",
       "status": "complete",
-      "outputPath": "D:\\video-agent\\seqvio\\output\\chapters\\technical-explainer-v2\\example.mp4",
+      "outputPath": "D:\\video-agent\\seqvio\\output\\chapters\\technical-explainer\\example.mp4",
       "settingsHash": "5731467e12750652",
       "previewComplete": true
     },
@@ -40,7 +40,7 @@
       "endFrame": 7595,
       "contentHash": "43a8932d",
       "status": "complete",
-      "outputPath": "D:\\video-agent\\seqvio\\output\\chapters\\technical-explainer-v2\\pitfalls.mp4",
+      "outputPath": "D:\\video-agent\\seqvio\\output\\chapters\\technical-explainer\\pitfalls.mp4",
       "settingsHash": "5731467e12750652",
       "previewComplete": true
     },
@@ -50,7 +50,7 @@
       "endFrame": 8135,
       "contentHash": "cde58e0d",
       "status": "complete",
-      "outputPath": "D:\\video-agent\\seqvio\\output\\chapters\\technical-explainer-v2\\recap.mp4",
+      "outputPath": "D:\\video-agent\\seqvio\\output\\chapters\\technical-explainer\\recap.mp4",
       "settingsHash": "5731467e12750652",
       "previewComplete": true
     }

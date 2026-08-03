@@ -1,5 +1,5 @@
 /**
- * Compile a BrowserCaptureManifest into a CompositionDocument IR.
+ * Compile a BrowserCaptureManifest into an ExplainerDocument IR.
  *
  * Simpler than terminal: no xterm timing - the recorded video + cursor/focus
  * metadata map directly onto a BrowserSceneSpec. Per-step narration (timed) is
@@ -11,21 +11,21 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import type {
-  CompositionDocument,
+  ExplainerDocument,
   BrowserSceneSpec,
   NarrationCue,
   CaptionCue,
 } from '@seqvio/core';
 import type {
   CompileOptions,
-  CompositionDocumentSeed,
+  ExplainerDocumentSeed,
   BrowserCaptureManifest,
 } from '@seqvio/capture';
 
 export async function compileBrowserCapture(
   manifest: BrowserCaptureManifest,
   options?: CompileOptions
-): Promise<CompositionDocumentSeed> {
+): Promise<ExplainerDocumentSeed> {
   // 1. Per-step narration and jointly-authored explanation beats.
   const narration: NarrationCue[] = [];
   const captions: CaptionCue[] = [];
@@ -82,9 +82,10 @@ export async function compileBrowserCapture(
       : undefined,
   };
 
-  // 3. CompositionDocument with groundTruth carried from the manifest.
-  const document: CompositionDocument = {
-    version: '2.0',
+  // 3. Executable explainer IR with groundTruth carried from the manifest.
+  const document: ExplainerDocument = {
+    format: 'seqvio-explainer',
+    schemaVersion: '1.0',
     id: `browser-capture-${manifest.name}`,
     width: manifest.viewport.width,
     height: manifest.viewport.height,

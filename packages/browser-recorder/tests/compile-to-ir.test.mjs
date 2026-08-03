@@ -4,7 +4,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { compileBrowserCapture } from '../dist/compile-to-ir.js';
 import { toBrowserCaptureManifest } from '../dist/capture-session.js';
-import { validateCompositionDocument } from '@seqvio/core';
+import { validateExplainerDocument } from '@seqvio/core';
 
 test('compileBrowserCapture produces a browser IR scene from a manifest', async () => {
   const manifest = {
@@ -26,7 +26,8 @@ test('compileBrowserCapture produces a browser IR scene from a manifest', async 
   fs.rmSync(jobDir, { recursive: true, force: true });
   const seed = await compileBrowserCapture(manifest, { jobDir });
 
-  assert.equal(seed.document.version, '2.0');
+  assert.equal(seed.document.format, 'seqvio-explainer');
+  assert.equal(seed.document.schemaVersion, '1.0');
   assert.equal(seed.document.id, 'browser-capture-smoke');
   assert.equal(seed.document.scenes.length, 1);
   const scene = seed.document.scenes[0];
@@ -36,7 +37,7 @@ test('compileBrowserCapture produces a browser IR scene from a manifest', async 
   assert.equal(scene.recordingWidth, 1280);
   assert.equal(scene.steps[1].id, 'a2');
   assert.equal(scene.explanation.beats[1].evidence.captureStepId, 'a2');
-  assert.deepEqual(validateCompositionDocument(seed.document), []);
+  assert.deepEqual(validateExplainerDocument(seed.document), []);
 
   // audio manifest with per-step narration (label fallback)
   assert.ok(seed.audioManifestPath);

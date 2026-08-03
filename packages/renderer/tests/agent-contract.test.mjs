@@ -2,35 +2,59 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   formatAgentPlanningPrompt,
+  formatEditorialPlanningPrompt,
+  formatVisualDesignPrompt,
   formatAgentSceneCapabilities,
   resolveAgentIrFormat,
 } from '../dist/agent-contract.js';
 
 describe('agent-contract', () => {
-  it('routes technical domains to composition-v2 by default', () => {
-    assert.equal(resolveAgentIrFormat({ domain: 'programming' }), 'composition-v2');
-    assert.equal(resolveAgentIrFormat({ domain: 'ai' }), 'composition-v2');
-    assert.equal(resolveAgentIrFormat({ domain: 'devops' }), 'composition-v2');
-    assert.equal(resolveAgentIrFormat({ domain: 'history' }), 'storyboard-v1');
-    assert.equal(resolveAgentIrFormat({ domain: 'auto' }), 'storyboard-v1');
+  it('routes technical domains to the explainer IR by default', () => {
+    assert.equal(resolveAgentIrFormat({ domain: 'programming' }), 'explainer');
+    assert.equal(resolveAgentIrFormat({ domain: 'ai' }), 'explainer');
+    assert.equal(resolveAgentIrFormat({ domain: 'devops' }), 'explainer');
+    assert.equal(resolveAgentIrFormat({ domain: 'history' }), 'storyboard');
+    assert.equal(resolveAgentIrFormat({ domain: 'auto' }), 'storyboard');
   });
 
-  it('writes a composition-v2 planning prompt for programming', () => {
+  it('writes an ExplainerDocument prompt constrained by approved authoring artifacts', () => {
     const prompt = formatAgentPlanningPrompt('Explain HTTP caching', {
       domain: 'programming',
       language: 'en',
       maxScenes: 6,
+    }, {
+      editorialPlan: '# Editorial Plan: HTTP caching',
+      visualDesignBrief: '# Visual Design Brief: HTTP caching',
     });
-    assert.match(prompt, /CompositionDocument v2/);
+    assert.match(prompt, /ExplainerDocument/);
     assert.match(prompt, /"pacingProfile": "explainer-v1"/);
-    assert.match(prompt, /"version": "2\.0"/);
+    assert.match(prompt, /"format": "seqvio-explainer"/);
+    assert.match(prompt, /"schemaVersion": "1\.0"/);
     assert.match(prompt, /type": "code"/);
     assert.match(prompt, /explanation\.beats/);
     assert.match(prompt, /"anchor": \{ "text": "typed helper" \}/);
     assert.doesNotMatch(prompt, /"narration": "The client uses/);
-    assert.match(prompt, /IR format: composition-v2/);
+    assert.match(prompt, /IR format: explainer/);
+    assert.match(prompt, /Approved Editorial Plan/);
+    assert.match(prompt, /Approved Visual Design Brief/);
     assert.match(prompt, /Public agent-authorable scene types/);
     assert.match(prompt, /Terminal and browser scenes are capture-derived/);
+  });
+
+  it('creates separate human-readable editorial and visual planning tasks', () => {
+    const editorial = formatEditorialPlanningPrompt('Explain HTTP caching', { language: 'en' });
+    assert.match(editorial, /Content Decisions/);
+    assert.match(editorial, /Make omissions explicit/);
+    const visual = formatVisualDesignPrompt('Explain HTTP caching', '# Editorial Plan: Cache', { language: 'en' });
+    assert.match(visual, /Section Treatments/);
+    assert.match(visual, /real\s+capture material/);
+  });
+
+  it('refuses final IR planning without both approved authoring artifacts', () => {
+    assert.throws(
+      () => formatAgentPlanningPrompt('Explain HTTP caching', { domain: 'programming' }),
+      /requires both an editorial plan and a visual design brief/,
+    );
   });
 
   it('derives agent scene descriptions from the public capability registry', () => {
@@ -46,8 +70,11 @@ describe('agent-contract', () => {
     const prompt = formatAgentPlanningPrompt('Silk Road trade', {
       domain: 'history',
       language: 'zh',
+    }, {
+      editorialPlan: '# Editorial Plan: Silk Road',
+      visualDesignBrief: '# Visual Design Brief: Silk Road',
     });
     assert.match(prompt, /whiteboard Storyboard IR/);
-    assert.doesNotMatch(prompt, /"version": "2\.0"/);
+    assert.doesNotMatch(prompt, /"schemaVersion": "1\.0"/);
   });
 });

@@ -11,11 +11,11 @@
 
 | Capability | Current state | Disposition |
 | --- | --- | --- |
-| CompositionDocument v2 IR | Five complete scene families plus `ExplanationBeat` cues, phrase anchors, visual actions, capture evidence, validation, compilation, and pacing | Canonical interchange contract |
+| ExplainerDocument IR | Five complete scene families plus `ExplanationBeat` cues, phrase anchors, visual actions, capture evidence, validation, compilation, and pacing | Canonical interchange contract |
 | chapter-render | `renderer/chapter-render.ts`: `hashRenderSettings`, `resume`, `onlyChapters`, `changedChapterIds`, `documentPath` | Reuse; incremental render built |
 | render conformance | Cross-platform semantic golden plus same-host PNG hash/PSNR checks for mixed Terminal/Browser frames | Three-host CI gate with environment-tagged artifacts |
 | seqvio-qa | Baseline/capture profiles cover visual, pacing, audio, media, capture-manifest, and resolved ExplanationBeat failures | Screenshot privacy masking intentionally deferred |
-| `@seqvio/capture` | New: `CaptureSession` contract, `CaptureManifest` union, `compileCaptureManifestToCompositionDocument` dispatcher | Built (Phase 1.1) |
+| `@seqvio/capture` | New: `CaptureSession` contract, `CaptureManifest` union, `compileCaptureManifestToExplainerDocument` dispatcher | Built (Phase 1.1) |
 | Release/capability governance | `seqvio.release-policy.json`, package lifecycle metadata, core scene registry, docs snapshot, changesets/CI drift verifier | Built; release publication pending |
 | terminal-narrator | `node-pty` + asciinema/xterm state; compiler emits capture-backed cues/Beats and audio scene timing | Production pipeline uses shared dispatcher -> IR -> TSX; legacy writer removed |
 | browser-recorder | Records exact action clocks; compiler emits BrowserSceneSpec plus capture-backed cues/Beats | Production pipeline uses shared dispatcher -> IR -> TSX; legacy writer removed |
@@ -30,7 +30,7 @@
    Defines a `CaptureSession` interface (`record() -> CaptureManifest`), a
    `CaptureManifest` schema (carries per-step operation semantics + captured
    state: terminal stdout, browser cursor/focus/screenshot), a
-   `CaptureManifest -> CompositionDocument` dispatcher (compilers injected by
+   `CaptureManifest -> ExplainerDocument` dispatcher (compilers injected by
    adapters, no import cycle), and an **AI explain** step (agent generates
    narration from the manifest's real recorded state, injected as jointly
    authored `scene.explanation.cues` and capture-backed `explanation.beats`).
@@ -40,7 +40,7 @@
    go through the IR: `BrowserSceneSpec` (peer to `TerminalSceneSpec`:
    sourceVideo + cursorPoints + focusTargets + clicks + exact recorded steps +
    explanation) compiles to `RecordedBrowserDemo`.
-3. **No pre-stable IR migration program.** CompositionDocument changes may be
+3. **No pre-stable IR migration program.** ExplainerDocument changes may be
    explicitly breaking until a stable compatibility policy is declared.
    Storyboard v1 remains a separate whiteboard input, not a migration obligation.
 
@@ -71,7 +71,7 @@ added when those are refactored (Phase 1.2/1.3 pipeline migration).
 
 `CaptureSession` interface, `CaptureManifest` union (terminal/browser/git),
 `CaptureStep` + `CaptureState` (AI explain), `NarrationProvider`,
-`compileCaptureManifestToCompositionDocument` dispatcher (compilers injected).
+`compileCaptureManifestToExplainerDocument` dispatcher (compilers injected).
 
 ### 1.2 terminal-narrator - DONE (core)
 
@@ -121,7 +121,7 @@ clipping risk, and sampled visual change. Missing/corrupt/truncated browser medi
   now retains failure artifacts, checks cue/audio duration tolerance, and supports
   configurable warning promotion.
   A shared core pacing policy is also used by agent authoring guidance,
-  CompositionDocument timing resolution, synthesized narration retiming, and QA
+  ExplainerDocument timing resolution, synthesized narration retiming, and QA
   speech-rate/highlight diagnostics.
   TTS resolution now performs a full scene-aware timeline reflow and `seqvio-qa`
   accepts `--audioManifest` so final QA evaluates the same resolved timing used
@@ -171,7 +171,7 @@ work.
 ### 4.1 Reproducible render baseline - DONE (local reference)
 
 `scripts/render-benchmark.mjs` generates network-free Code, Terminal, Browser,
-and mixed CompositionDocument workloads at 1280x720/30 fps. Three-run medians
+and mixed ExplainerDocument workloads at 1280x720/30 fps. Three-run medians
 record render factor, setup time, process-tree peak RSS, output size, renderer
 throughput, and static-frame cache hit rate. The stored Windows reference is
 enforced only on a matching platform/architecture/CPU; other hosts emit a
