@@ -81,6 +81,9 @@ jobs:
       - name: Verify versions, lifecycle, and scene capabilities
         run: npm run verify:contracts
 
+      - name: Verify publish artifacts
+        run: npm run verify:publish-artifacts
+
       - name: Release tooling tests
         run: npm run test:release-tools
 
