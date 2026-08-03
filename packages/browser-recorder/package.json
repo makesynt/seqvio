@@ -1,6 +1,6 @@
 {
   "name": "@seqvio/browser-recorder",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Pre-stable browser capture-to-explanation adapter for Seqvio",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -29,10 +29,10 @@
   },
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
-    "@seqvio/capture": "0.2.0",
-    "@seqvio/core": "0.7.0",
-    "@seqvio/product-demo": "0.7.0",
-    "@seqvio/renderer": "0.7.0",
+    "@seqvio/capture": "0.2.1",
+    "@seqvio/core": "0.7.1",
+    "@seqvio/product-demo": "0.7.1",
+    "@seqvio/renderer": "0.7.1",
     "puppeteer": "^25.1.0"
   },
   "devDependencies": {
