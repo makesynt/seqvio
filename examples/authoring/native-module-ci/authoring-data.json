@@ -1,0 +1,169 @@
+{
+  "editorialPlan": {
+    "format": "seqvio-editorial-plan",
+    "id": "native-module-ci-editorial",
+    "title": "Why node-pty still fails after rebuild",
+    "objective": "Explain why a successful npm rebuild message does not prove that a native module can be loaded, then show a verifiable repair.",
+    "audience": {
+      "description": "Node.js maintainers who understand npm and CI but do not routinely debug native addons.",
+      "priorKnowledge": [
+        "npm installs package dependencies",
+        "CI runs commands in a clean environment"
+      ],
+      "likelyMisconceptions": [
+        "A zero rebuild exit code guarantees that pty.node exists",
+        "Re-running the same rebuild command is a sufficient verification"
+      ]
+    },
+    "thesis": "The rebuild command can succeed while npm blocks the install script that produces pty.node, so verification must test both the artifact and the import.",
+    "durationBudgetSec": 75,
+    "concepts": [
+      {
+        "id": "success-is-not-artifact",
+        "claim": "Command success and native artifact existence are different conditions.",
+        "role": "essential",
+        "decision": "include",
+        "reason": "This corrects the misconception exposed by the CI log.",
+        "prerequisites": [],
+        "estimatedSeconds": 12
+      },
+      {
+        "id": "native-install-path",
+        "claim": "node-pty needs its install script to produce a platform-specific pty.node binary.",
+        "role": "essential",
+        "decision": "include",
+        "reason": "The viewer needs a causal model before seeing the blocked step.",
+        "prerequisites": ["success-is-not-artifact"],
+        "estimatedSeconds": 18
+      },
+      {
+        "id": "blocked-script",
+        "claim": "allowScripts blocked the install step, leaving no loadable binary.",
+        "role": "evidence",
+        "decision": "include",
+        "reason": "This is the direct cause supported by the npm warning.",
+        "prerequisites": ["native-install-path"],
+        "estimatedSeconds": 16
+      },
+      {
+        "id": "repair-and-import",
+        "claim": "Allow the required script, rebuild, and verify with an actual import.",
+        "role": "example",
+        "decision": "include",
+        "reason": "The repair is incomplete without executable verification.",
+        "prerequisites": ["blocked-script"],
+        "estimatedSeconds": 20
+      },
+      {
+        "id": "abi-history",
+        "claim": "Review the complete history of Node ABI versions.",
+        "role": "optional",
+        "decision": "omit",
+        "reason": "It does not help diagnose the observed blocked-script failure."
+      }
+    ],
+    "sections": [
+      {
+        "id": "symptom",
+        "title": "The misleading success signal",
+        "purpose": "hook",
+        "conceptIds": ["success-is-not-artifact"],
+        "expectedOutcome": "The viewer stops treating the rebuild message as proof of loadability.",
+        "targetSeconds": 12
+      },
+      {
+        "id": "install-path",
+        "title": "What must happen during install",
+        "purpose": "establish-model",
+        "conceptIds": ["native-install-path"],
+        "expectedOutcome": "The viewer can name the step that creates pty.node.",
+        "targetSeconds": 18
+      },
+      {
+        "id": "root-cause",
+        "title": "Where the path was blocked",
+        "purpose": "explain-mechanism",
+        "conceptIds": ["blocked-script"],
+        "expectedOutcome": "The viewer connects the allowScripts warning to the missing binary.",
+        "targetSeconds": 16
+      },
+      {
+        "id": "repair",
+        "title": "Repair and verify",
+        "purpose": "demonstrate",
+        "conceptIds": ["repair-and-import"],
+        "expectedOutcome": "The viewer verifies the fix with an import rather than another success message.",
+        "targetSeconds": 20
+      }
+    ]
+  },
+  "visualDesignBrief": {
+    "format": "seqvio-visual-design",
+    "id": "native-module-ci-visual",
+    "title": "Native module causal trace",
+    "direction": "A quiet technical editorial treatment that keeps one causal statement active at a time and uses red only for the blocked install step.",
+    "canvas": {
+      "width": 1280,
+      "height": 720,
+      "background": "#f7f8fa",
+      "safeAreaPx": 48
+    },
+    "palette": [
+      { "role": "ink", "value": "#17191f", "use": "Primary labels and code" },
+      { "role": "surface", "value": "#ffffff", "use": "Panels and diagram nodes" },
+      { "role": "accent", "value": "#176b87", "use": "Normal execution path" },
+      { "role": "failure", "value": "#c83e4d", "use": "Blocked script and missing artifact only" }
+    ],
+    "typography": [
+      { "role": "title", "family": "Inter", "sizePx": 48, "weight": 700, "use": "One short claim per scene" },
+      { "role": "body", "family": "Inter", "sizePx": 30, "weight": 500, "use": "Explanatory labels" },
+      { "role": "code", "family": "JetBrains Mono", "sizePx": 25, "weight": 500, "use": "Configuration and verification code" }
+    ],
+    "layoutRules": [
+      "Keep the title in the top safe area and the explanation in one central field.",
+      "Show no more than five diagram nodes at once.",
+      "Preserve left-to-right position across the install-path and root-cause scenes."
+    ],
+    "motionRules": [
+      "Reveal one causal step per narration anchor.",
+      "Trace normal steps in blue and hold the blocked step in red for at least 1.5 seconds.",
+      "Use cuts within the causal sequence and a short fade before the repair."
+    ],
+    "sceneTreatments": [
+      {
+        "sectionId": "symptom",
+        "sceneIds": ["symptom"],
+        "visualForm": "whiteboard",
+        "composition": "Place the success message above the missing-artifact statement with a not-equal sign between them.",
+        "emphasis": "Reveal the missing artifact only when the narration says it is still absent."
+      },
+      {
+        "sectionId": "install-path",
+        "sceneIds": ["install-path"],
+        "visualForm": "diagram",
+        "composition": "Use a left-to-right chain from package install to install script to build to pty.node.",
+        "emphasis": "Trace the whole expected path in the normal accent color."
+      },
+      {
+        "sectionId": "root-cause",
+        "sceneIds": ["root-cause"],
+        "visualForm": "diagram",
+        "composition": "Reuse the install path and isolate the allowScripts gate between install script and build.",
+        "emphasis": "Only the blocked gate and missing pty.node use the failure color."
+      },
+      {
+        "sectionId": "repair",
+        "sceneIds": ["repair"],
+        "visualForm": "code",
+        "composition": "Show the allowScripts configuration first, then the rebuild and import verification as a short code sequence.",
+        "emphasis": "Finish on the import line, not the rebuild output."
+      }
+    ],
+    "avoid": [
+      "Fake terminal output",
+      "Browser chrome without a real capture",
+      "Decorative gradients",
+      "Explaining unrelated ABI history"
+    ]
+  }
+}

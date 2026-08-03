@@ -73,6 +73,7 @@ export interface VisualDesignBrief {
   motionRules: string[];
   sceneTreatments?: Array<{
     sectionId: string;
+    sceneIds: string[];
     visualForm: 'whiteboard' | 'code' | 'diagram' | 'terminal' | 'browser';
     composition: string;
     emphasis: string;

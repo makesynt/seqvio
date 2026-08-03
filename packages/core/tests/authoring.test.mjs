@@ -4,6 +4,7 @@ import {
   formatEditorialPlanMarkdown,
   formatVisualDesignBriefMarkdown,
   validateEditorialPlan,
+  validateAuthoringTrace,
   validateVisualDesignBrief,
 } from '../dist/index.js';
 
@@ -65,7 +66,7 @@ const design = {
   layoutRules: ['Keep the causal path centered.', 'Show no more than five nodes.'],
   motionRules: ['Trace the path in narration order.', 'Hold the blocked step for two seconds.'],
   sceneTreatments: [
-    { sectionId: 'root-cause', visualForm: 'diagram', composition: 'Left-to-right install path.', emphasis: 'Only the blocked install script uses red.' },
+    { sectionId: 'root-cause', sceneIds: ['root-cause'], visualForm: 'diagram', composition: 'Left-to-right install path.', emphasis: 'Only the blocked install script uses red.' },
   ],
   avoid: ['Decorative gradients', 'Fake terminal output'],
 };
@@ -95,5 +96,15 @@ describe('human-readable authoring artifacts', () => {
       sceneTreatments: [{ ...design.sceneTreatments[0], sectionId: 'missing' }],
     }, plan);
     assert.ok(issues.some((issue) => issue.code === 'unknown_section'));
+  });
+
+  it('traces editorial sections and visual treatments into the executable IR', () => {
+    const document = {
+      format: 'seqvio-explainer', schemaVersion: '1.0', id: 'native-module', width: 1280, height: 720,
+      scenes: [{ type: 'diagram', id: 'root-cause', nodes: [], edges: [], steps: [] }],
+    };
+    assert.deepEqual(validateAuthoringTrace(plan, design, document), []);
+    const issues = validateAuthoringTrace(plan, design, { ...document, scenes: [{ ...document.scenes[0], type: 'code' }] });
+    assert.ok(issues.some((issue) => issue.code === 'visual_form_mismatch'));
   });
 });

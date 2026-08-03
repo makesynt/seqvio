@@ -4,6 +4,10 @@ import {
   type EditorialPlan,
   type VisualDesignBrief,
 } from './schema';
+import {
+  EXPLAINER_DOCUMENT_DEFAULTS,
+  type ExplainerDocument,
+} from '../explainer-document/schema';
 
 export interface AuthoringIssue {
   severity: 'error' | 'warning';
@@ -69,6 +73,55 @@ export function validateEditorialPlan(plan: EditorialPlan): AuthoringIssue[] {
   const budget = plan.sections.reduce((sum, section) => sum + (section.targetSeconds ?? 0), 0);
   if (budget > plan.durationBudgetSec) {
     issues.push({ severity: 'error', path: 'sections', code: 'duration_budget_exceeded', message: `Section budget ${budget}s exceeds the ${plan.durationBudgetSec}s plan budget.` });
+  }
+  return issues;
+}
+
+export function validateAuthoringTrace(
+  plan: EditorialPlan,
+  brief: VisualDesignBrief,
+  document: ExplainerDocument,
+): AuthoringIssue[] {
+  const issues = [
+    ...validateEditorialPlan(plan),
+    ...validateVisualDesignBrief(brief, plan),
+  ];
+  const treatments = brief.sceneTreatments ?? [];
+  const treatmentBySection = new Map(treatments.map((item) => [item.sectionId, item]));
+  const scenes = new Map(document.scenes.map((scene) => [scene.id, scene]));
+  const plannedScenes = new Set<string>();
+
+  for (const section of plan.sections) {
+    if (!treatmentBySection.has(section.id)) {
+      issues.push({ severity: 'error', path: `sections.${section.id}`, code: 'missing_visual_treatment', message: `Editorial section "${section.id}" has no visual treatment.` });
+    }
+  }
+
+  for (const treatment of treatments) {
+    if (treatment.sceneIds.length === 0) {
+      issues.push({ severity: 'error', path: `sceneTreatments.${treatment.sectionId}.sceneIds`, code: 'empty_scene_treatment', message: `Visual treatment "${treatment.sectionId}" does not name a scene.` });
+    }
+    for (const sceneId of treatment.sceneIds) {
+      plannedScenes.add(sceneId);
+      const scene = scenes.get(sceneId);
+      if (!scene) {
+        issues.push({ severity: 'error', path: `sceneTreatments.${treatment.sectionId}.sceneIds`, code: 'unknown_scene', message: `Visual treatment references unknown scene "${sceneId}".` });
+      } else if (scene.type !== treatment.visualForm) {
+        issues.push({ severity: 'error', path: `sceneTreatments.${treatment.sectionId}.visualForm`, code: 'visual_form_mismatch', message: `Scene "${sceneId}" is ${scene.type}, not ${treatment.visualForm}.` });
+      }
+    }
+  }
+
+  for (const scene of document.scenes) {
+    if (!plannedScenes.has(scene.id)) {
+      issues.push({ severity: 'warning', path: `scenes.${scene.id}`, code: 'unplanned_scene', message: `Scene "${scene.id}" is not traced to a visual treatment.` });
+    }
+  }
+
+  const width = document.width ?? EXPLAINER_DOCUMENT_DEFAULTS.width;
+  const height = document.height ?? EXPLAINER_DOCUMENT_DEFAULTS.height;
+  if (width !== brief.canvas.width || height !== brief.canvas.height) {
+    issues.push({ severity: 'error', path: 'canvas', code: 'canvas_mismatch', message: `Visual brief canvas ${brief.canvas.width}x${brief.canvas.height} does not match ExplainerDocument ${width}x${height}.` });
   }
   return issues;
 }

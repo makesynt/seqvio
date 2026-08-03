@@ -66,6 +66,10 @@ Review the two Markdown artifacts before generating the IR. The final task
 instructs the host agent to preserve approved omissions and visual direction,
 rather than reopening creative planning while writing scene data.
 
+See [`examples/authoring/native-module-ci/`](../examples/authoring/native-module-ci/)
+for a checked-in source, both review artifacts, the executable IR, and a smoke
+test that verifies their traceability.
+
 ## Formal IR name
 
 The canonical JSON IR is named `ExplainerDocument`. It uses:
