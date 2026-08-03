@@ -43,7 +43,7 @@
     "dev": "npm run dev --workspaces --if-present --include-workspace-root=false",
     "build": "npm run build -w @seqvio/core && npm run build -w @seqvio/capture && npm run build -w @seqvio/whiteboard && npm run build -w @seqvio/scatterbrain && npm run build -w @seqvio/product-demo && npm run build -w @seqvio/technical && npm run build -w @seqvio/renderer && npm run build -w @seqvio/browser-recorder && npm run build -w @seqvio/terminal-narrator",
     "test": "npm run test --workspaces --if-present --include-workspace-root=false",
-    "test:release-tools": "node --test scripts/tests/sync-release-train.test.mjs",
+    "test:release-tools": "node --test scripts/tests/*.test.mjs",
     "test:browser": "npm run test:browser -w @seqvio/renderer",
     "test:conformance": "npm run test:browser -w @seqvio/renderer",
     "smoke:release-pipeline": "node scripts/release-pipeline-smoke.mjs",
@@ -54,6 +54,8 @@
     "smoke:capture-host-runtime": "node scripts/capture-host-runtime-smoke.mjs",
     "prepare:native": "node scripts/prepare-native-dependencies.mjs",
     "verify:contracts": "node scripts/verify-contracts.mjs",
+    "verify:publish-artifacts": "node scripts/verify-publish-artifacts.mjs",
+    "publish:packages": "node scripts/publish-packages.mjs",
     "doctor": "node packages/renderer/dist/doctor-cli.js",
     "test:visual": "node scripts/visual-regression.mjs",
     "test:visual:update": "node scripts/visual-regression.mjs --update",
@@ -68,7 +70,7 @@
     "clean": "npm run clean --workspaces --if-present --include-workspace-root=false",
     "changeset": "changeset",
     "version": "changeset version && node scripts/sync-release-train.mjs && npm run build -w @seqvio/core && npm run verify:contracts",
-    "release": "npm run build && npm run verify:contracts && changeset publish"
+    "release": "npm run build && npm run verify:contracts && npm run verify:publish-artifacts && npm run publish:packages"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",
