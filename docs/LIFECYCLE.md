@@ -38,6 +38,12 @@ concurrent `prepack` or `prepublishOnly` builds clearing a dependency's `dist`
 directory while another package is compiling. Package lifecycle builds remain
 available for standalone developer packing and publishing.
 
+Publish success is determined by postconditions rather than the Changesets exit
+code alone: every public workspace's exact version must be visible on npm and
+its matching tag must exist on the remote repository. This tolerates stale npm
+metadata causing a duplicate-publish response, while still rejecting a zero
+exit when any package version or remote tag is missing.
+
 Capture, Browser Recorder, and Terminal Narrator use independent pre-1.0
 versions. Independent versioning does not weaken dependency checks: references
 to another local Seqvio package must still use its exact current version.
