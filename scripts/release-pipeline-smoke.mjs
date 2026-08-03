@@ -24,7 +24,8 @@ import {
 
 const execFileAsync = promisify(execFile);
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const fps = 30;
+const quick = process.env.SEQVIO_RELEASE_SMOKE_PROFILE === 'quick';
+const fps = numericArgument('fps', quick ? 10 : 30);
 
 function numericArgument(name, fallback) {
   const index = process.argv.indexOf(`--${name}`);
@@ -34,8 +35,8 @@ function numericArgument(name, fallback) {
   return Math.round(value);
 }
 
-const width = numericArgument('width', 1280);
-const height = numericArgument('height', 720);
+const width = numericArgument('width', quick ? 640 : 1280);
+const height = numericArgument('height', quick ? 360 : 720);
 
 function requestedKinds() {
   const kindIndex = process.argv.indexOf('--kind');
@@ -132,7 +133,7 @@ async function createCapture(kind, workDir) {
       manifest: {
         kind: 'terminal',
         name: 'terminal-release-smoke',
-        durationMs: 1200,
+        durationMs: quick ? 700 : 1200,
         viewport: { width, height },
         renderFps: fps,
         cols: terminalCols,
@@ -140,9 +141,9 @@ async function createCapture(kind, workDir) {
         renderOptions: { title: 'Release checks' },
         events: [
           { timeMs: 0, kind: 'stdout', text: '$ ', transient: false },
-          { timeMs: 180, kind: 'stdin', text: 'printf release-ok', transient: true },
+          { timeMs: quick ? 100 : 180, kind: 'stdin', text: 'printf release-ok', transient: true },
           {
-            timeMs: 700,
+            timeMs: quick ? 450 : 700,
             kind: 'stdout',
             text: 'printf release-ok\r\nrelease-ok\r\n$ ',
             transient: false,
@@ -152,13 +153,13 @@ async function createCapture(kind, workDir) {
           {
             id: 'command',
             label: 'Run the release check',
-            timeMs: 180,
+            timeMs: quick ? 100 : 180,
             capturedState: { kind: 'terminal', stdout: 'release-ok' },
           },
           {
             id: 'result',
             label: 'Confirm the command output',
-            timeMs: 700,
+            timeMs: quick ? 450 : 700,
             capturedState: { kind: 'terminal', stdout: 'release-ok' },
           },
         ],
@@ -230,8 +231,8 @@ async function createCapture(kind, workDir) {
 }
 
 async function createResolvedAudio(sourceManifest, workDir) {
-  const durationsMs = [1500, 1550];
-  const gapMs = 180;
+  const durationsMs = quick ? [450, 500] : [1500, 1550];
+  const gapMs = quick ? 50 : 180;
   const tracks = [];
   const synthesizedNarration = [];
   let cursorMs = 0;
@@ -266,7 +267,7 @@ async function createResolvedAudio(sourceManifest, workDir) {
     sourceManifest,
     synthesizedNarration,
     fps,
-    { cueGapMs: gapMs, sceneTailMs: 600 },
+    { cueGapMs: gapMs, sceneTailMs: quick ? 150 : 600 },
   );
   return {
     ...sourceManifest,
@@ -326,7 +327,12 @@ async function runPipeline(kind, smokeTempRoot, artifactDir) {
       '--width', String(width),
       '--height', String(height),
       '--fps', String(fps),
-      '--frames', `0,30,90,${Math.max(0, resolvedManifest.duration - 1)}`,
+      '--frames', [
+        0,
+        Math.round(fps * 0.5),
+        Math.round(fps * 1.5),
+        Math.max(0, resolvedManifest.duration - 1),
+      ].filter((frame, index, frames) => frame < resolvedManifest.duration && frames.indexOf(frame) === index).join(','),
       '--pixelRatio', '1',
       '--ci',
     ]);

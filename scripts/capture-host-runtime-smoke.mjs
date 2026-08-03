@@ -4,9 +4,13 @@ import * as http from 'node:http';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
-function runNode(args) {
+function runNode(args, env = {}) {
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, args, { cwd: process.cwd(), stdio: 'inherit' });
+    const child = spawn(process.execPath, args, {
+      cwd: process.cwd(),
+      stdio: 'inherit',
+      env: { ...process.env, ...env },
+    });
     child.once('error', reject);
     child.once('exit', (code) => code === 0
       ? resolve()
@@ -35,6 +39,8 @@ const requestedKind = process.argv.includes('--kind')
 if (!['all', 'terminal', 'browser'].includes(requestedKind)) {
   throw new Error('--kind must be all, terminal, or browser');
 }
+const quick = process.env.SEQVIO_CAPTURE_SMOKE_PROFILE === 'quick';
+const smokeViewport = quick ? { width: 640, height: 360 } : { width: 1280, height: 720 };
 let succeeded = false;
 const server = http.createServer((_request, response) => {
   response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
@@ -54,11 +60,11 @@ try {
     version: '1.0',
     name: 'Host runtime smoke',
     startUrl: `http://127.0.0.1:${address.port}`,
-    viewport: { width: 1280, height: 720 },
-    captureFps: 10,
-    renderFps: 30,
+    viewport: smokeViewport,
+    captureFps: quick ? 5 : 10,
+    renderFps: quick ? 10 : 30,
     actions: [
-      { id: 'run', type: 'click', label: 'Run', selector: '#run', afterMs: 250 },
+      { id: 'run', type: 'click', label: 'Run', selector: '#run', afterMs: quick ? 50 : 250 },
     ],
   }, null, 2)}\n`, 'utf8');
 
@@ -66,7 +72,7 @@ try {
     await runNode([
       'packages/terminal-narrator/dist/cli.js', 'record', '--sample',
       '--outputDir', tempRoot, '--jobId', 'terminal', '--json',
-    ]);
+    ], quick ? { SEQVIO_CAPTURE_SMOKE_PROFILE: 'quick' } : {});
     assertComplete(path.join(tempRoot, 'terminal'));
   }
   if (requestedKind === 'all' || requestedKind === 'browser') {
