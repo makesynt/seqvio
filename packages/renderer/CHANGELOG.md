@@ -1,5 +1,23 @@
 # @seqvio/renderer
 
+## 0.8.0
+
+### Minor Changes
+
+- 0a40341: Add human-readable editorial and visual-design authoring artifacts, and rename
+  the executable CompositionDocument v2 contract to ExplainerDocument. The IR now
+  uses `format: "seqvio-explainer"` with an implementation-only `schemaVersion`,
+  agent planning requires approved authoring artifacts, and capture jobs emit
+  `explainer.json` under capture CLI contract 2.0.
+
+### Patch Changes
+
+- Updated dependencies [0a40341]
+  - @seqvio/core@0.8.0
+  - @seqvio/capture@0.3.0
+  - @seqvio/technical@0.8.0
+  - @seqvio/whiteboard@0.8.0
+
 ## 0.7.1
 
 ### Patch Changes
