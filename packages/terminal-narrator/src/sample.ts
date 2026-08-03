@@ -3,12 +3,13 @@ import type { TerminalNarratorPlan } from './types';
 export function samplePlan(): TerminalNarratorPlan {
   // PowerShell emits VT color sequences on modern Windows — better VHS demo than cmd echo.
   const isWin = process.platform === 'win32';
+  const quickSmoke = process.env.SEQVIO_CAPTURE_SMOKE_PROFILE === 'quick';
   return {
     version: '1.0',
     name: 'VHS-style terminal demo',
-    viewport: { width: 1280, height: 720 },
-    renderFps: 30,
-    maxLines: 220,
+    viewport: quickSmoke ? { width: 640, height: 360 } : { width: 1280, height: 720 },
+    renderFps: quickSmoke ? 10 : 30,
+    maxLines: quickSmoke ? 80 : 220,
     presentation: 'vhs',
     typeDelayMs: 28,
     startupWaitMs: 5000,
@@ -27,7 +28,7 @@ export function samplePlan(): TerminalNarratorPlan {
           rows: 28,
           cwd: process.cwd(),
         },
-    inputs: isWin
+    inputs: (isWin
       ? [
           {
             id: 'hello',
@@ -70,9 +71,9 @@ export function samplePlan(): TerminalNarratorPlan {
             text: "printf '\\033[35mDone\\033[0m\\n'",
             afterMs: 700,
           },
-        ],
-    finalWaitMs: 1400,
-    timeoutMs: 45_000,
+        ]).slice(0, quickSmoke ? 1 : 3),
+    finalWaitMs: quickSmoke ? 250 : 1400,
+    timeoutMs: quickSmoke ? 20_000 : 45_000,
     readyPattern: isWin ? 'PS [^\\r\\n>]*>' : undefined,
   };
 }

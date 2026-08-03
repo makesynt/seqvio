@@ -16,6 +16,27 @@ test('Windows sample uses the platform PTY default and waits for observed output
   }
 });
 
+test('samplePlan has an explicit short CI profile without changing the default', () => {
+  const previous = process.env.SEQVIO_CAPTURE_SMOKE_PROFILE;
+  process.env.SEQVIO_CAPTURE_SMOKE_PROFILE = 'quick';
+  try {
+    const quick = samplePlan();
+    assert.deepEqual(quick.viewport, { width: 640, height: 360 });
+    assert.equal(quick.renderFps, 10);
+    assert.equal(quick.startupWaitMs, 5000);
+    assert.equal(quick.typeDelayMs, 28);
+    assert.equal(quick.finalWaitMs, 250);
+    assert.equal(quick.inputs.length, 1);
+  } finally {
+    if (previous === undefined) delete process.env.SEQVIO_CAPTURE_SMOKE_PROFILE;
+    else process.env.SEQVIO_CAPTURE_SMOKE_PROFILE = previous;
+  }
+  const full = samplePlan();
+  assert.deepEqual(full.viewport, { width: 1280, height: 720 });
+  assert.equal(full.renderFps, 30);
+  assert.equal(full.inputs.length, 3);
+});
+
 test('sampleClaudePlan uses the shared Claude executable resolver', () => {
   const explicit = sampleClaudePlan({ claudeBin: 'custom-claude' });
   assert.equal(explicit.shell.command, 'custom-claude');

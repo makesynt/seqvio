@@ -54,6 +54,10 @@ jobs:
         run: npm run verify:capture-host
       - name: Terminal and Browser runtime smoke
         timeout-minutes: 15
+        env:
+          # PRs verify the complete host path with a short fixture; main keeps
+          # the full 720p render for release confidence.
+          SEQVIO_CAPTURE_SMOKE_PROFILE: ${{ github.event_name == 'pull_request' && 'quick' || 'full' }}
         run: npm run smoke:capture-host-runtime
 
   build-test:
@@ -92,4 +96,7 @@ jobs:
 
       - name: Release pipeline smoke (terminal + browser)
         timeout-minutes: 15
+        env:
+          # Keep the PR gate fast while main/release retain the full render.
+          SEQVIO_RELEASE_SMOKE_PROFILE: ${{ github.event_name == 'pull_request' && 'quick' || 'full' }}
         run: npm run smoke:release-pipeline
