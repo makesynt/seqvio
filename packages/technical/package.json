@@ -3,7 +3,7 @@
   "version": "0.8.0",
   "seqvio": {
     "lifecycle": "public",
-    "releaseTrain": "0.7"
+    "releaseTrain": "0.8"
   },
   "description": "Technical explainer components for Seqvio (code, diagrams, annotations)",
   "keywords": [

@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "releaseTrain": {
-    "line": "0.7",
+    "line": "0.8",
     "packages": [
       "@seqvio/core",
       "@seqvio/whiteboard",
@@ -20,5 +20,11 @@
     "@seqvio/browser-recorder",
     "@seqvio/terminal-narrator"
   ],
-  "lifecycles": ["public", "experimental", "internal", "deprecated", "removed"]
+  "lifecycles": [
+    "public",
+    "experimental",
+    "internal",
+    "deprecated",
+    "removed"
+  ]
 }

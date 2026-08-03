@@ -3,7 +3,7 @@
   "version": "0.8.0",
   "seqvio": {
     "lifecycle": "public",
-    "releaseTrain": "0.7"
+    "releaseTrain": "0.8"
   },
   "description": "Post-it / cork-board sticky-note style components for Seqvio",
   "keywords": [

@@ -1,9 +1,9 @@
 {
   "name": "seqvio",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "seqvio": {
     "lifecycle": "internal",
-    "releaseTrain": "0.7"
+    "releaseTrain": "0.8"
   },
   "private": true,
   "description": "A visual language for coding agents to explain ideas with narrated video",
@@ -43,6 +43,7 @@
     "dev": "npm run dev --workspaces --if-present --include-workspace-root=false",
     "build": "npm run build -w @seqvio/core && npm run build -w @seqvio/capture && npm run build -w @seqvio/whiteboard && npm run build -w @seqvio/scatterbrain && npm run build -w @seqvio/product-demo && npm run build -w @seqvio/technical && npm run build -w @seqvio/renderer && npm run build -w @seqvio/browser-recorder && npm run build -w @seqvio/terminal-narrator",
     "test": "npm run test --workspaces --if-present --include-workspace-root=false",
+    "test:release-tools": "node --test scripts/tests/sync-release-train.test.mjs",
     "test:browser": "npm run test:browser -w @seqvio/renderer",
     "test:conformance": "npm run test:browser -w @seqvio/renderer",
     "smoke:release-pipeline": "node scripts/release-pipeline-smoke.mjs",
@@ -66,7 +67,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "clean": "npm run clean --workspaces --if-present --include-workspace-root=false",
     "changeset": "changeset",
-    "version": "changeset version",
+    "version": "changeset version && node scripts/sync-release-train.mjs && npm run build -w @seqvio/core && npm run verify:contracts",
     "release": "npm run build && npm run verify:contracts && changeset publish"
   },
   "devDependencies": {

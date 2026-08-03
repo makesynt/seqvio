@@ -3,7 +3,7 @@
   "version": "0.8.0",
   "seqvio": {
     "lifecycle": "public",
-    "releaseTrain": "0.7"
+    "releaseTrain": "0.8"
   },
   "description": "Core timeline and composition engine for Seqvio",
   "keywords": [
