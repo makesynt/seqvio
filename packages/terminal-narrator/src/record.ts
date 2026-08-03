@@ -238,6 +238,7 @@ export async function recordPlan(
 
       const inputText = input.text ?? '';
       const typeDelayMs = input.typeDelayMs ?? defaultTypeDelayMs;
+      const stepOutputStart = stdoutBuffer.length;
       const t = nowMs();
       steps.push({ id: input.id, label: input.label, timeMs: t });
       events.push({
@@ -262,7 +263,7 @@ export async function recordPlan(
           message: `Waiting for /${input.waitForPattern}/`,
         });
         await waitForReadyPattern({
-          getBuffer: () => stdoutBuffer,
+          getBuffer: () => stdoutBuffer.slice(stepOutputStart),
           pattern: input.waitForPattern,
           timeoutMs: effectiveWaitMs,
           isExited: () => exited,
