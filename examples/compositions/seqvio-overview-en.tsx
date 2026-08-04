@@ -47,7 +47,7 @@ function IntroScene() {
         duration={14}
         style={{ padding: '14px 20px' }}
       >
-        <span style={{ fontSize: TS.caption }}>SEQVIO · V0.5</span>
+        <span style={{ fontSize: TS.caption }}>SEQVIO · V0.8</span>
       </StickyNote>
 
       <Scrawl
@@ -70,7 +70,7 @@ function IntroScene() {
       />
 
       <StickyNote
-        title="prompt.md"
+        title="source.md"
         position={{ x: 772, y: 88 }}
         width={300}
         color="yellow"
@@ -83,7 +83,7 @@ function IntroScene() {
         lessons, product walkthroughs, concepts
       </StickyNote>
       <StickyNote
-        title="storyboard.json"
+        title="EDITORIAL.md"
         position={{ x: 884, y: 300 }}
         width={312}
         color="green"
@@ -93,7 +93,7 @@ function IntroScene() {
         start={76}
         duration={16}
       >
-        scenes, narration, visual intent, timing
+        objective, evidence, explanation structure
       </StickyNote>
       <Polaroid
         caption="MP4 · rendered locally"
@@ -376,7 +376,7 @@ function WorkflowScene() {
     >
       <ProductTitle
         title="@seqvio/product-demo"
-        subtitle="Agent produces structure; renderer validates, aligns narration, renders locally."
+        subtitle="Plans become ExplainerDocument; Beats align voice, visuals, and evidence."
         position={{ x: 64, y: 56 }}
         start={0}
       />
@@ -389,7 +389,7 @@ function WorkflowScene() {
         title="Seqvio Render Console"
         start={36}
       >
-        <ScreenshotPlaceholder label="prompt.md -> storyboard.json" start={52} />
+        <ScreenshotPlaceholder label="EDITORIAL.md -> explainer.json" start={52} />
       </BrowserFrame>
 
       <CursorPath
@@ -403,7 +403,7 @@ function WorkflowScene() {
         duration={62}
       />
       <Callout
-        text="Storyboard IR is generated, validated, repaired, and compiled deterministically."
+        text="Editorial and visual plans are reviewed, compiled into ExplainerDocument, and repaired before deterministic rendering."
         position={{ x: 848, y: 262 }}
         width={318}
         start={118}
@@ -481,7 +481,7 @@ function ClosingScene() {
         color="#22C55E"
       />
       <Callout
-        text="seqvio-render fuses TSX, the CosyVoice track, and local rendering into one MP4."
+        text="seqvio-qa checks timing and key frames before seqvio-render produces the local MP4."
         position={{ x: 768, y: 300 }}
         width={392}
         start={96}
@@ -562,17 +562,17 @@ export const meta: RenderableMeta = {
       {
         id: 'whiteboard',
         sceneId: 'whiteboard',
-        text: 'Seqvio gets its visuals from several style packages. The whiteboard package gives you handwritten text, sketch-like shapes, and pen timing, ideal for explaining a concept or a workflow step by step.',
+        text: 'Seqvio starts with a reviewable editorial plan and visual direction. Whiteboard scenes provide handwritten text, sketch-like shapes, and pen timing when a concept needs to unfold step by step.',
       },
       {
         id: 'scatterbrain',
         sceneId: 'scatterbrain',
-        text: 'The scatterbrain package adds sticky-note and cork-board workshop scenes for brainstorming and shaping ideas. Different look, but the same timing, narration, and rendering contracts.',
+        text: 'The visual vocabulary also includes workshop, product, code, and diagram scenes. They share one timing and narration contract, so the agent can choose the form that best serves each part of the explanation.',
       },
       {
         id: 'workflow',
         sceneId: 'workflow',
-        text: 'The product-demo package covers product walkthroughs. The whole flow is deterministic: an agent produces the structured storyboard, and the renderer validates it, aligns narration, and renders locally, so the visuals follow the synthesized voice.',
+        text: 'The product-demo package covers product walkthroughs, while technical scenes explain code and diagrams. The flow is deterministic: plans become an ExplainerDocument, spoken phrases bind to visual actions, QA checks the result, and the renderer produces the video locally.',
       },
       {
         id: 'closing',

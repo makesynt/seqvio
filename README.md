@@ -7,7 +7,7 @@
 
 English | [简体中文](./README.zh-CN.md)
 
-**A visual language for coding agents to explain ideas.**
+**Evidence-backed explainer videos for coding agents.**
 
 Seqvio gives coding agents a capture-to-explanation path for turning real terminal/browser activity and technical ideas into clear narrated videos. Human-readable `EDITORIAL.md` and `VISUAL-DESIGN.md` artifacts make content choices and visual direction reviewable before the executable `ExplainerDocument` IR binds spoken cues to visual actions with `ExplanationBeat`s.
 
@@ -15,15 +15,17 @@ Seqvio gives coding agents a capture-to-explanation path for turning real termin
 
 ## Demo
 
-Pre-rendered overview videos with CosyVoice narration, covering all three visual style packages (`@seqvio/whiteboard`, `@seqvio/scatterbrain`, `@seqvio/product-demo`). Source compositions live in [`examples/compositions/`](./examples/compositions/).
+The current 720p product demo shows the reviewable plan, executable
+`ExplainerDocument`, phrase-level `ExplanationBeat`, QA, and local rendering
+path through a native-module CI diagnosis.
 
-**English overview** — [`seqvio-overview-en.tsx`](./examples/compositions/seqvio-overview-en.tsx)
+**[Watch the current narrated demo](./docs/assets/videos/seqvio-product-hunt-en.mp4)**
+— source: [`seqvio-product-hunt-en.tsx`](./examples/compositions/seqvio-product-hunt-en.tsx)
 
-https://github.com/user-attachments/assets/83687d9c-63f0-4544-a67a-8f6eacc19928
-
-**中文介绍** — [`seqvio-overview-zh.tsx`](./examples/compositions/seqvio-overview-zh.tsx)
-
-https://github.com/user-attachments/assets/3ce605bc-7ad1-449b-a67c-5d8368f5398b
+Localized overview compositions remain available under
+[`examples/compositions/`](./examples/compositions/), but their previously
+published videos predate the current explanation contract and are no longer the
+primary product demo.
 
 ## Quick Start
 
@@ -61,7 +63,10 @@ npm install -g @seqvio/renderer
 seqvio-render --help
 ```
 
-Published packages: `@seqvio/core`, `@seqvio/whiteboard`, `@seqvio/scatterbrain`, `@seqvio/product-demo`, `@seqvio/technical`, and `@seqvio/renderer`.
+Public packages: `@seqvio/core`, `@seqvio/whiteboard`, `@seqvio/scatterbrain`,
+`@seqvio/product-demo`, `@seqvio/technical`, and `@seqvio/renderer`.
+Experimental capture packages: `@seqvio/capture`, `@seqvio/browser-recorder`,
+and `@seqvio/terminal-narrator`.
 
 Install optional style/component packages when a composition imports them directly:
 
@@ -97,7 +102,11 @@ After steps 1 and 2, try a prompt like:
 
 > Using `/seqvio`, first create and review an editorial plan and visual design brief, then compile them into a 4-scene Chinese ExplainerDocument with phrase-anchored visual Beats, run QA, and render the final MP4.
 
-The skill guides the agent through: pick an example composition, edit TSX, extract narration metadata, synthesize audio, and run `seqvio-render`.
+The recommended path reviews `EDITORIAL.md` and `VISUAL-DESIGN.md`, compiles an
+`ExplainerDocument`, resolves narration timing, runs `seqvio-qa`, and renders
+the MP4. Hand-authored TSX remains the lower-level path for deliberate visual
+control. Experimental terminal/browser adapters can supply observed scenes to
+the same IR; they are not required for authored explainers.
 
 Supported agents include Cursor, Claude Code, Codex, Gemini CLI, and other coding agents that support skills.
 
@@ -189,7 +198,7 @@ The skill lives in [`skills/seqvio/SKILL.md`](./skills/seqvio/SKILL.md) with sup
 | [`audio-workflow.md`](./skills/seqvio/references/audio-workflow.md) | Extract, synthesize, and mux narration |
 | [`render-workflow.md`](./skills/seqvio/references/render-workflow.md) | Build, render, and smoke-test commands |
 | [`production-techniques.md`](./skills/seqvio/references/production-techniques.md) | Voice-first timing, reference-style analysis, and visual QA rules |
-| [`planning-workflow.md`](./skills/seqvio/references/planning-workflow.md) | Storyboard IR planning and agent handoff |
+| [`planning-workflow.md`](./skills/seqvio/references/planning-workflow.md) | Editorial/visual planning and agent handoff |
 
 Install the skill (see [Quick Start](#quick-start)):
 
@@ -223,8 +232,8 @@ Seqvio is the visual language for coding agents that need to explain, not merely
 - Browser scene support with recorded video, cursor/focus/click metadata, exact action clocks, and time-mapped media seeking
 - `ExplanationBeat` cues, exact phrase anchors, visual actions, capture evidence, post-TTS `outputFrame`s, and semantic `sceneTimings[].timeMap`
 - `@seqvio/core` scene and transition primitives: `VideoComposition`, `Scene`, `Transition`
-- ExplainerDocument and retained Storyboard IR schema, validation, pacing,
-  and TSX compilation helpers
+- ExplainerDocument as the canonical IR, with retained Storyboard IR compatibility
+  for whiteboard-only input
 - `seqvio-render` CLI for TSX-to-MP4 rendering
 - `seqvio-audio` CLI for audio/caption manifest extraction and TTS synthesis
 - `seqvio-qa` CLI with baseline/capture profiles, stable audio/temporal/media diagnostics, configurable warning promotion, and key-frame visual checks
@@ -295,6 +304,7 @@ Voiceover is muxed automatically from the manifest. **Do not** add `--burnCaptio
 | [`@seqvio/technical`](./packages/technical) | Technical explainer runtime: code walkthroughs, architecture diagrams, terminal demos, annotations, and bundled fonts |
 | [`@seqvio/terminal-narrator`](./packages/terminal-narrator) | Pre-stable node-pty/xterm capture → IR/ExplanationBeat → optional narrated MP4 |
 | [`@seqvio/browser-recorder`](./packages/browser-recorder) | Pre-stable Chromium action capture with exact action timing → IR/ExplanationBeat |
+| [`@seqvio/capture`](./packages/capture) | Shared experimental capture session and artifact contracts |
 | [`@seqvio/renderer`](./packages/renderer) | TSX bundler plus `seqvio-render` and `seqvio-audio` CLIs |
 
 ## Documentation
@@ -310,6 +320,8 @@ Recommended reading:
 - [`examples/compositions/README.md`](./examples/compositions/README.md) — example catalog and conventions
 - [`skills/seqvio/SKILL.md`](./skills/seqvio/SKILL.md) — agent production loop
 - [`skills/seqvio/references/production-techniques.md`](./skills/seqvio/references/production-techniques.md) — narrated explainer production rules and QA checklist
+- [`docs/marketing/POSITIONING.md`](./docs/marketing/POSITIONING.md) — current product positioning and capability boundary
+- [`docs/marketing/FEATURE-STATUS.md`](./docs/marketing/FEATURE-STATUS.md) — public versus experimental wording
 
 If documentation conflicts with code, treat the code and [`docs/COMPOSITION-AUTHORING.md`](./docs/COMPOSITION-AUTHORING.md) as the source of truth.
 
