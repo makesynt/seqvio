@@ -49,7 +49,7 @@ function IntroScene() {
         duration={14}
         style={{ padding: '14px 20px' }}
       >
-        <span style={{ fontSize: TS.caption }}>SEQVIO · V0.5</span>
+        <span style={{ fontSize: TS.caption }}>SEQVIO · V0.8</span>
       </StickyNote>
 
       <Scrawl
@@ -72,7 +72,7 @@ function IntroScene() {
       />
 
       <StickyNote
-        title="prompt.md"
+        title="source.md"
         position={{ x: 772, y: 88 }}
         width={300}
         color="yellow"
@@ -85,7 +85,7 @@ function IntroScene() {
         课程、产品介绍、技术概念
       </StickyNote>
       <StickyNote
-        title="storyboard.json"
+        title="EDITORIAL.md"
         position={{ x: 884, y: 300 }}
         width={312}
         color="green"
@@ -95,7 +95,7 @@ function IntroScene() {
         start={76}
         duration={16}
       >
-        场景、旁白、视觉意图、时间关系
+        目标、证据、讲解结构和取舍
       </StickyNote>
       <Polaroid
         caption="MP4 · rendered locally"
@@ -378,7 +378,7 @@ function WorkflowScene() {
     >
       <ProductTitle
         title="@seqvio/product-demo + 确定性工作流"
-        subtitle="agent 产出结构，renderer 负责校验、对齐旁白、本地渲染。"
+        subtitle="计划编译成 ExplainerDocument；Beat 对齐旁白、画面和证据。"
         position={{ x: 64, y: 56 }}
         start={0}
       />
@@ -392,7 +392,7 @@ function WorkflowScene() {
         chromeFontFamily={LONG_CANG_STACK}
         start={36}
       >
-        <ScreenshotPlaceholder label="prompt.md -> storyboard.json" start={52} />
+        <ScreenshotPlaceholder label="EDITORIAL.md -> explainer.json" start={52} />
       </BrowserFrame>
 
       <CursorPath
@@ -406,7 +406,7 @@ function WorkflowScene() {
         duration={62}
       />
       <Callout
-        text="Storyboard IR 能被 agent 生成、校验、修复，再确定性地编译。"
+        text="Editorial 和 Visual 计划先审阅，再编译成 ExplainerDocument，修复后确定性渲染。"
         position={{ x: 848, y: 262 }}
         width={318}
         start={118}
@@ -485,7 +485,7 @@ function ClosingScene() {
         color="#22C55E"
       />
       <Callout
-        text="seqvio-render 把 TSX、CosyVoice 音轨和本地渲染合成一个 MP4。"
+        text="seqvio-qa 先检查时间和关键帧，再由 seqvio-render 生成本地 MP4。"
         position={{ x: 768, y: 300 }}
         width={392}
         start={96}
@@ -566,17 +566,17 @@ export const meta: RenderableMeta = {
       {
         id: 'whiteboard',
         sceneId: 'whiteboard',
-        text: 'Seqvio 的视觉能力由多个风格包提供。whiteboard 包给你手写文字、草图形状和画笔节奏，适合一步步讲清楚一个概念或流程。',
+        text: 'Seqvio 先形成可审阅的讲解策划和视觉方向。需要逐步展开概念时，whiteboard 场景提供手写文字、草图形状和画笔节奏。',
       },
       {
         id: 'scatterbrain',
         sceneId: 'scatterbrain',
-        text: 'scatterbrain 包提供便签和软木板式的工作台场景，适合发散和梳理想法。风格不同，但时序、旁白和渲染契约完全一致。',
+        text: '视觉词汇还包括工作台、产品、代码和架构场景。它们共享同一套时间和旁白契约，让 agent 为讲解的每一部分选择最合适的形式。',
       },
       {
         id: 'workflow',
         sceneId: 'workflow',
-        text: 'product-demo 包用来做产品演示。整个流程是确定性的：agent 产出结构化的 storyboard，renderer 负责校验、对齐旁白、本地渲染，让画面时长跟随合成出来的语音。',
+        text: 'product-demo 包用来做产品演示，technical 场景则解释代码和架构。整个流程是确定性的：计划编译成 ExplainerDocument，旁白短语绑定视觉动作，QA 检查结果，再由 renderer 本地生成视频。',
       },
       {
         id: 'closing',

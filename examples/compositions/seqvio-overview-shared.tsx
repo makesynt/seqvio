@@ -100,6 +100,24 @@ export interface OverviewProps {
   stageHeight?: number;
 }
 
+function ScaledOverviewStage({ children, scale }: { children: ReactNode; scale: number }) {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        width: W,
+        height: H,
+        transform: `scale(${scale})`,
+        transformOrigin: '0 0',
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 function clamp(value: number): number {
   return Math.max(0, Math.min(1, value));
 }
@@ -414,8 +432,8 @@ function RagExplanationScene({ copy, duration, enhanced }: { copy: OverviewCopy;
   const boardY = (H - boardH) / 2;
   const clipNow = Math.min(9, Math.floor(Math.min(1, frame / drawDuration) * 9));
   const actionLabels = copy.lang === 'zh'
-    ? ['提问', '向量', '检索', '回答']
-    : ['ASK', 'VECTOR', 'RETRIEVE', 'RESPOND'];
+    ? ['观察', '追踪', '诊断', '验证']
+    : ['OBSERVE', 'TRACE', 'DIAGNOSE', 'VERIFY'];
   const icons = ['lightbulb', 'plus', 'document', 'check'];
   return (
     <div
@@ -639,7 +657,7 @@ function MiniWhiteboard({ copy }: { copy: OverviewCopy }) {
       singlePen={false}
     >
       <DrawText
-        text="RAG"
+        text="MODEL"
         position={{ x: 34, y: 48 }}
         fontSize={38}
         fontWeight="bold"
@@ -711,7 +729,7 @@ function MiniScatter({ copy }: { copy: OverviewCopy }) {
         duration={20}
         style={{ padding: 12 }}
       >
-        RAG
+        PLAN
       </StickyNote>
       <Doodle
         type="arrow"
@@ -733,19 +751,19 @@ function MiniProductDemo() {
         position={{ x: 18, y: 38 }}
         width={308}
         height={248}
-        url="rag-demo.local"
-        title="sample output"
+        url="ci-run.local"
+        title="captured evidence"
         start={18}
         duration={22}
       >
         <div style={{ padding: 18, fontFamily: UI_STACK }}>
           <div style={{ fontSize: 17, fontWeight: 800, color: C.ink }}>
-            How does RAG answer?
+            Native module load
           </div>
           <div style={{ marginTop: 16, height: 10, width: 230, background: '#DCE5F3' }} />
           <div style={{ marginTop: 9, height: 10, width: 186, background: '#DCE5F3' }} />
           <div style={{ marginTop: 24, display: 'flex', gap: 8 }}>
-            {['Q', 'DB', 'A'].map((item, index) => (
+            {['BUILD', 'PTY', 'OK'].map((item, index) => (
               <div
                 key={item}
                 style={{
@@ -765,7 +783,7 @@ function MiniProductDemo() {
         </div>
       </BrowserFrame>
       <Callout
-        text="context found"
+        text="load verified"
         position={{ x: 182, y: 236 }}
         width={132}
         start={92}
@@ -785,13 +803,13 @@ function StylesScene({ copy, duration, enhanced }: { copy: OverviewCopy; duratio
   ];
   return (
     <LightStage dense={enhanced}>
-      {enhanced ? <SceneMeta index="05" label="VISUAL LANGUAGES" light /> : null}
+      {enhanced ? <SceneMeta index="05" label="EXPLANATION CONTRACT" light /> : null}
       <div
         style={{
           position: 'absolute',
           left: 74,
           top: 102,
-          fontSize: 50,
+          fontSize: enhanced ? 42 : 50,
           fontWeight: 850,
           ...reveal(frame, 4, 22),
         }}
@@ -859,7 +877,7 @@ function StylesScene({ copy, duration, enhanced }: { copy: OverviewCopy; duratio
 function ProofScene({ copy, duration, enhanced }: { copy: OverviewCopy; duration: number; enhanced: boolean }) {
   const frame = useCurrentFrame() * 246 / Math.max(1, duration);
   const commands = [
-    'seqvio-generate validate storyboard.json',
+    'seqvio-generate validate --ir explainer.json --ir-format explainer',
     'seqvio-audio synthesize --manifest audio.json',
     'seqvio-qa --frames 0,120,240',
     'seqvio-render --component rag-explainer.tsx',
@@ -1157,25 +1175,27 @@ export function SeqvioOverview({
       backgroundColor={C.navy}
       audio={audio}
     >
-      <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          width: W,
-          height: H,
-          transform: `scale(${scale})`,
-          transformOrigin: '0 0',
-        }}
-      >
-        <Scene id="hook" duration={hook}><HookScene copy={copy} duration={hook} enhanced={enhanced} /></Scene>
-        <Scene id="promise" duration={promise}><PromiseScene copy={copy} duration={promise} enhanced={enhanced} /></Scene>
-        <Scene id="prompt" duration={prompt}><PromptScene copy={copy} duration={prompt} enhanced={enhanced} /></Scene>
-        <Scene id="explanation" duration={explanation}><RagExplanationScene copy={copy} duration={explanation} enhanced={enhanced} /></Scene>
-        <Scene id="styles" duration={styles}><StylesScene copy={copy} duration={styles} enhanced={enhanced} /></Scene>
-        <Scene id="proof" duration={proof}><ProofScene copy={copy} duration={proof} enhanced={enhanced} /></Scene>
-        <Scene id="closing" duration={closing}><ClosingScene copy={copy} duration={closing} enhanced={enhanced} /></Scene>
-      </div>
+      <Scene id="hook" duration={hook}>
+        <ScaledOverviewStage scale={scale}><HookScene copy={copy} duration={hook} enhanced={enhanced} /></ScaledOverviewStage>
+      </Scene>
+      <Scene id="promise" duration={promise}>
+        <ScaledOverviewStage scale={scale}><PromiseScene copy={copy} duration={promise} enhanced={enhanced} /></ScaledOverviewStage>
+      </Scene>
+      <Scene id="prompt" duration={prompt}>
+        <ScaledOverviewStage scale={scale}><PromptScene copy={copy} duration={prompt} enhanced={enhanced} /></ScaledOverviewStage>
+      </Scene>
+      <Scene id="explanation" duration={explanation}>
+        <ScaledOverviewStage scale={scale}><RagExplanationScene copy={copy} duration={explanation} enhanced={enhanced} /></ScaledOverviewStage>
+      </Scene>
+      <Scene id="styles" duration={styles}>
+        <ScaledOverviewStage scale={scale}><StylesScene copy={copy} duration={styles} enhanced={enhanced} /></ScaledOverviewStage>
+      </Scene>
+      <Scene id="proof" duration={proof}>
+        <ScaledOverviewStage scale={scale}><ProofScene copy={copy} duration={proof} enhanced={enhanced} /></ScaledOverviewStage>
+      </Scene>
+      <Scene id="closing" duration={closing}>
+        <ScaledOverviewStage scale={scale}><ClosingScene copy={copy} duration={closing} enhanced={enhanced} /></ScaledOverviewStage>
+      </Scene>
     </VideoComposition>
   );
 }

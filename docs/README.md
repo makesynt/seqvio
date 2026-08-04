@@ -21,6 +21,8 @@ If you are trying to use Seqvio today, read these first:
 | [`../examples/compositions/README.md`](../examples/compositions/README.md) | Composition examples and render command |
 | [`../packages/whiteboard/README.md`](../packages/whiteboard/README.md) | Whiteboard component API and examples |
 | [`../packages/product-demo/package.json`](../packages/product-demo/package.json) | Product walkthrough component package metadata |
+| [`marketing/POSITIONING.md`](./marketing/POSITIONING.md) | Public positioning and product boundary |
+| [`marketing/FEATURE-STATUS.md`](./marketing/FEATURE-STATUS.md) | Public and experimental capability wording |
 
 ## Current Source of Truth
 
@@ -48,6 +50,9 @@ These docs describe the repository as it exists today:
 | [`VISION.md`](./VISION.md) | Product positioning, target users, scope, and design principles (slow-changing source of truth) |
 | [`ROADMAP.md`](./ROADMAP.md) | Directional bet and phase ordering; what to build next and why. Subordinate to `VISION.md` |
 | [`EXPLAINER-FRAMEWORK-IMPROVEMENT-PLAN.md`](./EXPLAINER-FRAMEWORK-IMPROVEMENT-PLAN.md) | Active implementation plan for capture, ExplanationBeat timing, deterministic playback, QA, and release readiness |
+| [`marketing/LANDING-COPY.md`](./marketing/LANDING-COPY.md) | Versioned landing page copy |
+| [`marketing/PRODUCT-HUNT.md`](./marketing/PRODUCT-HUNT.md) | Product Hunt tagline, description, and demo promise |
+| [`marketing/DEMO-SCRIPT.md`](./marketing/DEMO-SCRIPT.md) | Current 60-75 second product demo sequence |
 
 Active, time-boxed work items live in GitHub issues and milestones, not in a docs file.
 

@@ -6,7 +6,7 @@
 
 [English](./README.md) | 简体中文
 
-**让 coding agent 拥有解释想法的视觉语言。**
+**让 coding agent 把真实技术工作变成有证据的讲解视频。**
 
 Seqvio 为 coding agent 提供从真实系统捕获到讲解视频的完整路径。人类可读的 `EDITORIAL.md` 与 `VISUAL-DESIGN.md` 先让内容取舍和视觉方向可审阅，再由正式 `ExplainerDocument` IR 通过 `ExplanationBeat` 绑定旁白短语与视觉动作。
 
@@ -14,15 +14,15 @@ Seqvio 为 coding agent 提供从真实系统捕获到讲解视频的完整路�
 
 ## Demo
 
-预渲染产品介绍视频，使用 CosyVoice 旁白，覆盖三个视觉风格包（`@seqvio/whiteboard`、`@seqvio/scatterbrain`、`@seqvio/product-demo`）。源 composition 位于 [`examples/compositions/`](./examples/compositions/)。
+当前 720p 产品演示以 native-module CI 故障诊断为例，展示可审阅策划、
+正式 `ExplainerDocument`、短语级 `ExplanationBeat`、QA 和本地渲染路径。
 
-**英文介绍** — [`seqvio-overview-en.tsx`](./examples/compositions/seqvio-overview-en.tsx)
+**[观看当前带旁白演示](./docs/assets/videos/seqvio-product-hunt-en.mp4)**
+— 源码：[`seqvio-product-hunt-en.tsx`](./examples/compositions/seqvio-product-hunt-en.tsx)
 
-https://github.com/user-attachments/assets/83687d9c-63f0-4544-a67a-8f6eacc19928
-
-**中文介绍** — [`seqvio-overview-zh.tsx`](./examples/compositions/seqvio-overview-zh.tsx)
-
-https://github.com/user-attachments/assets/3ce605bc-7ad1-449b-a67c-5d8368f5398b
+中英文 overview composition 仍保留在
+[`examples/compositions/`](./examples/compositions/)；此前发布的视频早于
+当前解释契约，因此不再作为主要产品演示。
 
 ## 快速开始
 
@@ -60,7 +60,9 @@ npm install -g @seqvio/renderer
 seqvio-render --help
 ```
 
-已发布包：`@seqvio/core`、`@seqvio/whiteboard`、`@seqvio/scatterbrain`、`@seqvio/product-demo`、`@seqvio/technical`、`@seqvio/renderer`。
+Public 包：`@seqvio/core`、`@seqvio/whiteboard`、`@seqvio/scatterbrain`、
+`@seqvio/product-demo`、`@seqvio/technical`、`@seqvio/renderer`。实验性捕获包：
+`@seqvio/capture`、`@seqvio/browser-recorder`、`@seqvio/terminal-narrator`。
 
 当 composition 直接 import 可选视觉包时，可额外安装：
 
@@ -96,7 +98,10 @@ export ELEVENLABS_API_KEY=your_key
 
 > 使用 `/seqvio`，先生成并审阅讲解策划与视觉设计说明，再编译成 4 场景中文 ExplainerDocument，加入短语锚定视觉 Beat，运行 QA 后渲染 MP4。
 
-Skill 会引导 agent：选示例 composition、改 TSX、提取旁白元数据、合成音频、运行 `seqvio-render`。
+推荐路径会先审阅 `EDITORIAL.md` 和 `VISUAL-DESIGN.md`，编译
+`ExplainerDocument`，解析旁白时间，运行 `seqvio-qa`，最后渲染 MP4。
+需要精细视觉控制时仍可直接手写 TSX；实验性的 terminal/browser 适配器
+可以向同一个 IR 提供真实观察场景，但不是创作型讲解的必需依赖。
 
 支持 Cursor、Claude Code、Codex、Gemini CLI 等支持 skills 的 coding agent。
 
@@ -188,7 +193,7 @@ Skill 主文件：[`skills/seqvio/SKILL.md`](./skills/seqvio/SKILL.md)，参考�
 | [`audio-workflow.md`](./skills/seqvio/references/audio-workflow.md) | 提取、合成、混流旁白 |
 | [`render-workflow.md`](./skills/seqvio/references/render-workflow.md) | build、render、smoke test 命令 |
 | [`production-techniques.md`](./skills/seqvio/references/production-techniques.md) | voice-first timing、参考风格分析和视觉 QA 规则 |
-| [`planning-workflow.md`](./skills/seqvio/references/planning-workflow.md) | storyboard IR planning 和 agent handoff |
+| [`planning-workflow.md`](./skills/seqvio/references/planning-workflow.md) | Editorial/Visual 规划和 agent handoff |
 
 安装 skill（见 [快速开始](#快速开始)）：
 
@@ -222,7 +227,7 @@ Seqvio 是 coding agent 用来解释想法的视觉语言，而不只是一个�
 - Browser 场景支持录制视频、光标/聚焦/点击元数据、真实动作时钟和 time-mapped 媒体 seek
 - `ExplanationBeat` cue、精确短语锚点、视觉动作、捕获证据、TTS 后 `outputFrame` 和语义 `sceneTimings[].timeMap`
 - `@seqvio/core`：`VideoComposition`、`Scene`、`Transition`
-- ExplainerDocument 与保留的 Storyboard IR schema、validation、pacing 和 TSX compile helpers
+- ExplainerDocument 是正式 IR；Storyboard IR 仅作为白板输入兼容路径保留
 - `seqvio-render`：TSX 到 MP4
 - `seqvio-audio`：manifest 提取与 TTS 合成
 - `seqvio-qa`：baseline/capture profile、稳定音频/时序/媒体诊断、警告升级和关键帧视觉检查
@@ -295,6 +300,7 @@ node packages/renderer/dist/cli.js \
 | [`@seqvio/technical`](./packages/technical) | 技术讲解 runtime：代码走读、架构图、终端演示、标注和内置字体 |
 | [`@seqvio/terminal-narrator`](./packages/terminal-narrator) | Pre-stable node-pty/xterm 捕获 → IR/ExplanationBeat → 可选旁白 MP4 |
 | [`@seqvio/browser-recorder`](./packages/browser-recorder) | Pre-stable Chromium action 捕获，保留真实动作时间 → IR/ExplanationBeat |
+| [`@seqvio/capture`](./packages/capture) | 实验性的共享 capture session 和 artifact 契约 |
 | [`@seqvio/renderer`](./packages/renderer) | TSX bundler，以及 `seqvio-render` / `seqvio-audio` CLI |
 
 ## 文档
@@ -310,6 +316,8 @@ node packages/renderer/dist/cli.js \
 - [`examples/compositions/README.md`](./examples/compositions/README.md)
 - [`skills/seqvio/SKILL.md`](./skills/seqvio/SKILL.md)
 - [`skills/seqvio/references/production-techniques.md`](./skills/seqvio/references/production-techniques.md)
+- [`docs/marketing/POSITIONING.md`](./docs/marketing/POSITIONING.md) — 当前产品定位和能力边界
+- [`docs/marketing/FEATURE-STATUS.md`](./docs/marketing/FEATURE-STATUS.md) — public 与 experimental 的对外措辞
 
 如果文档与代码冲突，以代码和 [`docs/COMPOSITION-AUTHORING.md`](./docs/COMPOSITION-AUTHORING.md) 为准。
 
