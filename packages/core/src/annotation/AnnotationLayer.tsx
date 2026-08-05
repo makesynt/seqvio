@@ -8,6 +8,7 @@ import React, {
   useState,
 } from 'react';
 import { useCurrentFrame } from '../frame';
+import { resolveSafeLabelPlacement, routeConnector, routeGuidedPath } from './routing';
 
 export interface TargetRect {
   x: number;
@@ -154,11 +155,19 @@ export type AnnotationKind =
   | 'circle'
   | 'box'
   | 'underline'
-  | 'spotlight';
+  | 'spotlight'
+  | 'focus-ring'
+  | 'callout'
+  | 'bracket'
+  | 'connector'
+  | 'region-shade'
+  | 'guided-path';
 
 export interface AnnotationItem {
   id: string;
   targetId: string;
+  toTargetId?: string;
+  pathTargetIds?: string[];
   kind: AnnotationKind;
   start: number;
   duration: number;
@@ -182,8 +191,9 @@ export const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ annotations })
   const readyId = useId();
   const [registryVersion, bump] = useState(0);
   const [rects, setRects] = useState<Map<string, TargetRect>>(() => new Map());
+  const [canvasSize, setCanvasSize] = useState({ width: 1280, height: 720 });
   const annotationKey = annotations
-    .map((annotation) => `${annotation.id}:${annotation.targetId}:${annotation.start}:${annotation.duration}`)
+    .map((annotation) => `${annotation.id}:${annotation.targetId}:${annotation.toTargetId ?? ''}:${annotation.pathTargetIds?.join(',') ?? ''}:${annotation.start}:${annotation.duration}`)
     .join('|');
 
   useLayoutEffect(() => {
@@ -226,10 +236,20 @@ export const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ annotations })
     const measureHandle = requestAnimationFrame(() => {
       if (cancelled) return;
       const next = new Map<string, TargetRect>();
+      const container = registry.getContainer();
+      if (container) setCanvasSize({ width: container.clientWidth, height: container.clientHeight });
       for (const annotation of annotations) {
         if (annotationOpacity(frame, annotation.start, annotation.duration) <= 0) continue;
         const rect = registry.getRect(annotation.targetId);
         if (rect) next.set(annotation.id, rect);
+        if (annotation.toTargetId) {
+          const toRect = registry.getRect(annotation.toTargetId);
+          if (toRect) next.set(`${annotation.id}:to`, toRect);
+        }
+        for (const [index, targetId] of (annotation.pathTargetIds ?? []).entries()) {
+          const pathRect = registry.getRect(targetId);
+          if (pathRect) next.set(`${annotation.id}:path:${index}`, pathRect);
+        }
       }
       setRects(next);
       resolveReady?.();
@@ -249,17 +269,23 @@ export const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ annotations })
         const opacity = annotationOpacity(frame, annotation.start, annotation.duration);
         if (opacity <= 0) return null;
         const rect = rects.get(annotation.id);
-        if (!rect) return null;
+        if (!rect) return <span key={annotation.id} data-seqvio-annotation-id={annotation.id} data-seqvio-annotation-target-id={annotation.targetId} data-seqvio-annotation-target-resolved="false" style={{ display: 'none' }} />;
         return (
           <div
             key={annotation.id}
             data-seqvio-annotation-id={annotation.id}
             data-seqvio-annotation-kind={annotation.kind}
+            data-seqvio-annotation-target-id={annotation.targetId}
+            data-seqvio-annotation-target-resolved="true"
             style={{ display: 'contents' }}
           >
             <AnnotationOverlay
               annotation={annotation}
               rect={rect}
+              toRect={rects.get(`${annotation.id}:to`)}
+              pathRects={(annotation.pathTargetIds ?? []).map((_, index) => rects.get(`${annotation.id}:path:${index}`)).filter((value): value is TargetRect => Boolean(value))}
+              canvasWidth={canvasSize.width}
+              canvasHeight={canvasSize.height}
               opacity={opacity}
             />
           </div>
@@ -272,8 +298,12 @@ export const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ annotations })
 const AnnotationOverlay: React.FC<{
   annotation: AnnotationItem;
   rect: TargetRect;
+  toRect?: TargetRect;
+  pathRects: TargetRect[];
+  canvasWidth: number;
+  canvasHeight: number;
   opacity: number;
-}> = ({ annotation, rect, opacity }) => {
+}> = ({ annotation, rect, toRect, pathRects, canvasWidth, canvasHeight, opacity }) => {
   const pad = 8;
   const common: React.CSSProperties = {
     position: 'absolute',
@@ -298,7 +328,7 @@ const AnnotationOverlay: React.FC<{
     );
   }
 
-  if (annotation.kind === 'circle') {
+  if (annotation.kind === 'circle' || annotation.kind === 'focus-ring') {
     return (
       <div
         style={{
@@ -325,6 +355,42 @@ const AnnotationOverlay: React.FC<{
         }}
       />
     );
+  }
+
+  if (annotation.kind === 'region-shade') {
+    return <div style={{ ...common, borderRadius: 8, background: 'rgba(56, 189, 248, 0.16)', border: '1px solid rgba(125, 211, 252, 0.55)' }} />;
+  }
+
+  if (annotation.kind === 'bracket') {
+    return (
+      <div style={{ ...common, width: 16, borderLeft: '3px solid #38bdf8', borderTop: '3px solid #38bdf8', borderBottom: '3px solid #38bdf8' }}>
+        {annotation.label ? <div style={{ position: 'absolute', left: 18, top: '40%', color: '#7dd3fc', fontSize: 13, whiteSpace: 'nowrap' }}>{annotation.label}</div> : null}
+      </div>
+    );
+  }
+
+  if (annotation.kind === 'callout') {
+    const label = resolveSafeLabelPlacement(rect, 180, 38, canvasWidth, canvasHeight, [rect], 72);
+    return (
+      <><svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity }}><line x1={rect.x + rect.width / 2} y1={rect.y + rect.height / 2} x2={label.x + label.width / 2} y2={label.y + label.height / 2} stroke="#7dd3fc" strokeWidth="2" /></svg><div style={{ position: 'absolute', left: label.x, top: label.y, width: label.width, minHeight: label.height, padding: '8px 10px', boxSizing: 'border-box', borderRadius: 7, background: '#e2e8f0', color: '#0f172a', fontSize: 13, fontWeight: 650, textAlign: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.28)', opacity }}>{annotation.label ?? 'Note'}</div></>
+    );
+  }
+
+  if (annotation.kind === 'connector' && toRect) {
+    const points = routeConnector(rect, toRect, canvasWidth, canvasHeight);
+    const middle = points[Math.floor(points.length / 2)];
+    return (
+      <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity, overflow: 'visible' }}>
+        <polyline points={points.map((point) => `${point.x},${point.y}`).join(' ')} fill="none" stroke="#38bdf8" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+        {points.length ? <><circle cx={points[0].x} cy={points[0].y} r="4" fill="#38bdf8" /><circle cx={points[points.length - 1].x} cy={points[points.length - 1].y} r="4" fill="#38bdf8" /></> : null}
+        {annotation.label && middle ? <text x={middle.x} y={Math.max(18, middle.y - 8)} fill="#7dd3fc" fontSize="13" textAnchor="middle">{annotation.label}</text> : null}
+      </svg>
+    );
+  }
+
+  if (annotation.kind === 'guided-path' && pathRects.length >= 2) {
+    const points = routeGuidedPath(pathRects, canvasWidth, canvasHeight);
+    return <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity, overflow: 'visible' }}><polyline points={points.map((point) => `${point.x},${point.y}`).join(' ')} fill="none" stroke="#fbbf24" strokeWidth="3" strokeDasharray="8 7" strokeLinecap="round" strokeLinejoin="round" />{points.map((point, index) => <circle key={index} cx={point.x} cy={point.y} r={index === points.length - 1 ? 6 : 3} fill="#fbbf24" />)}</svg>;
   }
 
   if (annotation.kind === 'arrow') {

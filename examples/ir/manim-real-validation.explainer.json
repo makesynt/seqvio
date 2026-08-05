@@ -1,0 +1,23 @@
+{
+  "format": "seqvio-explainer",
+  "schemaVersion": "1.0",
+  "id": "manim-real-validation",
+  "width": 1280,
+  "height": 720,
+  "fps": 15,
+  "scenes": [
+    {
+      "type": "manim",
+      "id": "equation",
+      "sourceVideo": "file:///D:/video-agent/seqvio/output/manim-adapter-media/videos/equation/480p15/EquationDerivation.mp4",
+      "sourceManifest": "output/manim-adapter-cache/747706299f8a8da24eb5505755c8bf7a4c12171ef444ecede5c5453ec7adcc3a.json",
+      "mediaWidth": 854,
+      "mediaHeight": 480,
+      "mediaFps": 15,
+      "duration": 60,
+      "markers": [
+        { "id": "equation-written", "frame": 30 }
+      ]
+    }
+  ]
+}

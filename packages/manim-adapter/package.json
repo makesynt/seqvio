@@ -1,0 +1,11 @@
+{
+  "name": "@seqvio/manim-adapter",
+  "version": "0.1.0",
+  "description": "Versioned Manim scene contract and local preflight adapter for Seqvio",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": { "build": "tsc", "test": "node --test tests/*.test.mjs" },
+  "devDependencies": { "typescript": "^5.3.0", "@types/node": "^20.11.0" }
+}

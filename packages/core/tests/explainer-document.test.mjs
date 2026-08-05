@@ -15,16 +15,79 @@ import {
   SCENE_CAPABILITIES,
   SCENE_TYPES,
   listAgentAuthorableSceneCapabilities,
+  resolveAttentionSequence,
+  resolveAttentionSequenceAtOutputFrame,
+  selectAttentionForScene,
+  validateAttentionSequence,
+  routeConnector,
+  routeGuidedPath,
+  resolveSafeLabelPlacement,
 } from '../dist/index.js';
+
+describe('attention sequence', () => {
+  it('resolves holds and explicit handoffs deterministically', () => {
+    const sequence = [
+      { id: 'a', targetId: 'metric-a', kind: 'box', start: 0, duration: 10, minHoldFrames: 20, handoffTo: 'metric-b' },
+      { id: 'b', targetId: 'metric-b', kind: 'circle', start: 15, duration: 20 },
+    ];
+    assert.strictEqual(resolveAttentionSequence(sequence, 12)[0].active, true);
+    assert.strictEqual(resolveAttentionSequence(sequence, 16)[0].handoff, true);
+    assert.strictEqual(resolveAttentionSequence(sequence, 21)[0].active, false);
+  });
+
+  it('reflows attention through a post-TTS scene time map', () => {
+    const sequence = [
+      { id: 'a', targetId: 'metric-a', kind: 'box', start: 20, duration: 20, sourceBeatId: 'scene.beat-a' },
+      { id: 'b', targetId: 'metric-b', kind: 'circle', start: 60, duration: 20, sourceBeatId: 'scene.beat-b' },
+    ];
+    const timeMap = [
+      { outputFrame: 0, sourceFrame: 0 },
+      { outputFrame: 80, sourceFrame: 20 },
+      { outputFrame: 160, sourceFrame: 60 },
+      { outputFrame: 240, sourceFrame: 100 },
+    ];
+    const atFirstPhrase = resolveAttentionSequenceAtOutputFrame(sequence, 80, 100, 240, timeMap);
+    const atSecondPhrase = resolveAttentionSequenceAtOutputFrame(sequence, 160, 100, 240, timeMap);
+    assert.strictEqual(atFirstPhrase[0].active, true);
+    assert.strictEqual(atSecondPhrase[1].active, true);
+  });
+
+  it('selects scene-local segments and enforces explicit clearing', () => {
+    const sequence = [
+      { id: 'a', sceneId: 'before', targetId: 'metric-a', kind: 'spotlight', start: 0, duration: 10, persistence: 'until-clear', clearAt: 50, handoffTo: 'metric-b', handoffToSceneId: 'after' },
+      { id: 'b', sceneId: 'after', targetId: 'metric-b', kind: 'box', start: 0, duration: 20 },
+    ];
+    assert.deepStrictEqual(selectAttentionForScene(sequence, 'before').map((item) => item.id), ['a']);
+    assert.deepStrictEqual(validateAttentionSequence(sequence), []);
+    assert.strictEqual(resolveAttentionSequence(sequence.slice(0, 1), 49)[0].active, true);
+    assert.strictEqual(resolveAttentionSequence(sequence.slice(0, 1), 50)[0].active, false);
+  });
+});
+
+describe('attention routing', () => {
+  it('routes connectors deterministically inside the safe area', () => {
+    const from = { x: 10, y: 40, width: 80, height: 40 };
+    const to = { x: 1110, y: 600, width: 100, height: 50 };
+    const route = routeConnector(from, to, 1280, 720, 24);
+    assert.deepStrictEqual(route, routeConnector(from, to, 1280, 720, 24));
+    assert.ok(route.every((point) => point.x >= 24 && point.x <= 1256 && point.y >= 24 && point.y <= 696));
+    assert.ok(routeGuidedPath([from, to], 1280, 720).length >= 4);
+  });
+
+  it('keeps callout labels inside the canvas', () => {
+    const placement = resolveSafeLabelPlacement({ x: 0, y: 0, width: 60, height: 30 }, 180, 38, 1280, 720);
+    assert.ok(placement.x >= 18 && placement.y >= 18);
+  });
+});
 
 describe('scene capability registry', () => {
   it('is the complete source for stable scene validation and compilation metadata', () => {
-    assert.deepStrictEqual(SCENE_TYPES, ['whiteboard', 'code', 'diagram', 'terminal', 'browser']);
+    assert.deepStrictEqual(SCENE_TYPES, ['whiteboard', 'code', 'diagram', 'infographic', 'terminal', 'browser', 'manim']);
     for (const type of SCENE_TYPES) {
       const capability = SCENE_CAPABILITIES[type];
       assert.strictEqual(capability.schemaVersion, '1.0');
       assert.strictEqual(capability.compiler, 'complete');
-      assert.strictEqual(capability.lifecycle, 'public');
+      assert.ok(['public', 'experimental'].includes(capability.lifecycle));
       assert.ok(capability.requiredPackage.startsWith('@seqvio/'));
       assert.ok(capability.qaRules.length > 0);
     }
@@ -131,6 +194,21 @@ describe('validateExplainerDocument', () => {
     assert.ok(issues.some((i) => i.code === 'unknown_annotation_target'));
   });
 
+  it('validates connector annotations against both stable targets', () => {
+    const valid = {
+      format: 'seqvio-explainer', schemaVersion: '1.0', id: 'connector-valid',
+      scenes: [{
+        type: 'infographic', id: 'summary',
+        metrics: [{ id: 'from', label: 'From', value: '1' }, { id: 'to', label: 'To', value: '2' }],
+        annotations: [{ id: 'link', targetId: 'from', toTargetId: 'to', kind: 'connector', start: 0, duration: 20 }],
+      }],
+    };
+    assert.deepStrictEqual(validateExplainerDocument(valid), []);
+    const invalid = structuredClone(valid);
+    invalid.scenes[0].annotations[0].toTargetId = 'missing';
+    assert.ok(validateExplainerDocument(invalid).some((issue) => issue.code === 'unknown_annotation_target'));
+  });
+
   it('rejects chapter references to unknown scenes', () => {
     const issues = validateExplainerDocument({
       format: 'seqvio-explainer', schemaVersion: '1.0',
@@ -173,11 +251,10 @@ describe('validateExplainerDocument', () => {
     assert.ok(issues.some((i) => i.code === 'invalid_terminal_event_kind'));
   });
 
-  it('rejects removed chat, diff, and infographic scene types', () => {
+  it('rejects removed chat and diff scene types', () => {
     for (const scene of [
       { type: 'chat', id: 'conversation', messages: [{ role: 'user', text: 'hello' }] },
       { type: 'diff', id: 'change', before: 'old', after: 'new' },
-      { type: 'infographic', id: 'summary', panels: [{ id: 'total', label: 'Total' }] },
     ]) {
       const issues = validateExplainerDocument({
         format: 'seqvio-explainer', schemaVersion: '1.0',
@@ -309,8 +386,46 @@ describe('compileExplainerDocumentToTsx', () => {
     assert.doesNotMatch(code, /shell-command-1/);
   });
 
+  it('compiles an infographic scene', () => {
+    const { code } = compileExplainerDocumentToTsx({
+      format: 'seqvio-explainer', schemaVersion: '1.0', id: 'infographic-compile',
+      scenes: [{
+        type: 'infographic', id: 'summary',
+        metrics: [{ id: 'total', label: 'Total', value: '42' }],
+        comparisons: [{ id: 'delta', label: 'Delta', before: 10, after: 4 }],
+        explanation: {
+          cues: [{ id: 'result', text: 'The total improves, then the delta becomes clear.' }],
+          beats: [
+            { id: 'total-beat', cueId: 'result', anchor: { text: 'total improves' }, visuals: [{ targetId: 'total', action: 'focus', minHoldMs: 1200 }] },
+            { id: 'delta-beat', cueId: 'result', anchor: { text: 'delta becomes clear' }, visuals: [{ targetId: 'delta', action: 'highlight' }] },
+          ],
+        },
+      }],
+    });
+    assert.match(code, /InfographicScene/);
+    assert.match(code, /"id": "total"/);
+    assert.match(code, /"kind": "spotlight"/);
+    assert.match(code, /"handoffTo": "delta"/);
+    assert.match(code, /"sourceBeatId": "summary.total-beat"/);
+  });
+
+  it('validates and compiles a Manim-backed scene with named markers', () => {
+    const document = {
+      format: 'seqvio-explainer', schemaVersion: '1.0', id: 'manim-compile',
+      scenes: [{
+        type: 'manim', id: 'equation', sourceVideo: 'equation.mp4', mediaFps: 30,
+        markers: [{ id: 'start', frame: 0 }, { id: 'result', frame: 60, targetId: 'equation-result' }],
+      }],
+    };
+    assert.deepEqual(validateExplainerDocument(document), []);
+    const { code } = compileExplainerDocumentToTsx(document);
+    assert.match(code, /ManimClip/);
+    assert.match(code, /equation\.mp4/);
+    assert.match(code, /"equation-result"/);
+  });
+
   it('refuses removed scene types when validation is bypassed', () => {
-    for (const type of ['chat', 'diff', 'infographic']) {
+    for (const type of ['chat', 'diff']) {
       assert.throws(
         () => compileExplainerDocumentToTsx({
           format: 'seqvio-explainer', schemaVersion: '1.0',

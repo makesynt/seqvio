@@ -49,7 +49,7 @@ These docs describe the repository as it exists today:
 | --- | --- |
 | [`VISION.md`](./VISION.md) | Product positioning, target users, scope, and design principles (slow-changing source of truth) |
 | [`ROADMAP.md`](./ROADMAP.md) | Directional bet and phase ordering; what to build next and why. Subordinate to `VISION.md` |
-| [`EXPLAINER-FRAMEWORK-IMPROVEMENT-PLAN.md`](./EXPLAINER-FRAMEWORK-IMPROVEMENT-PLAN.md) | Active implementation plan for capture, ExplanationBeat timing, deterministic playback, QA, and release readiness |
+| [`IMPLEMENTATION-PLAN.md`](./IMPLEMENTATION-PLAN.md) | Task-level implementation plan for capture, ExplanationBeat timing, explanatory graphics, attention guidance, Manim integration, QA, and release readiness |
 | [`marketing/LANDING-COPY.md`](./marketing/LANDING-COPY.md) | Versioned landing page copy |
 | [`marketing/PRODUCT-HUNT.md`](./marketing/PRODUCT-HUNT.md) | Product Hunt tagline, description, and demo promise |
 | [`marketing/DEMO-SCRIPT.md`](./marketing/DEMO-SCRIPT.md) | Current 60-75 second product demo sequence |

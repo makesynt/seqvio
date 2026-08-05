@@ -1,0 +1,30 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Seqvio mark">
+  <defs>
+    <linearGradient id="seqvio-mark-front" x1="80" y1="72" x2="184" y2="188" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#78DCF4"/>
+      <stop offset="0.55" stop-color="#3F9CF4"/>
+      <stop offset="1" stop-color="#6673E8"/>
+    </linearGradient>
+    <linearGradient id="seqvio-mark-mask-gradient" x1="0" y1="118" x2="0" y2="165" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#000000"/>
+      <stop offset="1" stop-color="#FFFFFF"/>
+    </linearGradient>
+    <mask id="seqvio-mark-fade">
+      <rect width="256" height="256" fill="url(#seqvio-mark-mask-gradient)"/>
+    </mask>
+    <filter id="seqvio-mark-shadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#08111F" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+  <g mask="url(#seqvio-mark-fade)">
+    <g transform="translate(16.83,-8) matrix(1,0,-0.1980,1,0,0)">
+      <path d="M92 74 C120 66 176 96 188 122 C196 140 176 158 150 168 L104 186 C90 191 78 181 80 167 C88 150 118 150 118 132 C118 116 92 116 92 100 Z" fill="#7A7FF2" opacity="0.36"/>
+    </g>
+    <g transform="translate(8.42,-4) matrix(1,0,-0.0990,1,0,0)">
+      <path d="M92 74 C120 66 176 96 188 122 C196 140 176 158 150 168 L104 186 C90 191 78 181 80 167 C88 150 118 150 118 132 C118 116 92 116 92 100 Z" fill="#54B9F2" opacity="0.68"/>
+    </g>
+  </g>
+  <g filter="url(#seqvio-mark-shadow)">
+    <path d="M92 74 C120 66 176 96 188 122 C196 140 176 158 150 168 L104 186 C90 191 78 181 80 167 C88 150 118 150 118 132 C118 116 92 116 92 100 Z" fill="url(#seqvio-mark-front)"/>
+  </g>
+</svg>

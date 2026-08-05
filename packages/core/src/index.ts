@@ -17,6 +17,14 @@ export {
   AnnotationLayer,
   AnnotationProvider,
   AnnotationTarget,
+  AttentionSequenceLayer,
+  resolveAttentionSequence,
+  resolveAttentionSequenceAtOutputFrame,
+  selectAttentionForScene,
+  validateAttentionSequence,
+  routeConnector,
+  routeGuidedPath,
+  resolveSafeLabelPlacement,
   useAnnotationTargetRegistry,
 } from './annotation';
 export type {
@@ -24,6 +32,13 @@ export type {
   AnnotationLayerProps,
   AnnotationTargetProps,
   TargetRect,
+  AttentionKind,
+  AttentionSequenceItem,
+  AttentionSequenceLayerProps,
+  ResolvedAttentionItem,
+  AttentionSequenceIssue,
+  RoutePoint,
+  SafeLabelPlacement,
 } from './annotation';
 export * from './storyboard';
 export * from './authoring';
@@ -32,4 +47,6 @@ export * from './seekable';
 export * from './adapters';
 export * from './clock';
 export * from './parsers';
-
+export * from './direction';
+export * from './motion-grammar';
+export * from './style-profile';

@@ -1,0 +1,39 @@
+{
+  "format": "seqvio-explainer",
+  "schemaVersion": "1.0",
+  "id": "integrated-semantic-validation",
+  "width": 1280,
+  "height": 720,
+  "fps": 15,
+  "backgroundColor": "#0f172a",
+  "scenes": [
+    {
+      "type": "infographic",
+      "id": "overview",
+      "title": "From evidence to explanation",
+      "duration": 75,
+      "metrics": [
+        { "id": "evidence", "label": "Evidence", "value": "Recorded", "detail": "source state", "color": "#38bdf8", "at": 0 },
+        { "id": "model", "label": "Model", "value": "Explained", "detail": "semantic path", "color": "#a78bfa", "at": 20 }
+      ],
+      "explanation": {
+        "cues": [{ "id": "overview-cue", "text": "Evidence becomes an explanation." }],
+        "beats": [
+          { "id": "evidence-beat", "cueId": "overview-cue", "anchor": { "text": "Evidence" }, "visuals": [{ "targetId": "evidence", "action": "focus", "minHoldMs": 800 }] },
+          { "id": "model-beat", "cueId": "overview-cue", "anchor": { "text": "explanation" }, "visuals": [{ "targetId": "model", "action": "highlight", "minHoldMs": 800 }] }
+        ]
+      }
+    },
+    {
+      "type": "manim",
+      "id": "equation",
+      "sourceVideo": "file:///D:/video-agent/seqvio/output/manim-adapter-media-v2/videos/equation/480p15/EquationDerivation.mp4",
+      "sourceManifest": "output/manim-adapter-cache-v2/a237aaba1ecb8dc77804e88439eccc34337a8427721e75dd75ce91a38bcb7b8a.json",
+      "mediaWidth": 854,
+      "mediaHeight": 480,
+      "mediaFps": 15,
+      "duration": 60,
+      "markers": [{ "id": "equation-result", "frame": 30 }]
+    }
+  ]
+}

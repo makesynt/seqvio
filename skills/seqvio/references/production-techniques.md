@@ -47,6 +47,43 @@ Before copying a reference style, extract several frames and identify the visual
 
 Do not imitate only the background color or font. If the reference uses icons, symbols, arrows, and varied shapes, the Seqvio composition should also use a varied shape vocabulary.
 
+## Product explainer production contract
+
+Product-video reviews exposed several failure modes that should be prevented by
+the authoring contract rather than fixed by taste at the end:
+
+- Start from the real task and its visible result. Do not spend the opening on
+  an intro slide, a generic product label, or a full script on screen.
+- Let narration be the master clock. Keep full sentences in the voice track;
+  on-screen text is limited to labels, keywords, commands, filenames, and
+  short conclusions. Code, terminal, and browser evidence may retain the text
+  needed to inspect the action.
+- Declare one `focalTarget` per scene and make every reveal, emphasis, and
+  camera move serve that target. A scene without a clear target is a planning
+  error, not a style problem.
+- Mark whether a visual is evidence-bearing capture or an authored conceptual
+  explanation. A diagram may clarify a model, but must not imply that it is a
+  recording of a system event.
+- Vary scene composition and takeaway treatment. Repeating a header, title,
+  card grid, and bottom rail makes a technical video read like a slide deck;
+  use the scene's metaphor to determine its layout and conclusion.
+- Use transitions to transfer attention: deliberate cuts, focus transfers,
+  match-object links, and restrained blur crossfades. Avoid horizontal wipes,
+  continuous rotation, and motion that has no explanatory role.
+- Review reference frames at scene starts, midpoints, boundaries, and the final
+  frame. Record a contact sheet or frame index and check text overflow,
+  title-to-graphic collisions, focal-target coverage, and brand-asset
+  transparency.
+- Keep voice providers behind the resolved audio manifest. CosyVoice and other
+  providers must produce the same phrase anchors, narration clock, and QA
+  behavior; provider choice must not alter semantic scene order.
+
+Implementation hooks are the planning fields `hook`, `visualRole`,
+`focalTarget`, `evidenceSource`, `onScreenTextBudget`, and
+`transitionIntent`; the QA layer should report their violations with a scene
+id and frame number. This turns production experience into repeatable Seqvio
+behavior instead of a one-off editing checklist.
+
 ## Diagram richness
 
 Avoid explaining an entire video with only rounded rectangles plus text. Prefer semantic visual primitives:

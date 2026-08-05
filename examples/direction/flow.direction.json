@@ -1,0 +1,19 @@
+{
+  "format": "seqvio-direction-plan",
+  "version": "1.0",
+  "id": "flow-direction",
+  "segments": [
+    {
+      "id": "explain-flow",
+      "sceneId": "routing",
+      "purpose": "explain-mechanism",
+      "pace": "steady",
+      "focus": "sequence",
+      "focusSpec": {
+        "targetIds": ["input", "model", "result"]
+      },
+      "camera": "follow-target",
+      "transition": "cut"
+    }
+  ]
+}

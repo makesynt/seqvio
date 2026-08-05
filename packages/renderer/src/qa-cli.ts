@@ -339,6 +339,10 @@ async function inspectDom(page: import('puppeteer').Page): Promise<{
   textOverflowCount: number;
   smallFontCount: number;
   lowContrastCount: number;
+  attentionMissingTargets: string[];
+  attentionOffscreenLabels: string[];
+  attentionLabelCollisions: string[];
+  attentionTargetOcclusions: string[];
 }> {
   return page.evaluate(() => {
     const elements = Array.from(document.querySelectorAll('#root *'));
@@ -350,6 +354,10 @@ async function inspectDom(page: import('puppeteer').Page): Promise<{
     let textOverflowCount = 0;
     let smallFontCount = 0;
     let lowContrastCount = 0;
+    const attentionMissingTargets: string[] = [];
+    const attentionOffscreenLabels: string[] = [];
+    const attentionLabelCollisions: string[] = [];
+    const attentionTargetOcclusions: string[] = [];
     const MIN_FONT_PX = 12;
     const MIN_CONTRAST = 4.5;
 
@@ -412,6 +420,46 @@ async function inspectDom(page: import('puppeteer').Page): Promise<{
         }
       }
     }
+    const wrappers = Array.from(document.querySelectorAll<HTMLElement>('[data-seqvio-annotation-id]'));
+    const labels: Array<{ id: string; rect: DOMRect }> = [];
+    for (const wrapper of wrappers) {
+      const id = wrapper.dataset.seqvioAnnotationId ?? 'unknown';
+      if (wrapper.dataset.seqvioAnnotationTargetResolved === 'false') {
+        attentionMissingTargets.push(id);
+        continue;
+      }
+      const candidates = Array.from(wrapper.querySelectorAll<HTMLElement | SVGTextElement>('div,text'))
+        .filter((element) => (element.textContent ?? '').trim().length > 0);
+      for (const label of candidates) {
+        const rect = label.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) continue;
+        labels.push({ id, rect });
+        if (rect.left < 0 || rect.top < 0 || rect.right > viewport.width || rect.bottom > viewport.height) {
+          attentionOffscreenLabels.push(id);
+        }
+      }
+    }
+    for (let leftIndex = 0; leftIndex < labels.length; leftIndex++) {
+      for (let rightIndex = leftIndex + 1; rightIndex < labels.length; rightIndex++) {
+        const left = labels[leftIndex];
+        const right = labels[rightIndex];
+        if (left.id !== right.id && left.rect.left < right.rect.right && left.rect.right > right.rect.left && left.rect.top < right.rect.bottom && left.rect.bottom > right.rect.top) {
+          attentionLabelCollisions.push(`${left.id}:${right.id}`);
+        }
+      }
+    }
+    const targets = Array.from(document.querySelectorAll<HTMLElement>('[data-annotation-target]'));
+    for (const label of labels) {
+      const ownTarget = wrappers.find((wrapper) => wrapper.dataset.seqvioAnnotationId === label.id)?.dataset.seqvioAnnotationTargetId;
+      for (const target of targets) {
+        const targetId = target.dataset.annotationTarget;
+        if (!targetId || targetId === ownTarget) continue;
+        const rect = target.getBoundingClientRect();
+        if (label.rect.left < rect.right && label.rect.right > rect.left && label.rect.top < rect.bottom && label.rect.bottom > rect.top) {
+          attentionTargetOcclusions.push(`${label.id}:${targetId}`);
+        }
+      }
+    }
     return {
       elementCount: elements.length,
       bodyTextLength: document.body.innerText.trim().length,
@@ -420,6 +468,10 @@ async function inspectDom(page: import('puppeteer').Page): Promise<{
       textOverflowCount,
       smallFontCount,
       lowContrastCount,
+      attentionMissingTargets: [...new Set(attentionMissingTargets)],
+      attentionOffscreenLabels: [...new Set(attentionOffscreenLabels)],
+      attentionLabelCollisions: [...new Set(attentionLabelCollisions)],
+      attentionTargetOcclusions: [...new Set(attentionTargetOcclusions)],
     };
   });
 }
@@ -585,6 +637,10 @@ async function main(): Promise<void> {
         repair: 'Increase foreground/background contrast to at least 4.5:1.',
       });
     }
+    for (const id of dom.attentionMissingTargets) issues.push({ severity: 'error', code: 'attention_target_missing', path: `attention.${id}`, frame: sourceFrame, message: `Attention item "${id}" has no measurable target at frame ${sourceFrame}.`, repair: 'Use a stable target id that exists and is visible during the attention window.' });
+    for (const id of dom.attentionOffscreenLabels) issues.push({ severity: 'warning', code: 'attention_label_offscreen', path: `attention.${id}`, frame: sourceFrame, message: `Attention label "${id}" extends outside the viewport.`, repair: 'Use safe-area label placement or move the target away from the edge.' });
+    for (const pair of dom.attentionLabelCollisions) issues.push({ severity: 'warning', code: 'attention_label_collision', path: `attention.${pair}`, frame: sourceFrame, message: `Attention labels "${pair}" overlap.`, repair: 'Change label placement, shorten copy, or serialize the attention items.' });
+    for (const pair of dom.attentionTargetOcclusions) issues.push({ severity: 'warning', code: 'attention_target_occluded', path: `attention.${pair}`, frame: sourceFrame, message: `Attention label "${pair.split(':')[0]}" occludes target "${pair.split(':')[1]}".`, repair: 'Move the label to another safe candidate or reroute its leader.' });
 
     // narration/visual agreement: the current cue's keywords should overlap
     // with the visible text. Catches the common AI-video failure where the

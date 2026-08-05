@@ -12,6 +12,8 @@ import {
   EXPLAINER_DOCUMENT_SCHEMA_VERSION,
   type ExplainerDocument,
   type DiagramSceneSpec,
+  type InfographicSceneSpec,
+  type ManimSceneSpec,
   type SceneExplanationSpec,
   type SceneSpec,
   type WhiteboardSceneSpec,
@@ -292,6 +294,44 @@ function validateDiagramScene(
   }
 }
 
+function validateInfographicScene(
+  scene: InfographicSceneSpec,
+  scenePath: string,
+  issues: CompositionIssue[],
+): void {
+  const collections = [
+    ['metrics', scene.metrics],
+    ['comparisons', scene.comparisons],
+    ['process', scene.process],
+    ['timeline', scene.timeline],
+    ['relationshipNodes', scene.relationshipNodes],
+    ['relationships', scene.relationships],
+  ] as const;
+  const ids = new Set<string>();
+  for (const [name, items] of collections) {
+    if (!items) continue;
+    items.forEach((item, index) => {
+      const itemPath = `${scenePath}.${name}[${index}]`;
+      if (typeof item.id !== 'string' || item.id.length === 0) {
+        issue(issues, { severity: 'error', path: `${itemPath}.id`, code: 'missing_infographic_item_id', message: `${itemPath}.id must be a non-empty string`, repairable: true });
+      } else if (ids.has(item.id)) {
+        issue(issues, { severity: 'error', path: `${itemPath}.id`, code: 'duplicate_infographic_item_id', message: `Duplicate infographic item id "${item.id}"`, repairable: true });
+      } else ids.add(item.id);
+      if (name !== 'relationships' && (typeof item.label !== 'string' || item.label.length === 0)) {
+        issue(issues, { severity: 'error', path: `${itemPath}.label`, code: 'missing_infographic_item_label', message: `${itemPath}.label must be a non-empty string`, repairable: true });
+      }
+      if ('at' in item && item.at !== undefined && (typeof item.at !== 'number' || item.at < 0)) {
+        issue(issues, { severity: 'error', path: `${itemPath}.at`, code: 'invalid_infographic_item_time', message: `${itemPath}.at must be a non-negative number`, repairable: true });
+      }
+    });
+  }
+  const nodeIds = new Set((scene.relationshipNodes ?? []).map((node) => node.id));
+  (scene.relationships ?? []).forEach((relationship, index) => {
+    if (!nodeIds.has(relationship.from)) issue(issues, { severity: 'error', path: `${scenePath}.relationships[${index}].from`, code: 'invalid_infographic_relationship_from', message: 'Relationship source must reference a relationship node', repairable: true });
+    if (!nodeIds.has(relationship.to)) issue(issues, { severity: 'error', path: `${scenePath}.relationships[${index}].to`, code: 'invalid_infographic_relationship_to', message: 'Relationship target must reference a relationship node', repairable: true });
+  });
+}
+
 function validatePlaceholderScene(
   scene: SceneSpec,
   scenePath: string,
@@ -431,6 +471,22 @@ function validatePlaceholderScene(
   }
 }
 
+function validateManimScene(scene: ManimSceneSpec, scenePath: string, issues: CompositionIssue[]): void {
+  if (typeof scene.sourceVideo !== 'string' || !scene.sourceVideo.trim()) {
+    issue(issues, { severity: 'error', path: `${scenePath}.sourceVideo`, code: 'missing_manim_media', message: `${scenePath}.sourceVideo must reference rendered media`, repairable: true });
+  }
+  const markerIds = new Set<string>();
+  const beatIds = new Set((scene.explanation?.beats ?? []).map((beat) => beat.id));
+  (scene.markers ?? []).forEach((marker, index) => {
+    const path = `${scenePath}.markers[${index}]`;
+    if (!marker.id) issue(issues, { severity: 'error', path: `${path}.id`, code: 'missing_manim_marker_id', message: `${path}.id is required`, repairable: true });
+    else if (markerIds.has(marker.id)) issue(issues, { severity: 'error', path: `${path}.id`, code: 'duplicate_manim_marker_id', message: `Duplicate Manim marker id "${marker.id}"`, repairable: true });
+    else markerIds.add(marker.id);
+    if (!Number.isInteger(marker.frame) || marker.frame < 0) issue(issues, { severity: 'error', path: `${path}.frame`, code: 'invalid_manim_marker_frame', message: `${path}.frame must be a non-negative integer`, repairable: true });
+    if (marker.beatId && !beatIds.has(marker.beatId)) issue(issues, { severity: 'error', path: `${path}.beatId`, code: 'unknown_manim_marker_beat', message: `${path}.beatId must reference an ExplanationBeat in the same scene`, repairable: true });
+  });
+}
+
 function validateAnnotation(
   annotation: unknown,
   path: string,
@@ -462,6 +518,18 @@ function validateAnnotation(
       code: 'missing_annotation_target',
       message: `${path}.targetId must be a non-empty string`,
       repairable: true,
+    });
+  }
+  if (annotation.kind === 'connector' && (typeof annotation.toTargetId !== 'string' || annotation.toTargetId.length === 0)) {
+    issue(issues, {
+      severity: 'error', path: `${path}.toTargetId`, code: 'missing_connector_target',
+      message: `${path}.toTargetId must be a non-empty string for connector annotations`, repairable: true,
+    });
+  }
+  if (annotation.kind === 'guided-path' && (!Array.isArray(annotation.pathTargetIds) || annotation.pathTargetIds.length < 2)) {
+    issue(issues, {
+      severity: 'error', path: `${path}.pathTargetIds`, code: 'invalid_guided_path_targets',
+      message: `${path}.pathTargetIds must contain at least two target ids`, repairable: true,
     });
   }
   if (
@@ -514,12 +582,26 @@ function collectAddressableIds(scene: SceneSpec): string[] {
     for (const step of scene.steps) {
       if (step.id) ids.push(step.id);
     }
+  } else if (scene.type === 'infographic') {
+    for (const item of [
+      ...(scene.metrics ?? []),
+      ...(scene.comparisons ?? []),
+      ...(scene.process ?? []),
+      ...(scene.timeline ?? []),
+      ...(scene.relationshipNodes ?? []),
+      ...(scene.relationships ?? []),
+    ]) ids.push(item.id);
   } else if (scene.type === 'terminal' || scene.type === 'browser') {
     for (const step of scene.steps ?? []) ids.push(step.id);
     if (scene.type === 'browser') {
       for (const target of scene.focusTargets ?? []) {
         if (target.id) ids.push(target.id);
       }
+    }
+  } else if (scene.type === 'manim') {
+    for (const marker of scene.markers ?? []) {
+      ids.push(marker.id);
+      if (marker.targetId) ids.push(marker.targetId);
     }
   }
   for (const annotation of scene.annotations ?? []) ids.push(annotation.id);
@@ -934,6 +1016,10 @@ export function validateExplainerDocument(input: unknown): CompositionIssue[] {
       validateCodeScene(typedScene, scenePath, issues);
     } else if (typedScene.type === 'diagram') {
       validateDiagramScene(typedScene, scenePath, issues);
+    } else if (typedScene.type === 'infographic') {
+      validateInfographicScene(typedScene, scenePath, issues);
+    } else if (typedScene.type === 'manim') {
+      validateManimScene(typedScene, scenePath, issues);
     } else {
       validatePlaceholderScene(typedScene, scenePath, issues);
     }
@@ -979,6 +1065,17 @@ export function validateExplainerDocument(input: unknown): CompositionIssue[] {
           targetId: annotation.targetId,
         });
       }
+      if (isObject(annotation) && typeof annotation.toTargetId === 'string') {
+        annotationTargets.push({
+          path: `annotations[${index}].toTargetId`,
+          targetId: annotation.toTargetId,
+        });
+      }
+      if (isObject(annotation) && Array.isArray(annotation.pathTargetIds)) {
+        annotation.pathTargetIds.forEach((targetId, targetIndex) => {
+          if (typeof targetId === 'string') annotationTargets.push({ path: `annotations[${index}].pathTargetIds[${targetIndex}]`, targetId });
+        });
+      }
     });
   }
   doc.scenes.forEach((scene, sceneIndex) => {
@@ -988,6 +1085,17 @@ export function validateExplainerDocument(input: unknown): CompositionIssue[] {
         annotationTargets.push({
           path: `scenes[${sceneIndex}].annotations[${annotationIndex}].targetId`,
           targetId: annotation.targetId,
+        });
+      }
+      if (isObject(annotation) && typeof annotation.toTargetId === 'string') {
+        annotationTargets.push({
+          path: `scenes[${sceneIndex}].annotations[${annotationIndex}].toTargetId`,
+          targetId: annotation.toTargetId,
+        });
+      }
+      if (isObject(annotation) && Array.isArray(annotation.pathTargetIds)) {
+        annotation.pathTargetIds.forEach((targetId, targetIndex) => {
+          if (typeof targetId === 'string') annotationTargets.push({ path: `scenes[${sceneIndex}].annotations[${annotationIndex}].pathTargetIds[${targetIndex}]`, targetId });
         });
       }
     });

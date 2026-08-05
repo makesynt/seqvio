@@ -113,6 +113,8 @@ export interface RenderableMeta {
       minDurationFrames: number;
     }>;
   };
+  /** Reviewable renderer-agnostic direction compiled from semantic ids. */
+  direction?: import('./direction').CompiledDirectionPlan;
 }
 
 export function resolveCompositionAudioManifest(

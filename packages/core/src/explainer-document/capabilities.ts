@@ -39,6 +39,12 @@ export const SCENE_CAPABILITIES = {
     authoringSummary: 'nodes, edges, steps = reveal | connect | trace | emphasize',
     qaRules: ['visual-layout', 'pacing', 'audio-timeline', 'explanation-beats'],
   },
+  infographic: {
+    type: 'infographic', schemaVersion: '1.0', compiler: 'complete',
+    requiredPackage: '@seqvio/technical', lifecycle: 'experimental', agentAuthoring: true,
+    authoringSummary: 'metrics, comparisons, process, timeline, and relationship primitives',
+    qaRules: ['visual-layout', 'text-density', 'focal-target', 'pacing', 'audio-timeline', 'explanation-beats'],
+  },
   terminal: {
     type: 'terminal', schemaVersion: '1.0', compiler: 'complete',
     requiredPackage: '@seqvio/technical', lifecycle: 'public', agentAuthoring: false,
@@ -50,6 +56,12 @@ export const SCENE_CAPABILITIES = {
     requiredPackage: '@seqvio/product-demo', lifecycle: 'public', agentAuthoring: false,
     authoringSummary: 'capture-derived video, cursor, focus, click, and recorded steps',
     qaRules: ['visual-layout', 'capture-state', 'capture-media', 'pacing', 'audio-timeline', 'explanation-beats'],
+  },
+  manim: {
+    type: 'manim', schemaVersion: '1.0', compiler: 'complete',
+    requiredPackage: '@seqvio/manim-adapter', lifecycle: 'experimental', agentAuthoring: true,
+    authoringSummary: 'pre-rendered mathematical animation, render manifest, and named markers',
+    qaRules: ['visual-layout', 'external-media', 'marker-alignment', 'pacing', 'audio-timeline', 'explanation-beats'],
   },
 } as const satisfies Record<string, SceneCapability>;
 

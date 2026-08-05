@@ -159,5 +159,5 @@ Keep final TSX as the editable production source after compile.
 - Use `plan-auto`; Seqvio no longer ships a heuristic planner.
 - Ask Seqvio CLI to call model APIs.
 - Generate placeholder art in Seqvio core.
-- Put OpenMontage schemas into Seqvio core.
+- Put application-specific production schemas into Seqvio core.
 - Split scene planning and illustration into hidden CLI passes.

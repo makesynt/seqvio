@@ -20,6 +20,8 @@ import {
   type CodeSceneSpec,
   type ExplainerDocument,
   type DiagramSceneSpec,
+  type InfographicSceneSpec,
+  type ManimSceneSpec,
   type SceneSpec,
 } from './schema';
 import { sceneDurationFrames } from './timeline';
@@ -29,6 +31,12 @@ import {
   resolvePacingProfile,
   resolveScenePacing,
 } from '../pacing';
+import {
+  compileDirectionPlan,
+  deriveDirectionPlan,
+  type CompiledDirectionPlan,
+  type DirectionPlan,
+} from '../direction';
 
 function resolved(doc: ExplainerDocument) {
   return {
@@ -137,6 +145,29 @@ function compileDiagramScene(scene: DiagramSceneSpec, componentName: string): st
 }`;
 }
 
+function compileInfographicScene(scene: InfographicSceneSpec, componentName: string): string {
+  const annotations = serializeAnnotations(scene.annotations);
+  return `function ${componentName}() {
+  return (
+    <TechnicalScene width={W} height={H} annotations={${annotations}}>
+      <InfographicScene
+        id=${JSON.stringify(scene.id)}
+        title=${JSON.stringify(scene.title)}
+        metrics={${JSON.stringify(scene.metrics ?? [], null, 2)}}
+        comparisons={${JSON.stringify(scene.comparisons ?? [], null, 2)}}
+        process={${JSON.stringify(scene.process ?? [], null, 2)}}
+        timeline={${JSON.stringify(scene.timeline ?? [], null, 2)}}
+        relationshipNodes={${JSON.stringify(scene.relationshipNodes ?? [], null, 2)}}
+        relationships={${JSON.stringify(scene.relationships ?? [], null, 2)}}
+        attention={${JSON.stringify(scene.attention ?? [], null, 2)}}
+        width={W}
+        height={H}
+      />
+    </TechnicalScene>
+  );
+}`;
+}
+
 function compileTerminalScene(scene: Extract<SceneSpec, { type: 'terminal' }>, componentName: string): string {
   const annotations = serializeAnnotations(scene.annotations);
   const legacyEvents = (scene.commands ?? []).map((command, index) => ({
@@ -217,6 +248,25 @@ function compileBrowserScene(
 }`;
 }
 
+function compileManimScene(scene: ManimSceneSpec, componentName: string): string {
+  const annotations = serializeAnnotations(scene.annotations);
+  return `function ${componentName}() {
+  return (
+    <TechnicalScene width={W} height={H} annotations={${annotations}}>
+      <ManimClip
+        id=${JSON.stringify(scene.id)}
+        src=${JSON.stringify(scene.sourceVideo)}
+        width={${scene.mediaWidth ?? 'W'}}
+        height={${scene.mediaHeight ?? 'H'}}
+        fps={${scene.mediaFps ?? 'FPS'}}
+        fit=${JSON.stringify(scene.fit ?? 'contain')}
+        markers={${JSON.stringify(scene.markers ?? [], null, 2)}}
+      />
+    </TechnicalScene>
+  );
+}`;
+}
+
 function unsupportedSceneType(scene: never): never {
   const type = (scene as { type?: unknown }).type;
   throw new Error(`Unsupported ExplainerDocument scene type: ${String(type)}`);
@@ -234,10 +284,14 @@ function compileSceneComponent(
       return compileCodeScene(scene, componentName);
     case 'diagram':
       return compileDiagramScene(scene, componentName);
+    case 'infographic':
+      return compileInfographicScene(scene, componentName);
     case 'terminal':
       return compileTerminalScene(scene, componentName);
     case 'browser':
       return compileBrowserScene(scene, componentName);
+    case 'manim':
+      return compileManimScene(scene, componentName);
   }
 
   return unsupportedSceneType(scene);
@@ -249,6 +303,8 @@ function sceneDurationFramesForCompile(scene: SceneSpec, fps: number): number {
 
 export interface CompileCompositionResult {
   code: string;
+  directionPlan: DirectionPlan;
+  compiledDirection: CompiledDirectionPlan;
 }
 
 export function compileExplainerDocumentToTsx(
@@ -256,6 +312,8 @@ export function compileExplainerDocumentToTsx(
 ): CompileCompositionResult {
   const pacingProfile = resolvePacingProfile(doc.pacingProfile);
   const pacedDoc = resolveCompositionPacing(doc, pacingProfile.policy);
+  const directionPlan = deriveDirectionPlan(pacedDoc);
+  const compiledDirection = compileDirectionPlan(directionPlan);
   const r = resolved(pacedDoc);
   const sceneNames = pacedDoc.scenes.map((scene, index) =>
     sceneComponentName(scene.id, index)
@@ -363,6 +421,8 @@ export function compileExplainerDocumentToTsx(
   AnnotationTarget,
   CodeWalkthrough,
   ArchitectureDiagram,
+  InfographicScene,
+  ManimClip,
   TerminalXtermDemo,
 } from '@seqvio/technical';`
     : '';
@@ -417,6 +477,7 @@ ${
   width: W,
   height: H,
   pacing: { profile: ${JSON.stringify(pacingProfile.id)}, highlights: ${JSON.stringify(pacingHighlights, null, 2)} },
+  direction: ${JSON.stringify(compiledDirection, null, 2)},
   audio: {
     fps: FPS,
     lockToAudio: ${r.lockToAudio},
@@ -432,9 +493,10 @@ ${
   width: W,
   height: H,
   pacing: { profile: ${JSON.stringify(pacingProfile.id)}, highlights: ${JSON.stringify(pacingHighlights, null, 2)} },
+  direction: ${JSON.stringify(compiledDirection, null, 2)},
 };`
 }
 `;
 
-  return { code };
+  return { code, directionPlan, compiledDirection };
 }

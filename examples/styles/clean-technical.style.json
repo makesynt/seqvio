@@ -1,0 +1,13 @@
+{
+  "format": "seqvio-style-profile",
+  "version": "1.0",
+  "id": "clean-technical",
+  "label": "Clean Technical",
+  "typography": { "headingFamily": "Inter", "bodyFamily": "Inter", "monoFamily": "JetBrains Mono", "scale": "editorial" },
+  "motionDensity": "restrained",
+  "cameraPolicy": "semantic-focus",
+  "transitionPolicy": "focus-transfer",
+  "attentionPersistence": "until-handoff",
+  "spacing": "comfortable",
+  "paletteRoles": { "background": "#0f172a", "ink": "#f8fafc", "accent": "#38bdf8", "muted": "#94a3b8" }
+}

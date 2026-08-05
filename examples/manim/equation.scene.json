@@ -1,0 +1,11 @@
+{
+  "format": "seqvio-manim-scene",
+  "version": "1.0",
+  "id": "equation",
+  "pythonFile": "examples/manim/equation.py",
+  "className": "EquationDerivation",
+  "width": 1280,
+  "height": 720,
+  "fps": 30,
+  "quality": "medium"
+}

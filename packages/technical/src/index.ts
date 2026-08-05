@@ -1,6 +1,20 @@
 export { TechnicalScene } from './TechnicalScene';
 export type { TechnicalSceneProps } from './TechnicalScene';
 
+export { InfographicScene, infographicProgress } from './InfographicScene';
+export type {
+  InfographicSceneProps,
+  InfographicMetric,
+  InfographicComparison,
+  InfographicProcessStep,
+  InfographicTimelineEvent,
+  InfographicRelationshipNode,
+  InfographicRelationship,
+} from './InfographicScene';
+
+export { ManimClip, markerAtFrame, resolveManimMarkerFrames } from './ManimClip';
+export type { ManimClipProps, ManimMarker } from './ManimClip';
+
 export {
   AnnotationLayer,
   AnnotationProvider,

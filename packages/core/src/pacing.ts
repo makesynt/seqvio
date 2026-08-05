@@ -196,6 +196,42 @@ function applyExplanationTiming(
           : step;
       }),
     } as SceneSpec;
+  } else if (scene.type === 'infographic') {
+    const attention = beats.flatMap((beat) => beat.visuals
+      .filter((visual) => visual.action !== 'reveal')
+      .map((visual, visualIndex) => {
+        const offsetFrames = Math.round(((visual.offsetMs ?? 0) / 1000) * fps);
+        const start = Math.max(0, beat.sourceFrame + offsetFrames);
+        const duration = Math.max(
+          minFrames,
+          Math.ceil(((visual.minHoldMs ?? policy.minHighlightMs) / 1000) * fps),
+        );
+        return {
+          id: `${beat.id}.attention-${visualIndex + 1}`,
+          targetId: visual.targetId,
+          kind: visual.action === 'focus' ? 'spotlight' as const
+            : visual.action === 'annotate' ? 'arrow' as const
+              : 'box' as const,
+          start,
+          duration,
+          minHoldFrames: duration,
+          sourceBeatId: beat.id,
+          sceneId: scene.id,
+          persistence: 'until-handoff' as const,
+        };
+      }));
+    timedScene = {
+      ...scene,
+      metrics: scene.metrics?.map((item) => startByTarget.has(item.id) ? { ...item, at: startByTarget.get(item.id)! } : item),
+      comparisons: scene.comparisons?.map((item) => startByTarget.has(item.id) ? { ...item, at: startByTarget.get(item.id)! } : item),
+      process: scene.process?.map((item) => startByTarget.has(item.id) ? { ...item, at: startByTarget.get(item.id)! } : item),
+      timeline: scene.timeline?.map((item) => startByTarget.has(item.id) ? { ...item, at: startByTarget.get(item.id)! } : item),
+      relationships: scene.relationships?.map((item) => startByTarget.has(item.id) ? { ...item, at: startByTarget.get(item.id)! } : item),
+      attention: attention.map((item, index) => ({
+        ...item,
+        handoffTo: attention[index + 1]?.targetId,
+      })),
+    };
   } else if (scene.type === 'browser') {
     timedScene = {
       ...scene,
@@ -232,6 +268,14 @@ function baseSceneDurationFrames(scene: SceneSpec, fps: number, policy: PacingPo
   if (scene.type === 'terminal') {
     const maxMs = Math.max(0, ...(scene.events ?? []).map((event) => event.timeMs), ...(scene.steps ?? []).map((step) => step.timeMs));
     return Math.max(1, Math.ceil((maxMs / 1000) * fps) + tail);
+  }
+  if (scene.type === 'infographic') {
+    const itemEnds = [
+      ...(scene.metrics ?? []), ...(scene.comparisons ?? []), ...(scene.process ?? []),
+      ...(scene.timeline ?? []), ...(scene.relationships ?? []),
+    ].map((item) => (item.at ?? 0) + 30);
+    const attentionEnds = (scene.attention ?? []).map((item) => item.start + Math.max(item.duration, item.minHoldFrames ?? 0));
+    return Math.max(120, ...itemEnds, ...attentionEnds) + tail;
   }
   if (scene.type === 'browser') {
     const maxMs = Math.max(0, ...(scene.cursorPoints ?? []).map((point) => point.timeMs), ...(scene.focusTargets ?? []).map((point) => point.timeMs), ...(scene.clicks ?? []).map((point) => point.timeMs));

@@ -5,8 +5,8 @@
 > milestones. For positioning and scope, read [`VISION.md`](./VISION.md) - when
 > the two disagree, `VISION.md` wins.
 >
-> Last revised: 2026-08-01 (implementation status aligned with the current
-> ExplanationBeat and terminal/browser IR pipelines).
+> Last revised: 2026-08-05 (ordered semantic direction before the final style
+> layer and added product-explainer production contracts).
 
 ## What Changed in This Revision
 
@@ -155,6 +155,99 @@ terminal vs real stdout) was considered and dropped: capture-produced IR is
 faithful (same-source as the real recording, so verification is self-consistent),
 and hand-written IR either has no ground truth (whiteboard) or was dropped
 (code/diagram char-level checks conflate simplification with fabrication).
+
+## Phase 3 - Semantic Direction and Mathematical Animation
+
+Build a semantic visual-expression layer for moments where captured footage,
+code, and architecture diagrams do not fully explain the idea. These connected
+capabilities share the same ExplanationBeat timing contract.
+
+### Explainable motion graphics
+
+Add `InfographicScene` to `@seqvio/technical` with reusable metric, comparison,
+process, timeline, chart, and relationship primitives. Motion must communicate
+an explicit semantic change: reveal a quantity, compare values, trace a process,
+show a state transition, or connect cause and effect. Every addressable datum and
+relationship receives a stable target id so `ExplanationBeat.visualActions` can
+drive `reveal`, `compare`, `trace`, `emphasize`, and `transform` actions from
+phrase anchors.
+
+Ship deterministic layouts, shared number/chart formatting, data-source labels,
+responsive safe areas, and seek-safe animation states. Add reference scenes for
+a metric explanation, a before/after comparison, a multi-step process, and a
+time-series change.
+
+### Reusable attention guidance
+
+Extend the shared annotation system into a cross-scene attention vocabulary:
+highlight, focus ring, spotlight, callout, arrow, bracket, connector, region
+shade, and guided focus path. An `AttentionSequence` coordinates activation,
+handoff, persistence, and clearing across stable annotation targets while the
+layout layer keeps labels and connectors inside safe areas and resolves common
+collisions.
+
+Make the same primitives usable across whiteboard, code, diagram, terminal,
+browser, product-demo, infographic, and externally rendered animation scenes.
+Connect attention actions to phrase-anchored ExplanationBeats and include
+random-access, reverse-seek, overlap, contrast, and minimum-hold QA coverage.
+
+### DirectionPlan
+
+Add a minimal, versioned, renderer-agnostic direction plan that references
+scenes, stable targets, `ExplanationBeat`s, and capture manifests. It records
+purpose, focal target, pace, camera intent, and transition intent without
+encoding CSS, opacity, scale, or renderer APIs. Compile it into the existing
+actions, `AttentionSequence`, and timing system, and validate unknown
+references and conflicting intents before rendering.
+
+### Manim adapter
+
+Add an external `@seqvio/manim-adapter` package for mathematical animation. A
+versioned `ManimSceneSpec` describes the source file, scene class, render
+settings, assets, and named timeline markers. The adapter invokes the local
+Python/Manim runtime and produces a content-addressed `ManimRenderManifest`
+containing the rendered media, duration, frame rate, dimensions, alpha mode,
+source hash, runtime versions, and resolved markers.
+
+Add a `ManimClip` scene component and compiler integration so named Manim
+markers can align with narration phrases and ExplanationBeats. Include runtime
+preflight, cache reuse, progress and diagnostics events, cancellation, artifact
+cleanup, and QA for media integrity, timing, dimensions, marker resolution, and
+seek behavior. Ship reference compositions for equation derivation, graph
+transformation, and geometric proof.
+
+### Motion Grammar
+
+Define a small semantic motion vocabulary - `question`, `pause`, `reveal`,
+`trace`, `compare`, `emphasize`, `transform`, `answer`, and `summarize` - that
+maps to semantic actions, `AttentionSequence`, and `DirectionPlan`. Ship
+question/answer, compare/merge, problem/fix, and process/verification fixtures.
+This is a constrained explanation grammar, not a general animation DSL.
+
+### Director Skills
+
+Add host-agent skills that generate and repair reviewable `DirectionPlan`,
+`AttentionSequence`, and Motion Grammar artifacts. Keep planning outside the
+renderer, store versioned plans and receipts, and use the same deterministic
+validation and frame QA as hand-authored compositions.
+
+### Style Playbook (final phase)
+
+Only after semantic actions, direction, motion grammar, Manim integration, and
+QA are stable, add a versioned style profile. Profiles such as
+`clean-technical`, `editorial-explainer`, `chalk-process`, and `terminal-first`
+control typography, motion density, camera behavior, transitions, attention
+persistence, spacing, and palette. They must not change narration timing,
+target identity, evidence order, or semantic actions; avoid brand-name
+imitation and limit the first release to two or three profiles.
+
+### Integrated authoring and QA
+
+Exercise one authoring path across captured terminal/browser media, authored
+diagrams, infographic scenes, annotation primitives, DirectionPlan, Motion
+Grammar, and Manim clips. Release smoke must cover voice-first timing, focal
+target coverage, text-density and collision diagnostics, transition intent,
+seek/reverse behavior, marker alignment, and content-addressed cache reuse.
 
 ## Operational Stabilization
 

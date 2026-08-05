@@ -1,0 +1,73 @@
+{
+  "format": "seqvio-explainer",
+  "schemaVersion": "1.0",
+  "id": "infographic-attention-validation",
+  "width": 1280,
+  "height": 720,
+  "fps": 30,
+  "scenes": [
+    {
+      "type": "infographic",
+      "id": "results",
+      "title": "One explanation, guided attention",
+      "duration": 240,
+      "metrics": [
+        { "id": "throughput", "label": "Throughput", "value": "4.8x", "detail": "after batching", "color": "#38bdf8" },
+        { "id": "latency", "label": "Latency", "value": "120ms", "detail": "p95 response", "color": "#34d399" },
+        { "id": "errors", "label": "Errors", "value": "0.7%", "detail": "verified run", "color": "#fbbf24" }
+      ],
+      "comparisons": [
+        { "id": "build-time", "label": "Build time", "before": 18, "after": 7, "beforeLabel": "Before", "afterLabel": "After" },
+        { "id": "review-steps", "label": "Review steps", "before": 9, "after": 4, "beforeLabel": "Manual", "afterLabel": "Guided" }
+      ],
+      "process": [
+        { "id": "capture", "label": "Capture", "detail": "record the real event" },
+        { "id": "explain", "label": "Explain", "detail": "show the causal model" },
+        { "id": "verify", "label": "Verify", "detail": "check the result" }
+      ],
+      "explanation": {
+        "cues": [
+          { "id": "guided", "text": "Throughput rises first. Latency is the key measure. Then compare the build time and verify the result." }
+        ],
+        "beats": [
+          {
+            "id": "throughput-beat",
+            "cueId": "guided",
+            "anchor": { "text": "Throughput rises first" },
+            "visuals": [
+              { "targetId": "throughput", "action": "reveal" },
+              { "targetId": "throughput", "action": "focus", "minHoldMs": 1300 }
+            ]
+          },
+          {
+            "id": "latency-beat",
+            "cueId": "guided",
+            "anchor": { "text": "Latency is the key measure" },
+            "visuals": [
+              { "targetId": "latency", "action": "reveal" },
+              { "targetId": "latency", "action": "highlight", "minHoldMs": 1300 }
+            ]
+          },
+          {
+            "id": "comparison-beat",
+            "cueId": "guided",
+            "anchor": { "text": "compare the build time" },
+            "visuals": [
+              { "targetId": "build-time", "action": "reveal" },
+              { "targetId": "build-time", "action": "annotate", "minHoldMs": 1500 }
+            ]
+          },
+          {
+            "id": "verify-beat",
+            "cueId": "guided",
+            "anchor": { "text": "verify the result" },
+            "visuals": [
+              { "targetId": "verify", "action": "reveal" },
+              { "targetId": "verify", "action": "focus", "minHoldMs": 1400 }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

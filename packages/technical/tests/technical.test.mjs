@@ -11,6 +11,7 @@ import {
   collapsedGroupsAt,
   layoutDiagram,
 } from '../dist/diagram-layout.js';
+import { infographicProgress } from '../dist/InfographicScene.js';
 
 describe('highlightLine / highlightSource (Shiki)', () => {
   it('colors keywords, types, and strings via Shiki', () => {
@@ -140,5 +141,14 @@ describe('layoutDiagram', () => {
     assert.ok(collapsed.nodes.some((node) => node.id === '__group:backend'));
     assert.ok(!collapsed.nodes.some((node) => node.id === 'svc'));
     assert.strictEqual(collapsed.nodes.length, 2);
+  });
+});
+
+describe('InfographicScene timing', () => {
+  it('keeps semantic items hidden before their cue and seek-safe afterwards', () => {
+    assert.strictEqual(infographicProgress(9, 10), 0);
+    assert.ok(infographicProgress(19, 10) > 0);
+    assert.strictEqual(infographicProgress(40, 10), 1);
+    assert.strictEqual(infographicProgress(19, 10), infographicProgress(19, 10));
   });
 });

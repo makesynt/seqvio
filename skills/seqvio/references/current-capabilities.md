@@ -195,7 +195,7 @@ Do not assume these exist just because they appear in roadmap or proposal docs:
 - visual editor / studio workflow
 - automatic custom SVG illustration generation per topic
 - Seqvio-side AI planning or planner API calls
-- OpenMontage adapter inside Seqvio core
+- Product-specific orchestration adapter inside Seqvio core
 - `@seqvio/education` / full LessonPlan package
 - ChatTranscript, DiffReview, or infographic scene families
 - automatic screenshot privacy or redaction guarantees
