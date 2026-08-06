@@ -28,24 +28,29 @@ node packages/renderer/dist/cli.js \
   `explanation.beats`; post-TTS timing is resolved into a semantic scene time map.
 - **Manual TSX audio**: direct `meta.audio.narration` remains supported but is a
   lower-level contract without automatic phrase-level visual alignment.
+- **Manim media**: render Python Manim scenes externally through
+  `@seqvio/manim-adapter`, then use `ManimClip` or an ExplainerDocument `manim`
+  scene. See [`docs/MANIM-INTEGRATION.md`](../../docs/MANIM-INTEGRATION.md).
 - **No templates**: layout and copy are explicit in TSX (Remotion-style).
 
 ## Examples
 
-| File | Description |
-|------|-------------|
-| `seqvio-overview-en.tsx` | Narrated English product overview |
-| `seqvio-overview-zh.tsx` | Narrated Chinese product overview |
-| `seqvio-intro.tsx` | 4-scene framework intro (EN + partial Chinese) |
-| `seqvio-intro-zh.tsx` | 4-scene all-Chinese framework intro |
-| `seqvio-audio-demo.tsx` | Audio and caption metadata demo |
-| `seqvio-alignment-demo.tsx` | Scene-duration derivation from resolved audio |
-| `seqvio-style-manifest-demo.tsx` | Whiteboard style preset manifest demo |
-| `seqvio-product-demo-preview.tsx` | Product walkthrough component demo |
-| `seqvio-product-demo-validation.tsx` | Short product-demo renderer validation composition |
-| `seqvio-scatterbrain.tsx` | Sticky-note / workshop style demo |
-| `loop-engineering-explainer.tsx` | Long-form narrated explainer composition |
-| `generated/style-layout-demo.tsx` | Storyboard IR compiled TSX demo |
+| File                                 | Description                                              |
+| ------------------------------------ | -------------------------------------------------------- |
+| `seqvio-overview-en.tsx`             | Narrated English product overview                        |
+| `seqvio-overview-zh.tsx`             | Narrated Chinese product overview                        |
+| `seqvio-intro.tsx`                   | 4-scene framework intro (EN + partial Chinese)           |
+| `seqvio-intro-zh.tsx`                | 4-scene all-Chinese framework intro                      |
+| `seqvio-audio-demo.tsx`              | Audio and caption metadata demo                          |
+| `seqvio-alignment-demo.tsx`          | Scene-duration derivation from resolved audio            |
+| `seqvio-style-manifest-demo.tsx`     | Whiteboard style preset manifest demo                    |
+| `seqvio-product-demo-preview.tsx`    | Product walkthrough component demo                       |
+| `seqvio-product-demo-validation.tsx` | Short product-demo renderer validation composition       |
+| `seqvio-scatterbrain.tsx`            | Sticky-note / workshop style demo                        |
+| `loop-engineering-explainer.tsx`     | Long-form narrated explainer composition                 |
+| `manim-clip-validation.tsx`          | Minimal seekable `ManimClip` and named-marker validation |
+| `manim-end-to-end-validation.tsx`    | Narrated playback of real graph and proof Manim renders  |
+| `generated/style-layout-demo.tsx`    | Storyboard IR compiled TSX demo                          |
 
 More single-scene samples: `packages/whiteboard/examples/`.
 

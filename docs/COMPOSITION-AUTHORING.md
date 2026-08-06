@@ -25,17 +25,13 @@ visual timestamps for the same scene.
     }
   ],
   "explanation": {
-    "cues": [
-      { "id": "voice", "text": "Now the client sends the request." }
-    ],
+    "cues": [{ "id": "voice", "text": "Now the client sends the request." }],
     "beats": [
       {
         "id": "send-request",
         "cueId": "voice",
         "anchor": { "text": "sends the request" },
-        "visuals": [
-          { "targetId": "request-line", "action": "focus" }
-        ]
+        "visuals": [{ "targetId": "request-line", "action": "focus" }]
       }
     ]
   }
@@ -53,6 +49,12 @@ Hand-authored TSX remains supported below. Direct `meta.audio.narration` is a
 lower-level contract and does not automatically provide phrase-level visual
 alignment unless the corresponding ExplanationBeat and scene timing metadata
 are also present.
+
+Mathematical animation is a two-stage optional path: the experimental
+`@seqvio/manim-adapter` invokes the external Python package `manim`, then an
+ExplainerDocument `manim` scene or `@seqvio/technical` `ManimClip` consumes the
+pre-rendered media. See [`MANIM-INTEGRATION.md`](./MANIM-INTEGRATION.md) for the
+runtime boundary, setup, manifest, marker, and cache contracts.
 
 ## Quick start
 
@@ -72,10 +74,10 @@ node dist/cli.js \
 
 ## File contract
 
-| Export | Required | Purpose |
-|--------|----------|---------|
-| `default` | Yes | Root scene or `VideoComposition` |
-| `meta` | Yes | `{ duration: frames, fps: number }` for the renderer |
+| Export    | Required | Purpose                                              |
+| --------- | -------- | ---------------------------------------------------- |
+| `default` | Yes      | Root scene or `VideoComposition`                     |
+| `meta`    | Yes      | `{ duration: frames, fps: number }` for the renderer |
 
 Imports resolve via esbuild aliases:
 
@@ -127,12 +129,12 @@ Supported transitions: `fade`, `slide`, and `wipe` (defined in `packages/core/sr
 
 ## Examples
 
-| Path | Description |
-|------|-------------|
-| `examples/compositions/seqvio-intro.tsx` | 4-scene product intro |
-| `packages/core/examples/multi-scene-demo.tsx` | Scene + fade transition API |
-| `packages/whiteboard/examples/01-hello-world.tsx` | Minimal single scene |
-| `packages/whiteboard/examples/04-framework-intro.tsx` | Long single-scene intro |
+| Path                                                  | Description                 |
+| ----------------------------------------------------- | --------------------------- |
+| `examples/compositions/seqvio-intro.tsx`              | 4-scene product intro       |
+| `packages/core/examples/multi-scene-demo.tsx`         | Scene + fade transition API |
+| `packages/whiteboard/examples/01-hello-world.tsx`     | Minimal single scene        |
+| `packages/whiteboard/examples/04-framework-intro.tsx` | Long single-scene intro     |
 
 ## Whiteboard theme (refined defaults)
 
@@ -165,11 +167,11 @@ With `excalidrawTheme` / `handDrawn`: **Virgil** (Latin) and **Long Cang 龙苍*
 
 Props:
 
-| Prop | Values | Notes |
-|------|--------|-------|
-| `textRender` | `fill` \| `stroke` \| `stroke-wash` | On `DrawText`; default solid fill |
-| `type` | `rounded-rectangle` | Rounded corners via `borderRadius` |
-| `fillColor` | explicit | Overrides theme wash when set |
+| Prop         | Values                              | Notes                              |
+| ------------ | ----------------------------------- | ---------------------------------- |
+| `textRender` | `fill` \| `stroke` \| `stroke-wash` | On `DrawText`; default solid fill  |
+| `type`       | `rounded-rectangle`                 | Rounded corners via `borderRadius` |
+| `fillColor`  | explicit                            | Overrides theme wash when set      |
 
 ## CLI reference
 

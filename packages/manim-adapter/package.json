@@ -1,7 +1,7 @@
 {
   "name": "@seqvio/manim-adapter",
   "version": "0.1.0",
-  "description": "Versioned Manim scene contract and local preflight adapter for Seqvio",
+  "description": "Experimental adapter for rendering Python Manim scenes into validated Seqvio media manifests",
   "license": "MIT",
   "seqvio": {
     "lifecycle": "experimental",

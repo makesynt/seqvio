@@ -85,6 +85,29 @@ timing and target identity remain invariant across them.
 
 Whiteboard drawables and product-demo chrome accept `annotationId` / element `id` so annotations can target them under a shared `AnnotationProvider`.
 
+## External Python Manim integration
+
+`@seqvio/manim-adapter` is an experimental TypeScript/Node.js adapter for the
+independently installed Python package `manim`. It does not implement Manim in
+JavaScript. The adapter validates an external-render `ManimSceneSpec`, runs
+`python -m manim`, probes the output, and records source/assets/runtime hashes,
+media metadata, cache identity, progress, logs, and diagnostics in a
+`ManimRenderManifest`.
+
+The external render and Seqvio playback contracts are separate:
+
+- `@seqvio/manim-adapter` turns a Python file and scene class into validated
+  media plus a manifest.
+- The ExplainerDocument `manim` scene references that pre-rendered media and is
+  compiled into `@seqvio/technical` `ManimClip`.
+- `ManimClip` seeks the media from the current composition frame. Named markers
+  may follow resolved ExplanationBeats and expose shared annotation targets.
+
+`seqvio-doctor` discovers a repository-local `.venv-manim` or uses
+`SEQVIO_MANIM_PYTHON`. See
+[`docs/MANIM-INTEGRATION.md`](../../../docs/MANIM-INTEGRATION.md) for the complete
+setup and rendering workflow.
+
 ## Core composition components
 
 From `@seqvio/core`:

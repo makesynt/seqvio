@@ -10,7 +10,7 @@ English | [简体中文](./README.zh-CN.md)
 
 Seqvio gives coding agents a capture-to-explanation path for turning real terminal/browser activity and technical ideas into clear narrated videos. Human-readable `EDITORIAL.md` and `VISUAL-DESIGN.md` artifacts make content choices and visual direction reviewable before the executable `ExplainerDocument` IR binds spoken cues to visual actions with `ExplanationBeat`s.
 
-> **Current status:** The repository supports explicit React/TSX compositions and `ExplainerDocument` with complete `whiteboard`, `code`, `diagram`, `terminal`, and `browser` compiler paths. Phrase-anchored ExplanationBeats drive logical visual timing, post-TTS semantic time maps, speech/highlight QA, and deterministic local rendering. Terminal and browser pipelines compile real recorded steps through the same IR. Capture CLI contract `2.0` names the canonical IR artifact `explainer.json`.
+> **Current status:** The repository supports explicit React/TSX compositions and `ExplainerDocument` with public `whiteboard`, `code`, `diagram`, `terminal`, and `browser` compiler paths, plus experimental `infographic` and externally rendered Python `manim` paths. Phrase-anchored ExplanationBeats drive logical visual timing, post-TTS semantic time maps, speech/highlight QA, and deterministic local rendering. Terminal and browser pipelines compile real recorded steps through the same IR. Capture CLI contract `2.0` names the canonical IR artifact `explainer.json`.
 
 ## Demo
 
@@ -66,6 +66,8 @@ Public packages: `@seqvio/core`, `@seqvio/whiteboard`, `@seqvio/scatterbrain`,
 `@seqvio/product-demo`, `@seqvio/technical`, and `@seqvio/renderer`.
 Experimental capture packages: `@seqvio/capture`, `@seqvio/browser-recorder`,
 and `@seqvio/terminal-narrator`.
+The optional experimental `@seqvio/manim-adapter` workspace invokes the Python
+package `manim` for externally rendered mathematical animation.
 
 Install optional style/component packages when a composition imports them directly:
 
@@ -139,6 +141,19 @@ Open `http://127.0.0.1:4175`. The built-in sample runs without an AI provider; c
 
 [`@seqvio/terminal-narrator`](./packages/terminal-narrator) uses `node-pty` and xterm-backed snapshots to preserve terminal state and recorded step timing. It compiles each observed step into a Terminal scene plus jointly-authored narration cues and capture-backed ExplanationBeats. `--withAudio` synthesizes and muxes narration; hard captions are added only when `--burnCaptions` is also explicit.
 
+### Optional Python Manim adapter
+
+[`@seqvio/manim-adapter`](./packages/manim-adapter) is a TypeScript/Node.js
+adapter for the external Python package `manim`; it is not a JavaScript Manim
+implementation. It renders equations, graphs, and geometric constructions to
+validated media and a content-addressed manifest. `ManimClip` from
+`@seqvio/technical` then adds that seekable media to the Seqvio timeline, where
+named markers can align with phrase-anchored ExplanationBeats.
+
+Python Manim is optional and only required for generating this external media.
+See the [Manim integration guide](./docs/MANIM-INTEGRATION.md) for setup on
+Windows, macOS, and Linux, adapter commands, cache behavior, and IR/TSX usage.
+
 ## What You Can Build
 
 - Product and framework intro videos
@@ -160,6 +175,7 @@ Start from examples:
 | [`loop-engineering-explainer.tsx`](./examples/compositions/loop-engineering-explainer.tsx)   | Long-form narrated explainer composition                           |
 | [`technical-explainer.tsx`](./examples/compositions/technical-explainer.tsx)                 | Technical explainer with code walkthrough and architecture diagram |
 | [`technical-demo.tsx`](./examples/compositions/technical-demo.tsx)                           | Terminal demo and ANSI rendering showcase                          |
+| [`manim-end-to-end-validation.tsx`](./examples/compositions/manim-end-to-end-validation.tsx) | Narrated playback of externally rendered graph and proof animation |
 | [`packages/whiteboard/examples/`](./packages/whiteboard/examples/)                           | Single-scene whiteboard samples                                    |
 
 ## How It Works
@@ -227,6 +243,8 @@ Seqvio is the visual language for coding agents that need to explain, not merely
 - `@seqvio/scatterbrain` sticky-note / cork-board components
 - `@seqvio/product-demo` components: `ProductDemoScene`, `BrowserFrame`, `ScreenshotPlaceholder`, `CursorPath`, `Callout`, `ProductTitle`
 - `@seqvio/technical` components: `TechnicalScene`, `AnnotationTarget`, `CodeWalkthrough`, `ArchitectureDiagram`, `TerminalDemo`, plus ANSI/grid utilities and bundled code fonts
+- `@seqvio/technical` `ManimClip` for deterministic seeking and narration-aligned markers in externally rendered mathematical animation
+- Experimental `@seqvio/manim-adapter` for Python/Manim preflight, deterministic execution, media probing, content-addressed manifests, and cache reuse
 - Terminal scene support in the composition-document IR (`events` / `steps` / `commands`) with validation and TSX compilation
 - Browser scene support with recorded video, cursor/focus/click metadata, exact action clocks, and time-mapped media seeking
 - `ExplanationBeat` cues, exact phrase anchors, visual actions, capture evidence, post-TTS `outputFrame`s, and semantic `sceneTimings[].timeMap`
@@ -301,9 +319,10 @@ Voiceover is muxed automatically from the manifest. **Do not** add `--burnCaptio
 | [`@seqvio/scatterbrain`](./packages/scatterbrain)           | Sticky-note / cork-board style components                                                                             |
 | [`@seqvio/product-demo`](./packages/product-demo)           | Browser frames, cursor paths, screenshot placeholders, callouts, and product walkthrough components                   |
 | [`@seqvio/technical`](./packages/technical)                 | Technical explainer runtime: code walkthroughs, architecture diagrams, terminal demos, annotations, and bundled fonts |
-| [`@seqvio/terminal-narrator`](./packages/terminal-narrator) | Stable node-pty/xterm capture contract → IR/ExplanationBeat → optional narrated MP4                                  |
-| [`@seqvio/browser-recorder`](./packages/browser-recorder)   | Stable Chromium action capture with exact action timing → IR/ExplanationBeat                                        |
+| [`@seqvio/terminal-narrator`](./packages/terminal-narrator) | Stable node-pty/xterm capture contract → IR/ExplanationBeat → optional narrated MP4                                   |
+| [`@seqvio/browser-recorder`](./packages/browser-recorder)   | Stable Chromium action capture with exact action timing → IR/ExplanationBeat                                          |
 | [`@seqvio/capture`](./packages/capture)                     | Shared experimental capture session and artifact contracts                                                            |
+| [`@seqvio/manim-adapter`](./packages/manim-adapter)         | Experimental adapter that invokes Python Manim and validates/caches the rendered media manifest                       |
 | [`@seqvio/renderer`](./packages/renderer)                   | TSX bundler plus `seqvio-render` and `seqvio-audio` CLIs                                                              |
 
 ## Documentation
@@ -315,6 +334,7 @@ Recommended reading:
 - [`docs/COMPOSITION-AUTHORING.md`](./docs/COMPOSITION-AUTHORING.md) — authoring contract and API rules
 - [`docs/EXPLANATION-BEAT-TIMING.md`](./docs/EXPLANATION-BEAT-TIMING.md) — joint narration/visual timing and post-TTS alignment
 - [`docs/CAPTURE-CLI-CONTRACT.md`](./docs/CAPTURE-CLI-CONTRACT.md) — capture commands, JSON output, exit codes, and artifacts
+- [`docs/MANIM-INTEGRATION.md`](./docs/MANIM-INTEGRATION.md) — optional Python Manim setup, adapter rendering, manifests, and timeline integration
 - [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md) — renderer, audio, and environment issues
 - [`examples/compositions/README.md`](./examples/compositions/README.md) — example catalog and conventions
 - [`skills/seqvio/SKILL.md`](./skills/seqvio/SKILL.md) — agent production loop

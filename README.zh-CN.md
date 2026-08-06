@@ -10,7 +10,7 @@
 
 Seqvio 为 coding agent 提供从真实系统捕获到讲解视频的完整路径。人类可读的 `EDITORIAL.md` 与 `VISUAL-DESIGN.md` 先让内容取舍和视觉方向可审阅，再由正式 `ExplainerDocument` IR 通过 `ExplanationBeat` 绑定旁白短语与视觉动作。
 
-> **当前状态：** 仓库支持显式 React/TSX composition，以及拥有完整 `whiteboard`、`code`、`diagram`、`terminal`、`browser` 编译路径的 `ExplainerDocument`。短语锚定的 ExplanationBeat 驱动逻辑视觉时间、TTS 后语义 timeMap、语速/高亮 QA 和确定性本地渲染。Capture CLI contract `2.0` 将正式 IR 产物统一命名为 `explainer.json`。
+> **当前状态：** 仓库支持显式 React/TSX composition，以及拥有 public `whiteboard`、`code`、`diagram`、`terminal`、`browser` 编译路径和实验性 `infographic`、外部 Python `manim` 编译路径的 `ExplainerDocument`。短语锚定的 ExplanationBeat 驱动逻辑视觉时间、TTS 后语义 timeMap、语速/高亮 QA 和确定性本地渲染。Capture CLI contract `2.0` 将正式 IR 产物统一命名为 `explainer.json`。
 
 ## Demo
 
@@ -63,6 +63,8 @@ seqvio-render --help
 Public 包：`@seqvio/core`、`@seqvio/whiteboard`、`@seqvio/scatterbrain`、
 `@seqvio/product-demo`、`@seqvio/technical`、`@seqvio/renderer`。实验性捕获包：
 `@seqvio/capture`、`@seqvio/browser-recorder`、`@seqvio/terminal-narrator`。
+可选的实验性 `@seqvio/manim-adapter` workspace 会调用 Python 包 `manim`，
+用于在外部渲染数学动画。
 
 当 composition 直接 import 可选视觉包时，可额外安装：
 
@@ -133,6 +135,18 @@ node packages/browser-recorder/dist/cli.js record --plan plan.json --jobId demo 
 
 [`@seqvio/terminal-narrator`](./packages/terminal-narrator) 使用 `node-pty` 与 xterm 快照保留终端状态和真实步骤时间，并把每个观察步骤编译成 Terminal 场景、旁白 cue 与基于捕获证据的 ExplanationBeat。`--withAudio` 只负责合成并混入旁白；仅当同时显式添加 `--burnCaptions` 时才烧录字幕。
 
+### 可选的 Python Manim 适配器
+
+[`@seqvio/manim-adapter`](./packages/manim-adapter) 是外部 Python 包 `manim`
+的 TypeScript/Node.js 适配层，并不是 JavaScript 版 Manim。它把公式、图表和
+几何构造渲染成经过校验的媒体与内容寻址 manifest；随后由
+`@seqvio/technical` 的 `ManimClip` 将媒体作为可 seek 内容接入 Seqvio
+时间线，并让命名 marker 与短语锚定的 ExplanationBeat 对齐。
+
+只有生成这些外部媒体时才需要安装 Python Manim。Windows、macOS、Linux
+安装方法、adapter 命令、缓存规则和 IR/TSX 接入方式见
+[Manim 集成指南](./docs/MANIM-INTEGRATION.md)。
+
 **环境要求：** Node.js `>=18`、Chromium（Puppeteer）、FFmpeg（`@seqvio/renderer` 已内置）。本地仓库开发使用 npm workspaces 和 `package-lock.json`。可运行 `seqvio-doctor`，或在仓库中运行 `npm run doctor`，一次校验完整本地工具链。
 
 ## 可以做什么
@@ -145,18 +159,19 @@ node packages/browser-recorder/dist/cli.js record --plan plan.json --jobId demo 
 
 示例入口：
 
-| 示例                                                                                         | 说明                            |
-| -------------------------------------------------------------------------------------------- | ------------------------------- |
-| [`seqvio-overview-zh.tsx`](./examples/compositions/seqvio-overview-zh.tsx)                   | 中文旁白产品介绍                |
-| [`seqvio-overview-en.tsx`](./examples/compositions/seqvio-overview-en.tsx)                   | 英文旁白产品介绍                |
-| [`seqvio-audio-demo.tsx`](./examples/compositions/seqvio-audio-demo.tsx)                     | 音频和字幕元数据                |
-| [`seqvio-style-manifest-demo.tsx`](./examples/compositions/seqvio-style-manifest-demo.tsx)   | 白板 style preset manifest 示例 |
-| [`seqvio-product-demo-preview.tsx`](./examples/compositions/seqvio-product-demo-preview.tsx) | 产品 walkthrough 组件示例       |
-| [`seqvio-scatterbrain.tsx`](./examples/compositions/seqvio-scatterbrain.tsx)                 | 便签 / workshop 风格示例        |
-| [`loop-engineering-explainer.tsx`](./examples/compositions/loop-engineering-explainer.tsx)   | 长篇旁白讲解 composition        |
-| [`technical-explainer.tsx`](./examples/compositions/technical-explainer.tsx)                 | 技术讲解：代码走读与架构图      |
-| [`technical-demo.tsx`](./examples/compositions/technical-demo.tsx)                           | 终端演示与 ANSI 渲染展示        |
-| [`packages/whiteboard/examples/`](./packages/whiteboard/examples/)                           | 单场景白板示例                  |
+| 示例                                                                                         | 说明                             |
+| -------------------------------------------------------------------------------------------- | -------------------------------- |
+| [`seqvio-overview-zh.tsx`](./examples/compositions/seqvio-overview-zh.tsx)                   | 中文旁白产品介绍                 |
+| [`seqvio-overview-en.tsx`](./examples/compositions/seqvio-overview-en.tsx)                   | 英文旁白产品介绍                 |
+| [`seqvio-audio-demo.tsx`](./examples/compositions/seqvio-audio-demo.tsx)                     | 音频和字幕元数据                 |
+| [`seqvio-style-manifest-demo.tsx`](./examples/compositions/seqvio-style-manifest-demo.tsx)   | 白板 style preset manifest 示例  |
+| [`seqvio-product-demo-preview.tsx`](./examples/compositions/seqvio-product-demo-preview.tsx) | 产品 walkthrough 组件示例        |
+| [`seqvio-scatterbrain.tsx`](./examples/compositions/seqvio-scatterbrain.tsx)                 | 便签 / workshop 风格示例         |
+| [`loop-engineering-explainer.tsx`](./examples/compositions/loop-engineering-explainer.tsx)   | 长篇旁白讲解 composition         |
+| [`technical-explainer.tsx`](./examples/compositions/technical-explainer.tsx)                 | 技术讲解：代码走读与架构图       |
+| [`technical-demo.tsx`](./examples/compositions/technical-demo.tsx)                           | 终端演示与 ANSI 渲染展示         |
+| [`manim-end-to-end-validation.tsx`](./examples/compositions/manim-end-to-end-validation.tsx) | 外部渲染图表和证明动画的旁白播放 |
+| [`packages/whiteboard/examples/`](./packages/whiteboard/examples/)                           | 单场景白板示例                   |
 
 ## 工作原理
 
@@ -223,6 +238,8 @@ Seqvio 是 coding agent 用来解释想法的视觉语言，而不只是一个�
 - `@seqvio/scatterbrain`：便签 / cork-board 风格组件
 - `@seqvio/product-demo`：`ProductDemoScene`、`BrowserFrame`、`ScreenshotPlaceholder`、`CursorPath`、`Callout`、`ProductTitle`
 - `@seqvio/technical`：`TechnicalScene`、`AnnotationTarget`、`CodeWalkthrough`、`ArchitectureDiagram`、`TerminalDemo`，以及 ANSI/grid 工具函数和内置代码字体
+- `@seqvio/technical` 的 `ManimClip`：对外部渲染的数学动画进行确定性 seek，并让 marker 与旁白对齐
+- 实验性 `@seqvio/manim-adapter`：检查 Python/Manim、确定性执行、媒体探测、内容寻址 manifest 和缓存复用
 - 终端场景在 composition-document IR 中的支持（`events` / `steps` / `commands`），含校验和 TSX 编译
 - Browser 场景支持录制视频、光标/聚焦/点击元数据、真实动作时钟和 time-mapped 媒体 seek
 - `ExplanationBeat` cue、精确短语锚点、视觉动作、捕获证据、TTS 后 `outputFrame` 和语义 `sceneTimings[].timeMap`
@@ -291,17 +308,18 @@ node packages/renderer/dist/cli.js \
 
 ## Packages
 
-| Package                                                     | 说明                                                                   |
-| ----------------------------------------------------------- | ---------------------------------------------------------------------- |
-| [`@seqvio/whiteboard`](./packages/whiteboard)               | 白板绘制组件和 timing helpers                                          |
-| [`@seqvio/core`](./packages/core)                           | Composition 容器、场景、转场和 timeline runtime                        |
-| [`@seqvio/scatterbrain`](./packages/scatterbrain)           | 便签 / cork-board 风格组件                                             |
-| [`@seqvio/product-demo`](./packages/product-demo)           | 浏览器框、光标路径、截图占位、callout 和产品 walkthrough 组件          |
-| [`@seqvio/technical`](./packages/technical)                 | 技术讲解 runtime：代码走读、架构图、终端演示、标注和内置字体           |
-| [`@seqvio/terminal-narrator`](./packages/terminal-narrator) | Stable node-pty/xterm 捕获契约 → IR/ExplanationBeat → 可选旁白 MP4     |
+| Package                                                     | 说明                                                               |
+| ----------------------------------------------------------- | ------------------------------------------------------------------ |
+| [`@seqvio/whiteboard`](./packages/whiteboard)               | 白板绘制组件和 timing helpers                                      |
+| [`@seqvio/core`](./packages/core)                           | Composition 容器、场景、转场和 timeline runtime                    |
+| [`@seqvio/scatterbrain`](./packages/scatterbrain)           | 便签 / cork-board 风格组件                                         |
+| [`@seqvio/product-demo`](./packages/product-demo)           | 浏览器框、光标路径、截图占位、callout 和产品 walkthrough 组件      |
+| [`@seqvio/technical`](./packages/technical)                 | 技术讲解 runtime：代码走读、架构图、终端演示、标注和内置字体       |
+| [`@seqvio/terminal-narrator`](./packages/terminal-narrator) | Stable node-pty/xterm 捕获契约 → IR/ExplanationBeat → 可选旁白 MP4 |
 | [`@seqvio/browser-recorder`](./packages/browser-recorder)   | Stable Chromium action 捕获，保留真实动作时间 → IR/ExplanationBeat |
-| [`@seqvio/capture`](./packages/capture)                     | 实验性的共享 capture session 和 artifact 契约                          |
-| [`@seqvio/renderer`](./packages/renderer)                   | TSX bundler，以及 `seqvio-render` / `seqvio-audio` CLI                 |
+| [`@seqvio/capture`](./packages/capture)                     | 实验性的共享 capture session 和 artifact 契约                      |
+| [`@seqvio/manim-adapter`](./packages/manim-adapter)         | 调用 Python Manim，并校验、缓存渲染媒体 manifest 的实验性适配层    |
+| [`@seqvio/renderer`](./packages/renderer)                   | TSX bundler，以及 `seqvio-render` / `seqvio-audio` CLI             |
 
 ## 文档
 
@@ -312,6 +330,7 @@ node packages/renderer/dist/cli.js \
 - [`docs/COMPOSITION-AUTHORING.md`](./docs/COMPOSITION-AUTHORING.md)
 - [`docs/EXPLANATION-BEAT-TIMING.md`](./docs/EXPLANATION-BEAT-TIMING.md)
 - [`docs/CAPTURE-CLI-CONTRACT.md`](./docs/CAPTURE-CLI-CONTRACT.md)
+- [`docs/MANIM-INTEGRATION.md`](./docs/MANIM-INTEGRATION.md) — Python Manim 安装、adapter 渲染、manifest 与时间线接入
 - [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md)
 - [`examples/compositions/README.md`](./examples/compositions/README.md)
 - [`skills/seqvio/SKILL.md`](./skills/seqvio/SKILL.md)

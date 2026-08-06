@@ -203,19 +203,21 @@ references and conflicting intents before rendering.
 
 ### Manim adapter
 
-Add an external `@seqvio/manim-adapter` package for mathematical animation. A
-versioned `ManimSceneSpec` describes the source file, scene class, render
-settings, assets, and named timeline markers. The adapter invokes the local
-Python/Manim runtime and produces a content-addressed `ManimRenderManifest`
-containing the rendered media, duration, frame rate, dimensions, alpha mode,
-source hash, runtime versions, and resolved markers.
+**Implemented as an experimental external adapter.**
+`@seqvio/manim-adapter` invokes a selected local Python interpreter and its
+installed `manim` package; it is not a JavaScript implementation of Manim. Its
+versioned external-render `ManimSceneSpec` describes the Python source, scene
+class, render settings, and assets. Execution produces a content-addressed
+`ManimRenderManifest` containing the rendered-media contract, source and asset
+hashes, runtime versions, cache identity, logs, and diagnostics.
 
-Add a `ManimClip` scene component and compiler integration so named Manim
-markers can align with narration phrases and ExplanationBeats. Include runtime
-preflight, cache reuse, progress and diagnostics events, cancellation, artifact
-cleanup, and QA for media integrity, timing, dimensions, marker resolution, and
-seek behavior. Ship reference compositions for equation derivation, graph
-transformation, and geometric proof.
+`ManimClip` and the ExplainerDocument `manim` compiler path consume the
+pre-rendered video as deterministic seekable media. Named markers can align
+with narration phrases and ExplanationBeats and expose annotation targets.
+Runtime preflight, cache reuse, progress events, cancellation, timeouts, media
+probing, marker/seek QA, and equation, graph, symbolic-proof, and geometric-proof
+fixtures are implemented. See [`MANIM-INTEGRATION.md`](./MANIM-INTEGRATION.md)
+for the current usage contract.
 
 ### Motion Grammar
 
