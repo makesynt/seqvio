@@ -5,7 +5,7 @@
 > each phase breaks into concrete work against the current codebase_. For
 > positioning and scope, [`VISION.md`](./VISION.md) wins.
 >
-> Last revised: 2026-08-05.
+> Last revised: 2026-08-06.
 
 ## Current-State Inventory (what is already there)
 
