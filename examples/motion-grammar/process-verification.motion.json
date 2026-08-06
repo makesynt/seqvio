@@ -1,0 +1,11 @@
+{
+  "format": "seqvio-motion-grammar",
+  "version": "1.0",
+  "id": "process-verification",
+  "steps": [
+    { "id": "open-process", "sceneId": "process-verification", "action": "question" },
+    { "id": "trace-process", "sceneId": "process-verification", "action": "trace", "targetId": "observe", "pathTargetIds": ["observe", "decide", "verify"], "startFrame": 18, "holdFrames": 56 },
+    { "id": "show-verification", "sceneId": "process-verification", "action": "emphasize", "targetId": "verified", "startFrame": 78, "holdFrames": 24 },
+    { "id": "close-process", "sceneId": "process-verification", "action": "summarize", "targetId": "verified", "startFrame": 94, "holdFrames": 20 }
+  ]
+}

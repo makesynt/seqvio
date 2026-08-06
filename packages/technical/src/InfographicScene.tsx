@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { AnnotationTarget, AttentionSequenceLayer, useCurrentFrame, type AttentionSequenceItem } from '@seqvio/core';
+import { AnnotationTarget, AttentionSequenceLayer, useCurrentFrame, useStyleProfile, type AttentionSequenceItem } from '@seqvio/core';
 import { ease } from './anim';
 import { technicalFonts, technicalPalette } from './theme';
 
@@ -70,6 +70,7 @@ export interface InfographicChart {
 export interface InfographicSceneProps {
   id: string;
   title?: string;
+  density?: 'auto' | 'standard' | 'reduced';
   width?: number;
   height?: number;
   metrics?: InfographicMetric[];
@@ -86,8 +87,8 @@ export function infographicProgress(frame: number, at = 0, duration = 18): numbe
   return ease((frame - at) / Math.max(1, duration));
 }
 
-function revealStyle(frame: number, at: number | undefined, index: number): React.CSSProperties {
-  const progress = infographicProgress(frame, at ?? index * 10);
+function revealStyle(frame: number, at: number | undefined, index: number, duration = 18): React.CSSProperties {
+  const progress = infographicProgress(frame, at ?? index * 10, duration);
   return {
     opacity: progress,
     transform: `translateY(${(1 - progress) * 10}px)`,
@@ -101,8 +102,9 @@ const ItemTarget: React.FC<{
   index: number;
   children: React.ReactNode;
   style?: React.CSSProperties;
-}> = ({ id, frame, at, index, children, style }) => (
-  <AnnotationTarget id={id} style={{ ...style, ...revealStyle(frame, at, index) }}>
+  revealDuration?: number;
+}> = ({ id, frame, at, index, children, style, revealDuration }) => (
+  <AnnotationTarget id={id} style={{ ...style, ...revealStyle(frame, at, index, revealDuration) }}>
     {children}
   </AnnotationTarget>
 );
@@ -118,8 +120,8 @@ export function resolveChartDomain(chart: InfographicChart): { min: number; max:
 
 const CHART_COLORS = ['#4f8cff', '#21a179', '#f0a43c', '#d7658b'];
 
-const ChartView: React.FC<{ chart: InfographicChart; frame: number; index: number }> = ({ chart, frame, index }) => {
-  const progress = infographicProgress(frame, chart.at ?? index * 12, 24);
+const ChartView: React.FC<{ chart: InfographicChart; frame: number; index: number; revealDuration: number }> = ({ chart, frame, index, revealDuration }) => {
+  const progress = infographicProgress(frame, chart.at ?? index * 12, revealDuration + 6);
   const domain = resolveChartDomain(chart);
   const categories = [...new Set(chart.series.flatMap((series) => series.points.map((point) => point.x)))];
   const plot = { left: 58, top: 32, width: 424, height: 224 };
@@ -127,7 +129,7 @@ const ChartView: React.FC<{ chart: InfographicChart; frame: number; index: numbe
   const ticks = Math.max(2, chart.yAxis?.ticks ?? 4);
   const legend = chart.legend ?? 'top';
   return (
-    <ItemTarget id={chart.id} frame={frame} at={chart.at} index={index} style={{ padding: 18, background: technicalPalette.panel, border: `1px solid ${technicalPalette.line}`, borderRadius: 8, minHeight: 448, boxSizing: 'border-box' }}>
+    <ItemTarget id={chart.id} frame={frame} at={chart.at} index={index} revealDuration={revealDuration} style={{ padding: 18, background: technicalPalette.panel, border: `1px solid ${technicalPalette.line}`, borderRadius: 8, minHeight: 448, boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 16 }}>
         <div style={{ fontSize: 18, fontWeight: 700 }}>{chart.title}</div>
         {chart.unit ? <div style={{ color: technicalPalette.muted, fontSize: 12 }}>Unit: {chart.unit}</div> : null}
@@ -185,6 +187,7 @@ const ChartLegend: React.FC<{ chart: InfographicChart }> = ({ chart }) => (
 export const InfographicScene: React.FC<InfographicSceneProps> = ({
   id,
   title = 'Explanation',
+  density = 'auto',
   width = 1280,
   height = 720,
   metrics = [],
@@ -197,28 +200,37 @@ export const InfographicScene: React.FC<InfographicSceneProps> = ({
   attention = [],
 }) => {
   const frame = useCurrentFrame();
+  const styleProfile = useStyleProfile();
   const nodeMap = useMemo(() => new Map(relationshipNodes.map((node) => [node.id, node])), [relationshipNodes]);
+  const portrait = width / height < 0.82;
+  const square = width / height >= 0.82 && width / height < 1.35;
+  const reduced = density === 'reduced' || (density === 'auto' && width / height < 1.35);
+  const spacingScale = styleProfile?.spacing === 'tight' ? 0.82 : styleProfile?.spacing === 'airy' ? 1.16 : 1;
+  const padding = Math.round((portrait ? 24 : square ? 30 : 40) * spacingScale);
+  const metricColumns = portrait ? 1 : square ? 2 : 3;
+  const revealDuration = styleProfile?.motionDensity === 'restrained' ? 12 : styleProfile?.motionDensity === 'expressive' ? 24 : 18;
+  const titleScale = styleProfile?.typography.scale === 'compact' ? 0.86 : styleProfile?.typography.scale === 'large' ? 1.15 : 1;
 
   return (
     <AnnotationTarget id={id} style={{ position: 'relative', width, height }}>
-      <div style={{ position: 'relative', width, height, overflow: 'hidden', background: technicalPalette.canvas, color: technicalPalette.ink, fontFamily: technicalFonts.sans, padding: 40, boxSizing: 'border-box' }}>
-        <div style={{ fontSize: 30, fontWeight: 700, marginBottom: 28 }}>{title}</div>
-        {charts.length > 0 ? <div style={{ display: 'grid', gridTemplateColumns: charts.length > 1 ? 'repeat(2, minmax(0, 1fr))' : 'minmax(0, 1fr)', gap: 20 }}>{charts.map((chart, index) => <ChartView key={chart.id} chart={chart} frame={frame} index={index} />)}</div> : null}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 18 }}>
+      <div data-seqvio-infographic-density={reduced ? 'reduced' : 'standard'} style={{ position: 'relative', width, height, overflow: 'hidden', background: technicalPalette.canvas, color: technicalPalette.ink, fontFamily: technicalFonts.sans, padding, boxSizing: 'border-box' }}>
+        <div style={{ fontFamily: 'var(--seqvio-font-heading, inherit)', fontSize: (reduced ? 24 : 30) * titleScale, fontWeight: 700, marginBottom: (reduced ? 18 : 28) * spacingScale }}>{title}</div>
+        {charts.length > 0 ? <div style={{ display: 'grid', gridTemplateColumns: charts.length > 1 && !reduced ? 'repeat(2, minmax(0, 1fr))' : 'minmax(0, 1fr)', gap: (reduced ? 14 : 20) * spacingScale }}>{charts.map((chart, index) => <ChartView key={chart.id} chart={chart} frame={frame} index={index} revealDuration={revealDuration} />)}</div> : null}
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${metricColumns}, minmax(0, 1fr))`, gap: reduced ? 12 : 18 }}>
           {metrics.map((metric, index) => (
-            <ItemTarget key={metric.id} id={metric.id} frame={frame} at={metric.at} index={index} style={{ background: technicalPalette.panel, border: `1px solid ${technicalPalette.line}`, borderRadius: 10, padding: 20, minHeight: 112, boxSizing: 'border-box' }}>
+            <ItemTarget key={metric.id} id={metric.id} frame={frame} at={metric.at} index={index} revealDuration={revealDuration} style={{ background: technicalPalette.panel, border: `1px solid ${technicalPalette.line}`, borderRadius: 10, padding: 20 * spacingScale, minHeight: 112, boxSizing: 'border-box' }}>
               <div style={{ color: metric.color ?? technicalPalette.accent, fontSize: 34, fontWeight: 750 }}>{metric.value}</div>
               <div style={{ marginTop: 8, fontWeight: 650 }}>{metric.label}</div>
-              {metric.detail ? <div style={{ marginTop: 5, color: technicalPalette.muted, fontSize: 14 }}>{metric.detail}</div> : null}
+              {metric.detail && !reduced ? <div style={{ marginTop: 5, color: technicalPalette.muted, fontSize: 14 }}>{metric.detail}</div> : null}
             </ItemTarget>
           ))}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, marginTop: 30 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: reduced ? '1fr' : '1fr 1fr', gap: reduced ? 14 : 28, marginTop: reduced ? 18 : 30 }}>
           {comparisons.map((comparison, index) => {
             const progress = infographicProgress(frame, comparison.at ?? index * 10);
             const max = Math.max(comparison.before, comparison.after, 1);
             return (
-              <ItemTarget key={comparison.id} id={comparison.id} frame={frame} at={comparison.at} index={index} style={{ minHeight: 138 }}>
+              <ItemTarget key={comparison.id} id={comparison.id} frame={frame} at={comparison.at} index={index} revealDuration={revealDuration} style={{ minHeight: 138 }}>
                 <div style={{ fontWeight: 650, marginBottom: 12 }}>{comparison.label}</div>
                 {[['before', comparison.before, comparison.beforeLabel ?? 'Before', technicalPalette.muted], ['after', comparison.after, comparison.afterLabel ?? 'After', technicalPalette.success]].map(([key, value, label, color]) => (
                   <div key={key as string} style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
@@ -233,10 +245,10 @@ export const InfographicScene: React.FC<InfographicSceneProps> = ({
             );
           })}
         </div>
-        {process.length > 0 ? <div style={{ display: 'flex', gap: 10, marginTop: 30 }}>{process.map((step, index) => <ItemTarget key={step.id} id={step.id} frame={frame} at={step.at} index={index} style={{ flex: 1, minWidth: 0, padding: 14, borderLeft: `3px solid ${technicalPalette.accent}`, background: technicalPalette.surface }}><div style={{ fontWeight: 650 }}>{step.label}</div>{step.detail ? <div style={{ marginTop: 5, color: technicalPalette.muted, fontSize: 13 }}>{step.detail}</div> : null}</ItemTarget>)}</div> : null}
-        {timeline.length > 0 ? <div style={{ display: 'flex', alignItems: 'flex-start', gap: 0, marginTop: 30 }}>{timeline.map((event, index) => <ItemTarget key={event.id} id={event.id} frame={frame} at={event.at} index={index} style={{ flex: 1, position: 'relative', paddingTop: 18, borderTop: `2px solid ${technicalPalette.line}` }}><div style={{ position: 'absolute', top: -7, left: 0, width: 12, height: 12, borderRadius: '50%', background: technicalPalette.warning }} /><div style={{ fontWeight: 650 }}>{event.label}</div>{event.detail ? <div style={{ color: technicalPalette.muted, fontSize: 13, marginTop: 5 }}>{event.detail}</div> : null}</ItemTarget>)}</div> : null}
+        {process.length > 0 ? <div style={{ display: 'flex', flexDirection: portrait ? 'column' : 'row', gap: 10 * spacingScale, marginTop: (reduced ? 18 : 30) * spacingScale }}>{process.map((step, index) => <ItemTarget key={step.id} id={step.id} frame={frame} at={step.at} index={index} revealDuration={revealDuration} style={{ flex: 1, minWidth: 0, padding: (reduced ? 11 : 14) * spacingScale, borderLeft: `3px solid ${technicalPalette.accent}`, background: technicalPalette.surface }}><div style={{ fontWeight: 650 }}>{step.label}</div>{step.detail && !reduced ? <div style={{ marginTop: 5, color: technicalPalette.muted, fontSize: 13 }}>{step.detail}</div> : null}</ItemTarget>)}</div> : null}
+        {timeline.length > 0 ? <div style={{ display: 'flex', alignItems: 'flex-start', gap: 0, marginTop: 30 * spacingScale }}>{timeline.map((event, index) => <ItemTarget key={event.id} id={event.id} frame={frame} at={event.at} index={index} revealDuration={revealDuration} style={{ flex: 1, position: 'relative', paddingTop: 18, borderTop: `2px solid ${technicalPalette.line}` }}><div style={{ position: 'absolute', top: -7, left: 0, width: 12, height: 12, borderRadius: '50%', background: technicalPalette.warning }} /><div style={{ fontWeight: 650 }}>{event.label}</div>{event.detail ? <div style={{ color: technicalPalette.muted, fontSize: 13, marginTop: 5 }}>{event.detail}</div> : null}</ItemTarget>)}</div> : null}
         {relationshipNodes.length > 0 ? <svg width={width - 80} height={height - 80} style={{ position: 'absolute', inset: 40, pointerEvents: 'none' }}>{relationships.map((relationship, index) => { const from = nodeMap.get(relationship.from); const to = nodeMap.get(relationship.to); if (!from || !to) return null; const progress = infographicProgress(frame, relationship.at ?? index * 10); return <g key={relationship.id} opacity={progress}><line x1={from.x} y1={from.y} x2={from.x + (to.x - from.x) * progress} y2={from.y + (to.y - from.y) * progress} stroke={technicalPalette.accent} strokeWidth={2} /><text x={(from.x + to.x) / 2} y={(from.y + to.y) / 2 - 6} fill={technicalPalette.muted} fontSize={13}>{relationship.label ?? ''}</text></g>; })}</svg> : null}
-        {relationshipNodes.map((node, index) => <ItemTarget key={node.id} id={node.id} frame={frame} index={index} style={{ position: 'absolute', left: 40 + node.x - 56, top: 40 + node.y - 22, width: 112, padding: '11px 8px', textAlign: 'center', background: technicalPalette.panel, border: `1px solid ${technicalPalette.line}`, borderRadius: 8, boxSizing: 'border-box', fontSize: 14 }}>{node.label}</ItemTarget>)}
+        {relationshipNodes.map((node, index) => <ItemTarget key={node.id} id={node.id} frame={frame} index={index} revealDuration={revealDuration} style={{ position: 'absolute', left: padding + node.x - 56, top: padding + node.y - 22, width: 112, padding: '11px 8px', textAlign: 'center', background: technicalPalette.panel, border: `1px solid ${technicalPalette.line}`, borderRadius: 8, boxSizing: 'border-box', fontSize: 14 }}>{node.label}</ItemTarget>)}
         {attention.length > 0 ? <AttentionSequenceLayer sequence={attention} sceneId={id} /> : null}
       </div>
     </AnnotationTarget>

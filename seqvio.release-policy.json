@@ -14,7 +14,8 @@
   "independentPackages": [
     "@seqvio/capture",
     "@seqvio/browser-recorder",
-    "@seqvio/terminal-narrator"
+    "@seqvio/terminal-narrator",
+    "@seqvio/manim-adapter"
   ],
   "adapterPackages": [
     "@seqvio/browser-recorder",

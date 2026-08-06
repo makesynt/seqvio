@@ -153,6 +153,7 @@ function compileInfographicScene(scene: InfographicSceneSpec, componentName: str
       <InfographicScene
         id=${JSON.stringify(scene.id)}
         title=${JSON.stringify(scene.title)}
+        density=${JSON.stringify(scene.density ?? 'auto')}
         metrics={${JSON.stringify(scene.metrics ?? [], null, 2)}}
         comparisons={${JSON.stringify(scene.comparisons ?? [], null, 2)}}
         process={${JSON.stringify(scene.process ?? [], null, 2)}}
@@ -444,7 +445,7 @@ const STYLE = getSeqvioStylePreset(STYLE_ID) ?? {
   const code = `// AUTO-GENERATED from a Seqvio ExplainerDocument. Safe to edit by hand.
 import React from 'react';
 import type { RenderableMeta } from '@seqvio/core';
-import { VideoComposition, Scene, Transition } from '@seqvio/core';
+import { StyleProfileProvider, VideoComposition, Scene, Transition } from '@seqvio/core';
 ${whiteboardImports}
 ${technicalImports}
 ${productDemoImports}
@@ -452,21 +453,24 @@ ${productDemoImports}
 const W = ${r.width};
 const H = ${r.height};
 const FPS = ${r.fps};
+const STYLE_PROFILE = ${JSON.stringify(pacedDoc.styleProfile, null, 2)};
 ${styleBlock}
 
 ${sceneFns}
 
 export default function ${pascalId(r.id)}() {
   return (
+    <StyleProfileProvider profile={STYLE_PROFILE}>
     <VideoComposition
       id=${JSON.stringify(r.id)}
       width={W}
       height={H}
       fps={FPS}
-      backgroundColor=${JSON.stringify(r.backgroundColor)}${hasNarration ? '\n      audio={meta.audio}' : ''}
+      backgroundColor=${JSON.stringify(pacedDoc.styleProfile?.paletteRoles.background ?? r.backgroundColor)}${hasNarration ? '\n      audio={meta.audio}' : ''}
     >
 ${sceneTree}
     </VideoComposition>
+    </StyleProfileProvider>
   );
 }
 

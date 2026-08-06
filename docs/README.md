@@ -13,6 +13,7 @@ If you are trying to use Seqvio today, read these first:
 | [`AUTHORING-ARTIFACTS.md`](./AUTHORING-ARTIFACTS.md) | Human-readable editorial and visual design stages before executable IR |
 | [`COMPOSITION-AUTHORING.md`](./COMPOSITION-AUTHORING.md) | Canonical TSX authoring and rendering contract |
 | [`EXPLANATION-BEAT-TIMING.md`](./EXPLANATION-BEAT-TIMING.md) | Joint narration/visual authoring and post-TTS alignment contract |
+| [`STYLE-PLAYBOOK.md`](./STYLE-PLAYBOOK.md) | Versioned visual profiles and semantic invariants |
 | [`RENDER-LIFECYCLE.md`](./RENDER-LIFECYCLE.md) | Deterministic adapter stages, readiness barriers, timeouts, disposal, and diagnostics |
 | [`RENDER-CONFORMANCE.md`](./RENDER-CONFORMANCE.md) | Cross-platform semantic goldens, same-host pixel checks, and CI artifacts |
 | [`../benchmarks/README.md`](../benchmarks/README.md) | Reproducible 720p render workloads, metrics, and compatible-host budget checks |
@@ -33,6 +34,7 @@ These docs describe the repository as it exists today:
 | [`AUTHORING-ARTIFACTS.md`](./AUTHORING-ARTIFACTS.md) | EditorialPlan, VisualDesignBrief, and ExplainerDocument boundaries |
 | [`COMPOSITION-AUTHORING.md`](./COMPOSITION-AUTHORING.md) | TSX authoring model, render contract, transitions, and timing rules |
 | [`EXPLANATION-BEAT-TIMING.md`](./EXPLANATION-BEAT-TIMING.md) | ExplanationBeat schema, scene integration, timing resolution, and QA repair |
+| [`STYLE-PLAYBOOK.md`](./STYLE-PLAYBOOK.md) | Current profile schema, runtime application, and visual regression fixtures |
 | [`RENDER-LIFECYCLE.md`](./RENDER-LIFECYCLE.md) | Stateful/asynchronous render lifecycle and timeout contract |
 | [`RENDER-CONFORMANCE.md`](./RENDER-CONFORMANCE.md) | Windows/Linux/macOS render conformance and golden-update policy |
 | [`scene-capabilities.json`](./scene-capabilities.json) | Machine-readable public scene/compiler/package/lifecycle/QA capability snapshot |

@@ -308,13 +308,16 @@ Exit criteria:
 
 ### 3.3 Minimal `DirectionPlan`
 
-**Status: in progress - automatic derivation and compiler integration shipped.**
+**Status: complete.**
 The core package now derives a renderer-agnostic `DirectionPlan` sidecar from
 scene and ExplanationBeat ids, preserves capture-step references, validates
 scene, target, beat, capture, and transition references, and compiles into scene
 actions, attention entries, and timing hints. Generated TSX exposes the compiled
 result through `meta.direction`, and `npm run direction:generate` writes a
 reviewable JSON sidecar without renderer properties.
+Cross-scene transitions now pair source and destination target ids, conflicting
+focus/camera intents produce stable diagnostics, and semantic plans remain
+identical across duration and chapter reflow.
 
 - Add a versioned, renderer-agnostic `DirectionPlan` schema that references
   existing scene ids, target ids, ExplanationBeats, and capture evidence.
@@ -344,8 +347,8 @@ Exit criteria:
 package exposes `ManimSceneSpec`, `ManimRenderManifest`, deterministic command
 construction, validation, and machine-readable Python/Manim capability checks.
 Execution now supports structured progress, cancellation, timeout, retained
-logs, source/runtime content hashes, and validated cache lookup. Actual rendering
-remains environment-dependent and is reported explicitly. `ManimClip` is now
+logs, source/runtime/asset content hashes, and validated cache lookup. Actual
+rendering remains environment-dependent and is reported explicitly. `ManimClip` is now
 available in `@seqvio/technical` with deterministic media seeking and named
 marker targets. The experimental `manim` ExplainerDocument scene is registered,
 validated, and compiled into `ManimClip`. Named markers can reference a local
@@ -355,7 +358,9 @@ adapter and the ExplainerDocument pipeline, with a valid cached second run and
 machine-readable media probe. Real equation, graph, and proof fixtures are
 retained, `seqvio-doctor` detects the optional local environment, and QA checks
 seek and named-marker alignment. A CosyVoice-narrated graph/proof composition
-passes the end-to-end render and QA loop.
+passes the end-to-end render and QA loop. The geometric proof fixture renders
+at its declared 1280x720/30fps contract, records opaque alpha, and reuses the
+same content-addressed result on a second adapter run.
 
 - Create `@seqvio/manim-adapter` with versioned `ManimSceneSpec` and
   `ManimRenderManifest` schemas.
@@ -388,11 +393,13 @@ Exit criteria:
 
 ### 3.5 Motion Grammar
 
-**Status: in progress - contract, validator, and first compiler shipped.** The
+**Status: complete.** The
 core package now supports the nine semantic actions and compiles them into
 ExplanationBeat visual actions, AttentionSequence items, and DirectionPlan
 segments. Target and relationship validation is deterministic; the first
-question/reveal/compare/answer fixture and retained render are available.
+question/reveal/compare/answer, compare/merge, problem/fix, and
+process/verification fixtures have retained renders. `trace` preserves its full
+guided path and explicit frame timing under repeated and reverse seek.
 
 - Define a deliberately small semantic grammar over the existing visual action
   vocabulary: `question`, `pause`, `reveal`, `trace`, `compare`, `emphasize`,
@@ -413,10 +420,12 @@ Exit criteria:
 
 ### 3.6 Director Skills
 
-**Status: in progress - deterministic local director pass shipped.**
+**Status: complete.**
 `npm run director:pass` derives and validates a DirectionPlan and writes a
-versioned receipt with the input hash, segment count, and diagnostics. Host-agent
-LLM integration and repair suggestions remain outside the renderer.
+versioned receipt with the input hash, segment count, and diagnostics.
+`npm run director:task` emits versioned generate or repair tasks for a host
+agent, with stable suggestions and input/candidate/output hashes. Planning stays
+outside the renderer and returned artifacts are validated locally.
 
 - Add host-agent skills that generate or repair DirectionPlan,
   AttentionSequence, and Motion Grammar from an approved ExplainerDocument.
@@ -433,10 +442,12 @@ Exit criteria:
 
 ### 3.7 Style Playbook (final phase)
 
-**Status: in progress - profile contract and semantic invariant shipped.** A
-versioned profile schema and invariant checker now protect target ids, beat
-identity, timing, and evidence order. Renderer profile application and visual
-regression fixtures remain.
+**Status: complete.** A versioned profile schema and invariant checker protect
+target ids, beat identity, timing, and evidence order. The runtime applies
+typography, palette, spacing, motion density, camera, transition, and attention
+persistence policies. `clean-technical`, `editorial-explainer`, and
+`terminal-first` share one reference composition and twelve deterministic
+visual-regression frames.
 
 - Add a versioned style-profile schema only after semantic actions,
   DirectionPlan, Motion Grammar, Manim media, and QA are stable.
@@ -459,11 +470,14 @@ Exit criteria:
 
 ### 3.8 Integrated authoring and QA contract
 
-**Status: in progress - integrated semantic fixture shipped.** The repository
+**Status: complete.** The repository
 now contains a network-free IR fixture combining InfographicScene,
 ExplanationBeat attention, derived DirectionPlan, a real Manim media manifest,
 and a style profile. Director receipt, compiled TSX, retained MP4, and contact
-sheet are generated together; benchmark and release-smoke wiring remain.
+sheet are generated together. Network-free release smoke replaces external
+media with a local FFmpeg fixture, then compiles, runs QA, renders, and decodes
+the same IR. The semantic benchmark records cache hit rate, attention and
+direction diagnostics, marker confidence, text density, and focal coverage.
 
 - Update authoring references with selection guidance for infographic,
   annotation, captured-media, DirectionPlan, Motion Grammar, and Manim-backed

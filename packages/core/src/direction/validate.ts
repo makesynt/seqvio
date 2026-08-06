@@ -61,17 +61,45 @@ export function validateDirectionPlan(input: unknown, document?: DirectionDocume
     if (segment.transition !== undefined && !TRANSITIONS.has(segment.transition)) issue(issues, `${path}.transition`, 'unsupported_direction_transition', `Unsupported transition "${segment.transition}"`);
     const focus = segment.focusSpec;
     const focusIds = [...(focus?.targetIds ?? []), ...(focus?.targetId ? [focus.targetId] : [])];
+    if (segment.focus === 'overview' && focusIds.length > 0) issue(issues, `${path}.focusSpec`, 'conflicting_direction_focus', 'Overview focus cannot also name focal targets');
+    if (segment.focus === 'target' && focusIds.length !== 1) issue(issues, `${path}.focusSpec`, 'conflicting_direction_focus', 'Target focus requires exactly one focal target');
+    if (segment.focus === 'sequence' && focusIds.length < 2) issue(issues, `${path}.focusSpec`, 'conflicting_direction_focus', 'Sequence focus requires at least two focal targets');
+    if (segment.camera === 'overview' && focusIds.length > 0) issue(issues, `${path}.camera`, 'conflicting_direction_camera', 'Overview camera cannot follow focal targets');
     if (targets) focusIds.forEach((targetId) => { if (!targets.has(targetId)) issue(issues, `${path}.focusSpec`, 'unknown_direction_target', `Unknown target id "${targetId}" in scene "${segment.sceneId}"`); });
     if (targets && segment.transitionTargetId && !targets.has(segment.transitionTargetId)) issue(issues, `${path}.transitionTargetId`, 'unknown_direction_transition_target', `Unknown transition target id "${segment.transitionTargetId}" in scene "${segment.sceneId}"`);
     if (focus?.beatId && !beatMap.get(segment.sceneId ?? '')?.has(focus.beatId)) issue(issues, `${path}.focusSpec.beatId`, 'unknown_direction_beat', `Unknown ExplanationBeat id "${focus.beatId}" in scene "${segment.sceneId}"`);
     if (focus?.captureStepId && !captureStepMap.get(segment.sceneId ?? '')?.has(focus.captureStepId)) issue(issues, `${path}.focusSpec.captureStepId`, 'unknown_direction_capture_step', `Unknown capture step id "${focus.captureStepId}" in scene "${segment.sceneId}"`);
-    if (segment.transition && segment.transition !== 'cut' && !segment.transitionTargetId && focusIds.length === 0) issue(issues, `${path}.transitionTargetId`, 'transition_without_shared_target', 'Non-cut transitions require a shared target or transitionTargetId');
+    if (segment.transition && segment.transition !== 'cut') {
+      const next = plan.segments?.[index + 1];
+      const nextFocusIds = [...(next?.focusSpec?.targetIds ?? []), ...(next?.focusSpec?.targetId ? [next.focusSpec.targetId] : [])];
+      const sourceTargetId = segment.transitionTargetId ?? focusIds.at(-1);
+      const destinationTargetId = segment.transitionToTargetId ?? nextFocusIds[0];
+      if (!sourceTargetId) issue(issues, `${path}.transitionTargetId`, 'transition_without_shared_target', 'Non-cut transitions require a source target');
+      if (!next) issue(issues, `${path}.transition`, 'transition_without_destination', 'Non-cut transitions require a following segment');
+      else if (!destinationTargetId) issue(issues, `${path}.transitionToTargetId`, 'transition_without_destination_target', 'Non-cut transitions require a destination target');
+      const nextTargets = next ? sceneMap.get(next.sceneId ?? '') : undefined;
+      if (nextTargets && destinationTargetId && !nextTargets.has(destinationTargetId)) issue(issues, `${path}.transitionToTargetId`, 'unknown_direction_transition_destination', `Unknown destination target id "${destinationTargetId}" in scene "${next?.sceneId}"`);
+    }
   });
   return issues;
 }
 
 export function compileDirectionPlan(plan: DirectionPlan): import('./schema').CompiledDirectionPlan {
-  const sceneActions = plan.segments.map((segment) => ({ segmentId: segment.id, sceneId: segment.sceneId, purpose: segment.purpose, pace: segment.pace, camera: segment.camera, transition: segment.transition }));
+  const sceneActions = plan.segments.map((segment, index) => {
+    const targets = [...(segment.focusSpec?.targetIds ?? []), ...(segment.focusSpec?.targetId ? [segment.focusSpec.targetId] : [])];
+    const next = plan.segments[index + 1];
+    const nextTargets = [...(next?.focusSpec?.targetIds ?? []), ...(next?.focusSpec?.targetId ? [next.focusSpec.targetId] : [])];
+    return {
+      segmentId: segment.id,
+      sceneId: segment.sceneId,
+      purpose: segment.purpose,
+      pace: segment.pace,
+      camera: segment.camera,
+      transition: segment.transition,
+      transitionTargetId: segment.transitionTargetId ?? (segment.transition !== 'cut' ? targets.at(-1) : undefined),
+      transitionToTargetId: segment.transitionToTargetId ?? (segment.transition !== 'cut' ? nextTargets[0] : undefined),
+    };
+  });
   const attention: import('./schema').CompiledDirectionPlan['attention'] = [];
   const timingHints: import('./schema').CompiledDirectionPlan['timingHints'] = [];
   plan.segments.forEach((segment, index) => {

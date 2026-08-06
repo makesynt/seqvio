@@ -9,11 +9,11 @@ const FPS = 30;
 const DURATION = 210;
 
 const attention: AttentionSequenceItem[] = [
-  { id: 'ring', sceneId: 'primitives', targetId: 'input', kind: 'focus-ring', start: 6, duration: 32, persistence: 'timed' },
-  { id: 'callout', sceneId: 'primitives', targetId: 'model', kind: 'callout', start: 42, duration: 34, persistence: 'timed', label: 'The key transformation' },
-  { id: 'bracket', sceneId: 'primitives', targetId: 'process-explain', kind: 'bracket', start: 82, duration: 34, persistence: 'timed', label: 'semantic step' },
-  { id: 'shade', sceneId: 'primitives', targetId: 'comparison', kind: 'region-shade', start: 122, duration: 34, persistence: 'timed' },
-  { id: 'connector', sceneId: 'primitives', targetId: 'input', toTargetId: 'result', kind: 'connector', start: 162, duration: 40, persistence: 'timed', label: 'cause to outcome' },
+  { id: 'ring', sceneId: 'primitives', targetId: 'input', kind: 'focus-ring', start: 6, duration: 32, persistence: 'timed', priority: 10 },
+  { id: 'callout', sceneId: 'primitives', targetId: 'model', kind: 'callout', start: 42, duration: 34, persistence: 'timed', label: 'The key transformation', priority: 20 },
+  { id: 'bracket', sceneId: 'primitives', targetId: 'process-explain', kind: 'bracket', start: 82, duration: 34, persistence: 'timed', label: 'semantic step', priority: 10 },
+  { id: 'shade', sceneId: 'primitives', targetId: 'comparison', kind: 'region-shade', start: 122, duration: 80, persistence: 'timed', priority: 1 },
+  { id: 'connector', sceneId: 'primitives', targetId: 'input', toTargetId: 'result', kind: 'connector', start: 162, duration: 40, persistence: 'timed', label: 'cause to outcome', priority: 30 },
 ];
 
 export default function AttentionPrimitivesValidation() {

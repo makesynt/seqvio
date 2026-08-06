@@ -1,0 +1,11 @@
+{
+  "format": "seqvio-motion-grammar",
+  "version": "1.0",
+  "id": "compare-merge",
+  "steps": [
+    { "id": "frame-question", "sceneId": "compare-merge", "action": "question" },
+    { "id": "show-before", "sceneId": "compare-merge", "action": "reveal", "targetId": "manual", "startFrame": 8 },
+    { "id": "compare-paths", "sceneId": "compare-merge", "action": "compare", "targetId": "manual", "relatedTargetId": "guided", "startFrame": 30, "holdFrames": 34 },
+    { "id": "merge-result", "sceneId": "compare-merge", "action": "transform", "targetId": "merged", "startFrame": 68, "holdFrames": 28 }
+  ]
+}

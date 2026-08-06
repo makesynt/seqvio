@@ -211,7 +211,11 @@ function applyExplanationTiming(
           targetId: visual.targetId,
           kind: visual.action === 'focus' ? 'spotlight' as const
             : visual.action === 'annotate' ? 'arrow' as const
-              : 'box' as const,
+              : visual.action === 'compare' ? 'connector' as const
+                : visual.action === 'trace' ? 'guided-path' as const
+                  : 'box' as const,
+          toTargetId: visual.relatedTargetId,
+          pathTargetIds: visual.pathTargetIds,
           start,
           duration,
           minHoldFrames: duration,

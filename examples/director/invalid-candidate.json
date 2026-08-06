@@ -1,0 +1,43 @@
+{
+  "directionPlan": {
+    "format": "seqvio-direction-plan",
+    "version": "1.0",
+    "id": "integrated-semantic-validation.candidate",
+    "segments": [
+      {
+        "id": "overview-conflict",
+        "sceneId": "overview",
+        "purpose": "explain-mechanism",
+        "focus": "target",
+        "focusSpec": { "targetIds": ["evidence", "missing"] },
+        "camera": "overview",
+        "transition": "cut"
+      }
+    ]
+  },
+  "attentionSequence": [
+    {
+      "id": "unbounded-focus",
+      "sceneId": "overview",
+      "targetId": "evidence",
+      "kind": "spotlight",
+      "start": 12,
+      "duration": 24,
+      "persistence": "until-clear"
+    }
+  ],
+  "motionGrammar": {
+    "format": "seqvio-motion-grammar",
+    "version": "1.0",
+    "id": "integrated-semantic-validation.candidate-motion",
+    "steps": [
+      {
+        "id": "incomplete-trace",
+        "sceneId": "overview",
+        "action": "trace",
+        "targetId": "evidence",
+        "pathTargetIds": ["evidence"]
+      }
+    ]
+  }
+}

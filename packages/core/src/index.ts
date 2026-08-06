@@ -26,6 +26,8 @@ export {
   routeGuidedPath,
   resolveSafeLabelPlacement,
   resolveSafeLabelPlacements,
+  annotationOpacity,
+  orderAnnotationsForStacking,
   useAnnotationTargetRegistry,
 } from './annotation';
 export type {
@@ -53,3 +55,5 @@ export * from './parsers';
 export * from './direction';
 export * from './motion-grammar';
 export * from './style-profile';
+export * from './style-profile-runtime';
+export * from './director';

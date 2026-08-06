@@ -69,7 +69,19 @@ From `@seqvio/technical`:
 
 Shared attention includes spotlight, focus ring, callout, bracket, connector,
 region shade, and guided path primitives. Simultaneous callouts use deterministic
-collision-aware placement; connectors choose safe-area routes around occupied targets.
+collision-aware placement; connectors choose safe-area routes around occupied
+targets. Explicit priority provides deterministic stacking, and every primitive
+has random-access and reverse-seek coverage.
+
+Semantic direction is available through versioned `DirectionPlan` and Motion
+Grammar contracts. `npm run director:task` prepares host-agent generate/repair
+tasks and auditable receipts; the renderer executes their validated artifacts
+without a model call.
+
+Style profiles apply typography, palette, spacing, motion density, camera,
+transition, and attention persistence policies. The shipped reference profiles
+are `clean-technical`, `editorial-explainer`, and `terminal-first`; semantic
+timing and target identity remain invariant across them.
 
 Whiteboard drawables and product-demo chrome accept `annotationId` / element `id` so annotations can target them under a shared `AnnotationProvider`.
 
@@ -103,6 +115,8 @@ From `@seqvio/renderer`:
 - `seqvio-audio synthesize` — TTS synthesis and resolved manifest generation
 - `seqvio-qa` — visual, pacing, media, capture, and resolved timing checks
 - `seqvio-doctor` — environment checks including optional local Manim discovery
+- `npm run director:task -- --mode generate|repair ...` — versioned host-agent
+  direction task and receipt generation
 
 Capture adapters are available but pre-stable:
 
@@ -165,7 +179,8 @@ Preferred starting points:
 | `examples/ir/technical-explainer.explainer.json` | Full ExplainerDocument IR + chapters |
 | `examples/compositions/infographic-chart-validation.tsx` | Chart/series/axis/legend reference |
 | `examples/compositions/manim-end-to-end-validation.tsx` | Real graph/proof Manim playback with narration |
-| `examples/manim/` | Equation, graph, and proof Python fixtures |
+| `examples/compositions/style-playbook-*.tsx` | Same semantic composition under three visual profiles |
+| `examples/manim/` | Equation, graph, symbolic proof, and geometric proof Python fixtures |
 | `packages/whiteboard/examples/` | Single-scene whiteboard samples |
 
 Narrated technical reference loop:

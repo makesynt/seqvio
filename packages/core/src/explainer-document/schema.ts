@@ -49,7 +49,15 @@ export interface AddressableElement {
   id: string;
 }
 
-export type VisualBeatActionKind = 'reveal' | 'highlight' | 'focus' | 'annotate';
+export type VisualBeatActionKind =
+  | 'reveal'
+  | 'highlight'
+  | 'focus'
+  | 'annotate'
+  | 'compare'
+  | 'trace'
+  | 'emphasize'
+  | 'transform';
 
 export interface ExplanationCueSpec {
   id: string;
@@ -67,6 +75,8 @@ export interface ExplanationBeatAnchorSpec {
 export interface VisualBeatAction {
   targetId: string;
   action: VisualBeatActionKind;
+  relatedTargetId?: string;
+  pathTargetIds?: string[];
   /** Negative values reveal before speech; positive values delay the action. */
   offsetMs?: number;
   minHoldMs?: number;
@@ -94,6 +104,7 @@ export interface AnnotationSpec extends AddressableElement {
   start: number;
   duration: number;
   label?: string;
+  priority?: number;
 }
 
 export interface LineRange {
@@ -260,12 +271,14 @@ export interface AttentionSequenceSpec extends AddressableElement {
   persistence?: 'timed' | 'until-handoff' | 'until-clear';
   clearAt?: number;
   handoffToSceneId?: string;
+  priority?: number;
 }
 
 export interface InfographicSceneSpec {
   type: 'infographic';
   id: string;
   title?: string;
+  density?: 'auto' | 'standard' | 'reduced';
   metrics?: InfographicMetricSpec[];
   comparisons?: InfographicComparisonSpec[];
   process?: InfographicProcessStepSpec[];
@@ -448,6 +461,8 @@ export interface ExplainerDocument {
   transitionDuration?: number;
   /** Versioned pacing policy used by authoring, timing resolution, and QA. */
   pacingProfile?: string;
+  /** Optional visual profile; semantic ids, evidence, and timing remain unchanged. */
+  styleProfile?: import('../style-profile').StyleProfile;
   chapters?: ChapterSpec[];
   scenes: SceneSpec[];
   /** Document-level annotations that may target any scene element id. */

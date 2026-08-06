@@ -1,0 +1,13 @@
+{
+  "format": "seqvio-style-profile",
+  "version": "1.0",
+  "id": "terminal-first",
+  "label": "Terminal First",
+  "typography": { "headingFamily": "JetBrains Mono", "bodyFamily": "Inter", "monoFamily": "JetBrains Mono", "scale": "compact" },
+  "motionDensity": "restrained",
+  "cameraPolicy": "evidence-follow",
+  "transitionPolicy": "cut",
+  "attentionPersistence": "timed",
+  "spacing": "tight",
+  "paletteRoles": { "background": "#101418", "ink": "#e6edf3", "accent": "#2dd4bf", "muted": "#8b9aaa" }
+}

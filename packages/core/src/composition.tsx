@@ -19,6 +19,7 @@ import {
 import { resolveCompositionDurationFrames } from './time';
 import { getTransitionProgress, getTransitionStyle } from './transitions';
 import { FpsProvider, SceneLocalFrameProvider } from './frame';
+import { useStyleProfile } from './style-profile-runtime';
 
 export interface CompositionConfig {
   id: string;
@@ -185,6 +186,7 @@ export const Scene: React.FC<SceneProps> = ({ id, duration, children }) => {
   const { timeline, layout } = useComposition();
   const frame = timeline.getCurrentFrame();
   const registration = getSceneRegistration(layout, id);
+  const styleProfile = useStyleProfile();
 
   if (!registration) return null;
 
@@ -213,6 +215,13 @@ export const Scene: React.FC<SceneProps> = ({ id, duration, children }) => {
   let transitionRole: 'outgoing' | 'incoming' | undefined;
   let transitionProgress: number | undefined;
 
+  if (registration && styleProfile && styleProfile.cameraPolicy !== 'static') {
+    const sceneProgress = Math.min(1, Math.max(0, (frame - registration.globalStart) / Math.max(1, registration.duration)));
+    const cameraScale = styleProfile?.cameraPolicy === 'evidence-follow' ? 0.02 : 0.008;
+    sceneStyle.transform = `scale(${1 + sceneProgress * cameraScale})`;
+    sceneStyle.transformOrigin = '50% 50%';
+  }
+
   if (activeTransition && (isOutgoing || isIncoming)) {
     const progress = getTransitionProgress(
       frame,
@@ -220,17 +229,20 @@ export const Scene: React.FC<SceneProps> = ({ id, duration, children }) => {
       activeTransition.duration
     );
     transitionProgress = progress;
-    const style = getTransitionStyle(activeTransition.type, progress);
+    const effectiveTransition = styleProfile?.transitionPolicy === 'cut' ? undefined
+      : styleProfile?.transitionPolicy === 'focus-transfer' ? 'cinematic-zoom'
+        : styleProfile?.transitionPolicy === 'crossfade' ? 'fade' : activeTransition.type;
+    const style = effectiveTransition ? getTransitionStyle(effectiveTransition, progress) : undefined;
     if (isOutgoing) {
       transitionRole = 'outgoing';
-      sceneStyle.opacity = style.outgoingOpacity;
+      sceneStyle.opacity = style?.outgoingOpacity ?? 0;
       sceneStyle.zIndex = 1;
     }
     if (isIncoming) {
       transitionRole = 'incoming';
-      sceneStyle.opacity = style.incomingOpacity;
-      sceneStyle.transform = style.incomingTransform;
-      sceneStyle.clipPath = style.overlayClipPath;
+      sceneStyle.opacity = style?.incomingOpacity ?? 1;
+      sceneStyle.transform = style?.incomingTransform;
+      sceneStyle.clipPath = style?.overlayClipPath;
       sceneStyle.zIndex = 2;
     }
   }

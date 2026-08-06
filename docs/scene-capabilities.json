@@ -26,6 +26,14 @@
       "qaRules": ["visual-layout", "pacing", "audio-timeline", "explanation-beats"]
     },
     {
+      "type": "infographic",
+      "compiler": "complete",
+      "requiredPackage": "@seqvio/technical",
+      "lifecycle": "experimental",
+      "agentAuthoring": true,
+      "qaRules": ["visual-layout", "text-density", "focal-target", "pacing", "audio-timeline", "explanation-beats"]
+    },
+    {
       "type": "terminal",
       "compiler": "complete",
       "requiredPackage": "@seqvio/technical",
@@ -40,6 +48,14 @@
       "lifecycle": "public",
       "agentAuthoring": false,
       "qaRules": ["visual-layout", "capture-state", "capture-media", "pacing", "audio-timeline", "explanation-beats"]
+    },
+    {
+      "type": "manim",
+      "compiler": "complete",
+      "requiredPackage": "@seqvio/manim-adapter",
+      "lifecycle": "experimental",
+      "agentAuthoring": true,
+      "qaRules": ["visual-layout", "external-media", "marker-alignment", "pacing", "audio-timeline", "explanation-beats"]
     }
   ]
 }

@@ -176,17 +176,23 @@ export interface AnnotationItem {
   start: number;
   duration: number;
   label?: string;
+  /** Higher-priority annotations render above lower-priority annotations. */
+  priority?: number;
 }
 
 export interface AnnotationLayerProps {
   annotations: AnnotationItem[];
 }
 
-function annotationOpacity(frame: number, start: number, duration: number): number {
+export function annotationOpacity(frame: number, start: number, duration: number): number {
   if (frame < start) return 0;
   if (frame >= start + duration) return 1;
   const t = (frame - start) / Math.max(1, duration);
   return Math.min(1, t * 1.4);
+}
+
+export function orderAnnotationsForStacking<T extends Pick<AnnotationItem, 'id' | 'priority'>>(annotations: T[]): T[] {
+  return [...annotations].sort((left, right) => (left.priority ?? 0) - (right.priority ?? 0) || left.id.localeCompare(right.id));
 }
 
 export const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ annotations }) => {
@@ -196,8 +202,9 @@ export const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ annotations })
   const [registryVersion, bump] = useState(0);
   const [rects, setRects] = useState<Map<string, TargetRect>>(() => new Map());
   const [canvasSize, setCanvasSize] = useState({ width: 1280, height: 720 });
-  const annotationKey = annotations
-    .map((annotation) => `${annotation.id}:${annotation.targetId}:${annotation.toTargetId ?? ''}:${annotation.pathTargetIds?.join(',') ?? ''}:${annotation.start}:${annotation.duration}`)
+  const orderedAnnotations = orderAnnotationsForStacking(annotations);
+  const annotationKey = orderedAnnotations
+    .map((annotation) => `${annotation.id}:${annotation.targetId}:${annotation.toTargetId ?? ''}:${annotation.pathTargetIds?.join(',') ?? ''}:${annotation.start}:${annotation.duration}:${annotation.priority ?? 0}`)
     .join('|');
 
   useLayoutEffect(() => {
@@ -242,7 +249,7 @@ export const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ annotations })
       const next = new Map<string, TargetRect>();
       const container = registry.getContainer();
       if (container) setCanvasSize({ width: container.clientWidth, height: container.clientHeight });
-      for (const annotation of annotations) {
+      for (const annotation of orderedAnnotations) {
         if (annotationOpacity(frame, annotation.start, annotation.duration) <= 0) continue;
         const rect = registry.getRect(annotation.targetId);
         if (rect) next.set(annotation.id, rect);
@@ -272,7 +279,7 @@ export const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ annotations })
     .map(([, rect]) => rect)
     .filter((rect, index, all) => all.findIndex((candidate) => candidate.x === rect.x && candidate.y === rect.y && candidate.width === rect.width && candidate.height === rect.height) === index);
   const labelPlacements = resolveSafeLabelPlacements(
-    annotations.filter((annotation) => annotation.kind === 'callout' && annotation.label && rects.has(annotation.id)).map((annotation) => ({
+    orderedAnnotations.filter((annotation) => annotation.kind === 'callout' && annotation.label && rects.has(annotation.id)).map((annotation) => ({
       id: annotation.id,
       target: rects.get(annotation.id)!,
       width: 180,
@@ -288,7 +295,7 @@ export const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ annotations })
 
   return (
     <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 20 }}>
-      {annotations.map((annotation) => {
+      {orderedAnnotations.map((annotation) => {
         const opacity = annotationOpacity(frame, annotation.start, annotation.duration);
         if (opacity <= 0) return null;
         const rect = rects.get(annotation.id);

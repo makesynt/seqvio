@@ -2,6 +2,8 @@ export {
   AnnotationLayer,
   AnnotationProvider,
   AnnotationTarget,
+  annotationOpacity,
+  orderAnnotationsForStacking,
   useAnnotationTargetRegistry,
 } from './AnnotationLayer';
 export {

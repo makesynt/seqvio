@@ -3,6 +3,7 @@ import { AnnotationLayer, type AnnotationItem, type AnnotationKind } from './Ann
 import { mapSceneOutputFrameToSource } from '../frame';
 import { useCurrentFrame } from '../frame';
 import type { AudioSceneTiming } from '../audio';
+import { useStyleProfile } from '../style-profile-runtime';
 
 export interface AttentionSequenceItem extends AnnotationItem {
   /** Scene that owns the target. Omit for legacy scene-local sequences. */
@@ -103,7 +104,9 @@ export interface AttentionSequenceLayerProps {
 /** Renders a semantic focus sequence through the shared annotation renderer. */
 export const AttentionSequenceLayer: React.FC<AttentionSequenceLayerProps> = ({ sequence, sceneId }) => {
   const frame = useCurrentFrame();
-  const sceneSequence = sceneId ? selectAttentionForScene(sequence, sceneId) : sequence;
+  const styleProfile = useStyleProfile();
+  const styledSequence = sequence.map((item) => item.persistence ? item : { ...item, persistence: styleProfile?.attentionPersistence ?? 'timed' });
+  const sceneSequence = sceneId ? selectAttentionForScene(styledSequence, sceneId) : styledSequence;
   const active = resolveAttentionSequence(sceneSequence, frame)
     .filter((item) => item.active)
     .map(({ active: _active, handoff: _handoff, ...item }) => item);

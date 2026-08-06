@@ -31,6 +31,7 @@ export interface DirectionSegment {
   camera?: DirectionCamera;
   transition?: DirectionTransition;
   transitionTargetId?: string;
+  transitionToTargetId?: string;
 }
 
 export interface DirectionPlan {
@@ -55,6 +56,8 @@ export interface CompiledDirectionPlan {
     pace?: DirectionPace;
     camera?: DirectionCamera;
     transition?: DirectionTransition;
+    transitionTargetId?: string;
+    transitionToTargetId?: string;
   }>;
   attention: Array<{
     segmentId: string;

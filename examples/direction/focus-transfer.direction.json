@@ -1,0 +1,29 @@
+{
+  "format": "seqvio-direction-plan",
+  "version": "1.0",
+  "id": "focus-transfer-direction",
+  "segments": [
+    {
+      "id": "trace-model",
+      "sceneId": "model",
+      "purpose": "explain-mechanism",
+      "pace": "build",
+      "focus": "sequence",
+      "focusSpec": { "targetIds": ["input", "output"] },
+      "camera": "focus-transfer",
+      "transition": "match-object",
+      "transitionTargetId": "output",
+      "transitionToTargetId": "resolved"
+    },
+    {
+      "id": "confirm-result",
+      "sceneId": "result",
+      "purpose": "summarize",
+      "pace": "resolve",
+      "focus": "target",
+      "focusSpec": { "targetId": "resolved" },
+      "camera": "follow-target",
+      "transition": "cut"
+    }
+  ]
+}

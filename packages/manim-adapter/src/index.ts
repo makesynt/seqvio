@@ -17,6 +17,8 @@ export interface ManimSceneSpec {
   fps?: number;
   quality?: 'low' | 'medium' | 'high';
   args?: string[];
+  /** External files read by the scene; their content participates in the cache key. */
+  assets?: string[];
 }
 
 export interface ManimRenderManifest {
@@ -37,6 +39,9 @@ export interface ManimRenderManifest {
   alphaMode?: 'opaque' | 'straight' | 'premultiplied';
   markers?: Array<{ id: string; frame: number }>;
   logPath?: string;
+  sourceHash?: string;
+  runtimeHash?: string;
+  assetHashes?: Record<string, string>;
 }
 
 export interface ManimPreflightResult {
@@ -88,7 +93,7 @@ export function validateManimScene(scene: unknown): string[] {
 }
 
 export function buildManimCommand(scene: ManimSceneSpec): string[] {
-  return ['-m', 'manim', ...(scene.quality ? [`-${scene.quality === 'low' ? 'ql' : scene.quality === 'high' ? 'qh' : 'qm'}`] : []), ...(scene.fps ? ['--fps', String(scene.fps)] : []), scene.pythonFile, scene.className, ...(scene.args ?? [])];
+  return ['-m', 'manim', ...(scene.quality ? [`-${scene.quality === 'low' ? 'ql' : scene.quality === 'high' ? 'qh' : 'qm'}`] : []), ...(scene.fps ? ['--fps', String(scene.fps)] : []), ...(scene.width && scene.height ? ['-r', `${scene.width},${scene.height}`] : []), scene.pythonFile, scene.className, ...(scene.args ?? [])];
 }
 
 export function preflightManim(pythonCommand = 'python'): ManimPreflightResult {
@@ -102,7 +107,8 @@ export function preflightManim(pythonCommand = 'python'): ManimPreflightResult {
 
 export function createManimManifest(scene: ManimSceneSpec, preflight = preflightManim()): ManimRenderManifest {
   const errors = validateManimScene(scene);
-  return { scene, command: ['python', ...buildManimCommand(scene)], status: errors.length || !preflight.available ? 'failed' : 'planned', manimVersion: preflight.manimVersion, pythonVersion: preflight.pythonVersion, capabilities: preflight.capabilities, diagnostics: [...errors, ...preflight.diagnostics] };
+  const runtimeHash = createHash('sha256').update(JSON.stringify({ python: preflight.pythonVersion, manim: preflight.manimVersion })).digest('hex');
+  return { scene, command: ['python', ...buildManimCommand(scene)], status: errors.length || !preflight.available ? 'failed' : 'planned', manimVersion: preflight.manimVersion, pythonVersion: preflight.pythonVersion, runtimeHash, capabilities: preflight.capabilities, diagnostics: [...errors, ...preflight.diagnostics] };
 }
 
 export interface ManimExecutionOptions {
@@ -117,10 +123,24 @@ export interface ManimExecutionOptions {
   onProgress?: (event: { phase: 'planned' | 'rendering' | 'cached' | 'complete'; progress?: number; message?: string }) => void;
 }
 
-export async function hashManimRender(scene: ManimSceneSpec, preflight: ManimPreflightResult): Promise<string> {
-  let source = '';
-  try { source = await readFile(scene.pythonFile, 'utf8'); } catch { source = `missing:${scene.pythonFile}`; }
-  return createHash('sha256').update(JSON.stringify({ scene, source, python: preflight.pythonVersion, manim: preflight.manimVersion })).digest('hex');
+export async function hashManimAssets(scene: ManimSceneSpec, baseDir = process.cwd()): Promise<Record<string, string>> {
+  const hashes: Record<string, string> = {};
+  for (const asset of [...(scene.assets ?? [])].sort()) {
+    try { hashes[asset] = createHash('sha256').update(await readFile(path.resolve(baseDir, asset))).digest('hex'); }
+    catch { hashes[asset] = 'missing'; }
+  }
+  return hashes;
+}
+
+export async function hashManimSource(scene: ManimSceneSpec, baseDir = process.cwd()): Promise<string> {
+  try { return createHash('sha256').update(await readFile(path.resolve(baseDir, scene.pythonFile))).digest('hex'); }
+  catch { return createHash('sha256').update(`missing:${scene.pythonFile}`).digest('hex'); }
+}
+
+export async function hashManimRender(scene: ManimSceneSpec, preflight: ManimPreflightResult, baseDir = process.cwd()): Promise<string> {
+  const sourceHash = await hashManimSource(scene, baseDir);
+  const assetHashes = await hashManimAssets(scene, baseDir);
+  return createHash('sha256').update(JSON.stringify({ contract: 'source-assets-runtime-v1', scene, sourceHash, assetHashes, python: preflight.pythonVersion, manim: preflight.manimVersion })).digest('hex');
 }
 
 export async function executeManimScene(scene: ManimSceneSpec, options: ManimExecutionOptions = {}): Promise<ManimRenderManifest> {
@@ -129,8 +149,16 @@ export async function executeManimScene(scene: ManimSceneSpec, options: ManimExe
   const manifest = createManimManifest(scene, preflight);
   const errors = validateManimScene(scene);
   if (errors.length) return manifest;
-  const cacheKey = await hashManimRender(scene, preflight);
+  const cacheKey = await hashManimRender(scene, preflight, options.cwd);
   manifest.cacheKey = cacheKey;
+  manifest.sourceHash = await hashManimSource(scene, options.cwd);
+  manifest.assetHashes = await hashManimAssets(scene, options.cwd);
+  const missingAssets = Object.entries(manifest.assetHashes).filter(([, value]) => value === 'missing').map(([asset]) => asset);
+  if (missingAssets.length > 0) {
+    manifest.status = 'failed';
+    manifest.diagnostics.push(...missingAssets.map((asset) => `missing_asset:${asset}`));
+    return manifest;
+  }
   const cacheDir = path.resolve(options.cacheDir ?? '.seqvio-cache/manim');
   const cacheManifestPath = path.join(cacheDir, `${cacheKey}.json`);
   try {
@@ -181,6 +209,10 @@ export async function executeManimScene(scene: ManimSceneSpec, options: ManimExe
       const media = probeManimMedia(manifest.outputPath);
       manifest.width = media?.width; manifest.height = media?.height; manifest.fps = media?.fps;
       manifest.durationSeconds = media?.durationSeconds; manifest.alphaMode = media?.alphaMode;
+      if (!manifest.width || !manifest.height || !manifest.fps || !manifest.alphaMode) {
+        manifest.status = 'failed';
+        manifest.diagnostics.push('incomplete_media_contract');
+      }
     }
   }
   if (manifest.status === 'rendered') {

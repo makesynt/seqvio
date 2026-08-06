@@ -1,7 +1,7 @@
 // AUTO-GENERATED from a Seqvio ExplainerDocument. Safe to edit by hand.
 import React from 'react';
 import type { RenderableMeta } from '@seqvio/core';
-import { VideoComposition, Scene, Transition } from '@seqvio/core';
+import { StyleProfileProvider, VideoComposition, Scene, Transition } from '@seqvio/core';
 
 import {
   TechnicalScene,
@@ -17,6 +17,29 @@ import {
 const W = 1280;
 const H = 720;
 const FPS = 15;
+const STYLE_PROFILE = {
+  "format": "seqvio-style-profile",
+  "version": "1.0",
+  "id": "clean-technical",
+  "label": "Clean Technical",
+  "typography": {
+    "headingFamily": "Inter",
+    "bodyFamily": "Inter",
+    "monoFamily": "JetBrains Mono",
+    "scale": "editorial"
+  },
+  "motionDensity": "restrained",
+  "cameraPolicy": "semantic-focus",
+  "transitionPolicy": "focus-transfer",
+  "attentionPersistence": "until-handoff",
+  "spacing": "comfortable",
+  "paletteRoles": {
+    "background": "#0f172a",
+    "ink": "#f8fafc",
+    "accent": "#38bdf8",
+    "muted": "#94a3b8"
+  }
+};
 
 
 function OverviewScene0() {
@@ -25,6 +48,7 @@ function OverviewScene0() {
       <InfographicScene
         id="overview"
         title="From evidence to explanation"
+        density="auto"
         metrics={[
   {
     "id": "evidence",
@@ -48,6 +72,7 @@ function OverviewScene0() {
         timeline={[]}
         relationshipNodes={[]}
         relationships={[]}
+        charts={[]}
         attention={[
   {
     "id": "overview.evidence-beat.attention-1",
@@ -103,6 +128,7 @@ function EquationScene1() {
 
 export default function IntegratedSemanticValidation() {
   return (
+    <StyleProfileProvider profile={STYLE_PROFILE}>
     <VideoComposition
       id="integrated-semantic-validation"
       width={W}
@@ -119,6 +145,7 @@ export default function IntegratedSemanticValidation() {
         <EquationScene1 />
       </Scene>
     </VideoComposition>
+    </StyleProfileProvider>
   );
 }
 
@@ -150,7 +177,9 @@ export const meta: RenderableMeta = {
       "sceneId": "overview",
       "purpose": "hook",
       "pace": "steady",
-      "camera": "follow-target"
+      "camera": "follow-target",
+      "transitionTargetId": "evidence",
+      "transitionToTargetId": "model"
     },
     {
       "segmentId": "overview.model-beat",

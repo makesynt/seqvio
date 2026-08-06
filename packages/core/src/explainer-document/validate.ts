@@ -21,6 +21,7 @@ import {
 import { SCENE_TYPES, isSceneType } from './capabilities';
 import { isPacingProfileId } from '../pacing';
 import { findNarrationAnchorMatches, normalizeNarrationText } from '../narration-anchor';
+import { validateStyleProfile } from '../style-profile';
 
 export type CompositionIssue = StoryboardIssue;
 
@@ -299,6 +300,9 @@ function validateInfographicScene(
   scenePath: string,
   issues: CompositionIssue[],
 ): void {
+  if (scene.density !== undefined && !['auto', 'standard', 'reduced'].includes(scene.density)) {
+    issue(issues, { severity: 'error', path: `${scenePath}.density`, code: 'unsupported_infographic_density', message: `${scenePath}.density must be auto, standard, or reduced`, repairable: true });
+  }
   const collections = [
     ['metrics', scene.metrics],
     ['comparisons', scene.comparisons],
@@ -777,10 +781,24 @@ function validateExplanation(
             message: `${visualPath}.targetId must reference an addressable element in the scene`, repairable: true,
           });
         }
-        if (!isObject(visual) || !['reveal', 'highlight', 'focus', 'annotate'].includes(String(visual.action))) {
+        if (!isObject(visual) || !['reveal', 'highlight', 'focus', 'annotate', 'compare', 'trace', 'emphasize', 'transform'].includes(String(visual.action))) {
           issue(issues, {
             severity: 'error', path: `${visualPath}.action`, code: 'unsupported_beat_visual_action',
             message: `${visualPath}.action is unsupported`, repairable: true,
+          });
+        }
+        if (isObject(visual) && visual.action === 'compare' &&
+          (typeof visual.relatedTargetId !== 'string' || !addressableIds.has(visual.relatedTargetId))) {
+          issue(issues, {
+            severity: 'error', path: `${visualPath}.relatedTargetId`, code: 'invalid_compare_visual_target',
+            message: `${visualPath}.relatedTargetId must reference an addressable element`, repairable: true,
+          });
+        }
+        if (isObject(visual) && visual.action === 'trace' &&
+          (!Array.isArray(visual.pathTargetIds) || visual.pathTargetIds.length < 2 || visual.pathTargetIds.some((id) => typeof id !== 'string' || !addressableIds.has(id)))) {
+          issue(issues, {
+            severity: 'error', path: `${visualPath}.pathTargetIds`, code: 'invalid_trace_visual_path',
+            message: `${visualPath}.pathTargetIds must reference at least two addressable elements`, repairable: true,
           });
         }
         if (isObject(visual) && visual.offsetMs !== undefined && !Number.isFinite(visual.offsetMs)) {
@@ -947,6 +965,18 @@ export function validateExplainerDocument(input: unknown): CompositionIssue[] {
       repairable: true,
       suggestion: 'Use the versioned "explainer-v1" pacing profile.',
     });
+  }
+
+  if (doc.styleProfile !== undefined) {
+    for (const profileIssue of validateStyleProfile(doc.styleProfile)) {
+      issue(issues, {
+        severity: profileIssue.severity,
+        path: `styleProfile.${profileIssue.path}`,
+        code: profileIssue.code,
+        message: profileIssue.message,
+        repairable: true,
+      });
+    }
   }
 
   for (const numField of ['width', 'height', 'fps'] as const) {

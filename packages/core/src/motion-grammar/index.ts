@@ -12,6 +12,7 @@ export interface MotionGrammarStep {
   action: MotionGrammarAction;
   targetId?: string;
   relatedTargetId?: string;
+  pathTargetIds?: string[];
   beatId?: string;
   startFrame?: number;
   holdFrames?: number;
@@ -42,7 +43,10 @@ function targetsForScene(document: ExplainerDocument, sceneId: string): Set<stri
   if (plan.type === 'whiteboard') plan.elements.forEach((item) => add(item.id));
   if (plan.type === 'code' || plan.type === 'diagram') plan.steps.forEach((item) => add(item.id));
   if (plan.type === 'diagram') { plan.nodes.forEach((item) => add(item.id)); plan.edges.forEach((item) => add(item.id)); }
-  if (plan.type === 'infographic') [...(plan.metrics ?? []), ...(plan.comparisons ?? []), ...(plan.process ?? []), ...(plan.timeline ?? []), ...(plan.relationshipNodes ?? []), ...(plan.relationships ?? [])].forEach((item) => add(item.id));
+  if (plan.type === 'infographic') {
+    [...(plan.metrics ?? []), ...(plan.comparisons ?? []), ...(plan.process ?? []), ...(plan.timeline ?? []), ...(plan.relationshipNodes ?? []), ...(plan.relationships ?? []), ...(plan.charts ?? [])].forEach((item) => add(item.id));
+    (plan.charts ?? []).forEach((chart) => chart.series.forEach((series) => add(series.id)));
+  }
   if (plan.type === 'terminal' || plan.type === 'browser') (plan.steps ?? []).forEach((item) => add(item.id));
   if (plan.type === 'manim') (plan.markers ?? []).forEach((item) => { add(item.id); add(item.targetId); });
   return ids;
@@ -64,8 +68,11 @@ export function validateMotionGrammar(input: unknown, document?: ExplainerDocume
     const targets = document ? targetsForScene(document, step.sceneId) : undefined;
     if (document && targets?.size === 0) add(`${path}.sceneId`, 'unknown_motion_scene', `Unknown scene "${step.sceneId}"`);
     if (!TARGET_OPTIONAL.has(step.action) && !step.targetId) add(`${path}.targetId`, 'missing_motion_target', `Action "${step.action}" requires a target`);
-    for (const target of [step.targetId, step.relatedTargetId]) if (target && targets && !targets.has(target)) add(`${path}.targetId`, 'unknown_motion_target', `Unknown target "${target}" in scene "${step.sceneId}"`);
+    for (const target of [step.targetId, step.relatedTargetId, ...(step.pathTargetIds ?? [])]) if (target && targets && !targets.has(target)) add(`${path}.targetId`, 'unknown_motion_target', `Unknown target "${target}" in scene "${step.sceneId}"`);
     if (step.action === 'compare' && !step.relatedTargetId) add(`${path}.relatedTargetId`, 'missing_compare_relation', 'compare requires relatedTargetId');
+    if (step.action === 'trace' && (!Array.isArray(step.pathTargetIds) || step.pathTargetIds.length < 2)) add(`${path}.pathTargetIds`, 'missing_trace_path', 'trace requires at least two pathTargetIds');
+    if (step.startFrame !== undefined && (!Number.isInteger(step.startFrame) || step.startFrame < 0)) add(`${path}.startFrame`, 'invalid_motion_start', 'startFrame must be a non-negative integer');
+    if (step.holdFrames !== undefined && (!Number.isInteger(step.holdFrames) || step.holdFrames <= 0)) add(`${path}.holdFrames`, 'invalid_motion_hold', 'holdFrames must be a positive integer');
   });
   return issues;
 }
@@ -75,9 +82,9 @@ export function compileMotionGrammar(grammar: MotionGrammar): CompiledMotionGram
   const attention: AttentionSequenceItem[] = [];
   const direction: DirectionSegment[] = [];
   grammar.steps.forEach((step, index) => {
-    const visualAction: VisualBeatAction['action'] = step.action === 'reveal' ? 'reveal' : step.action === 'emphasize' || step.action === 'compare' ? 'highlight' : step.action === 'trace' || step.action === 'transform' ? 'annotate' : 'focus';
-    if (step.targetId) visuals.push({ stepId: step.id, sceneId: step.sceneId, beatId: step.beatId, visual: { targetId: step.targetId, action: visualAction } });
-    if (step.targetId && step.action !== 'reveal') attention.push({ id: step.id, sceneId: step.sceneId, targetId: step.targetId, toTargetId: step.relatedTargetId, kind: step.action === 'compare' ? 'connector' : step.action === 'trace' ? 'guided-path' : 'focus-ring', start: step.startFrame ?? index * 30, duration: step.holdFrames ?? 24, sourceBeatId: step.beatId, persistence: 'timed' });
+    const visualAction: VisualBeatAction['action'] = ['reveal', 'trace', 'compare', 'emphasize', 'transform'].includes(step.action) ? step.action as VisualBeatAction['action'] : 'focus';
+    if (step.targetId) visuals.push({ stepId: step.id, sceneId: step.sceneId, beatId: step.beatId, visual: { targetId: step.targetId, action: visualAction, relatedTargetId: step.relatedTargetId, pathTargetIds: step.pathTargetIds } });
+    if (step.targetId && step.action !== 'reveal') attention.push({ id: step.id, sceneId: step.sceneId, targetId: step.targetId, toTargetId: step.relatedTargetId, pathTargetIds: step.pathTargetIds, kind: step.action === 'compare' ? 'connector' : step.action === 'trace' ? 'guided-path' : 'focus-ring', start: step.startFrame ?? index * 30, duration: step.holdFrames ?? 24, sourceBeatId: step.beatId, persistence: 'timed' });
     direction.push({ id: step.id, sceneId: step.sceneId, purpose: step.action === 'question' ? 'hook' : step.action === 'answer' || step.action === 'summarize' ? 'summarize' : 'explain-mechanism', pace: step.action === 'pause' ? 'hold' : 'steady', focus: step.targetId ? 'target' : 'overview', focusSpec: step.targetId ? { targetId: step.targetId, beatId: step.beatId } : undefined, camera: step.targetId ? 'follow-target' : 'hold', transition: 'cut' });
   });
   return { visuals, attention, direction };

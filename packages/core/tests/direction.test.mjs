@@ -19,7 +19,7 @@ const plan = {
   format: 'seqvio-direction-plan', version: '1.0', id: 'flow-direction',
   segments: [{
     id: 'explain-flow', sceneId: 'flow', purpose: 'explain-mechanism', pace: 'steady',
-    focus: 'target', camera: 'follow-target', focusSpec: { targetIds: ['input', 'output'] },
+    focus: 'sequence', camera: 'focus-transfer', focusSpec: { targetIds: ['input', 'output'] },
     transition: 'cut',
   }],
 };
@@ -29,7 +29,7 @@ describe('DirectionPlan', () => {
     assert.deepEqual(validateDirectionPlan(plan, document), []);
     const compiled = compileDirectionPlan(plan);
     assert.deepEqual(compiled.attention.map((item) => item.targetId), ['input', 'output']);
-    assert.equal(compiled.sceneActions[0].camera, 'follow-target');
+    assert.equal(compiled.sceneActions[0].camera, 'focus-transfer');
   });
 
   it('rejects unknown targets and targetless transitions', () => {
@@ -43,6 +43,38 @@ describe('DirectionPlan', () => {
       segments: [{ ...plan.segments[0], focusSpec: { targetId: 'missing' } }],
     }, document);
     assert.ok(targetIssues.some((item) => item.code === 'unknown_direction_target'));
+  });
+
+  it('pairs source and destination targets for cross-scene transitions', () => {
+    const twoSceneDocument = {
+      scenes: [
+        document.scenes[0],
+        { type: 'diagram', id: 'result', nodes: [{ id: 'resolved', label: 'Resolved' }], edges: [], steps: [] },
+      ],
+    };
+    const paired = {
+      ...plan,
+      segments: [
+        { ...plan.segments[0], transition: 'match-object', transitionTargetId: 'output', transitionToTargetId: 'resolved' },
+        { id: 'show-result', sceneId: 'result', purpose: 'summarize', focus: 'target', camera: 'follow-target', focusSpec: { targetId: 'resolved' }, transition: 'cut' },
+      ],
+    };
+    assert.deepEqual(validateDirectionPlan(paired, twoSceneDocument), []);
+    assert.deepEqual(
+      compileDirectionPlan(paired).sceneActions.slice(0, 1).map(({ transitionTargetId, transitionToTargetId }) => ({ transitionTargetId, transitionToTargetId })),
+      [{ transitionTargetId: 'output', transitionToTargetId: 'resolved' }],
+    );
+    const invalid = { ...paired, segments: [{ ...paired.segments[0], transitionToTargetId: 'missing' }, paired.segments[1]] };
+    assert.ok(validateDirectionPlan(invalid, twoSceneDocument).some((item) => item.code === 'unknown_direction_transition_destination'));
+  });
+
+  it('diagnoses incompatible focus and camera instructions', () => {
+    const issues = validateDirectionPlan({
+      ...plan,
+      segments: [{ ...plan.segments[0], focus: 'overview', camera: 'overview' }],
+    }, document);
+    assert.ok(issues.some((item) => item.code === 'conflicting_direction_focus'));
+    assert.ok(issues.some((item) => item.code === 'conflicting_direction_camera'));
   });
 
   it('derives a beat-backed sidecar and embeds compiled direction in meta', () => {
@@ -66,5 +98,25 @@ describe('DirectionPlan', () => {
     assert.equal(compiled.directionPlan.id, 'directed-flow.direction');
     assert.deepEqual(compiled.compiledDirection.attention.map((item) => item.targetId), ['input', 'output']);
     assert.match(compiled.code, /direction:/);
+  });
+
+  it('keeps semantic direction stable across duration and chapter reflow', () => {
+    const base = {
+      format: 'seqvio-explainer', schemaVersion: '1.0', id: 'stable-direction',
+      scenes: [{
+        ...document.scenes[0], duration: 120,
+        explanation: {
+          cues: [{ id: 'cue', text: 'Follow input to output.' }],
+          beats: [{ id: 'follow', cueId: 'cue', anchor: { text: 'input' }, visuals: [{ targetId: 'input', action: 'focus' }, { targetId: 'output', action: 'highlight' }] }],
+        },
+      }],
+      chapters: [{ id: 'chapter-a', sceneIds: ['flow'] }],
+    };
+    const reflowed = {
+      ...base,
+      scenes: [{ ...base.scenes[0], duration: 240, transitionDuration: 18 }],
+      chapters: [{ id: 'chapter-reflowed', sceneIds: ['flow'] }],
+    };
+    assert.deepEqual(deriveDirectionPlan(reflowed), deriveDirectionPlan(base));
   });
 });

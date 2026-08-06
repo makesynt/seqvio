@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "description": "Versioned Manim scene contract and local preflight adapter for Seqvio",
   "license": "MIT",
+  "seqvio": {
+    "lifecycle": "experimental",
+    "versionPolicy": "independent"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": ["dist"],
