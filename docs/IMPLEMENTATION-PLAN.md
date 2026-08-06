@@ -1,27 +1,27 @@
 # Seqvio Implementation Plan
 
 > **Status:** the task-level companion to [`ROADMAP.md`](./ROADMAP.md). ROADMAP
-> states *what we are betting on and in what order*; this document states *how
-> each phase breaks into concrete work against the current codebase*. For
+> states _what we are betting on and in what order_; this document states _how
+> each phase breaks into concrete work against the current codebase_. For
 > positioning and scope, [`VISION.md`](./VISION.md) wins.
 >
 > Last revised: 2026-08-05.
 
 ## Current-State Inventory (what is already there)
 
-| Capability | Current state | Disposition |
-| --- | --- | --- |
-| ExplainerDocument IR | Five complete scene families plus `ExplanationBeat` cues, phrase anchors, visual actions, capture evidence, validation, compilation, and pacing | Canonical interchange contract |
-| chapter-render | `renderer/chapter-render.ts`: `hashRenderSettings`, `resume`, `onlyChapters`, `changedChapterIds`, `documentPath` | Reuse; incremental render built |
-| render conformance | Cross-platform semantic golden plus same-host PNG hash/PSNR checks for mixed Terminal/Browser frames | Three-host CI gate with environment-tagged artifacts |
-| seqvio-qa | Baseline/capture profiles cover visual, pacing, audio, media, capture-manifest, and resolved ExplanationBeat failures | Screenshot privacy masking intentionally deferred |
-| `@seqvio/capture` | New: `CaptureSession` contract, `CaptureManifest` union, `compileCaptureManifestToExplainerDocument` dispatcher | Built (Phase 1.1) |
-| Release/capability governance | `seqvio.release-policy.json`, package lifecycle metadata, core scene registry, docs snapshot, changesets/CI drift verifier | Built; release publication pending |
-| terminal-narrator | `node-pty` + asciinema/xterm state; compiler emits capture-backed cues/Beats and audio scene timing | Production pipeline uses shared dispatcher -> IR -> TSX; legacy writer removed |
-| browser-recorder | Records exact action clocks; compiler emits BrowserSceneSpec plus capture-backed cues/Beats | Production pipeline uses shared dispatcher -> IR -> TSX; legacy writer removed |
-| technical components | `CodeWalkthrough{source,steps}`, `ArchitectureDiagram`, `TerminalDemo`, `ansi.ts`, `code-utils.ts` | Reuse |
-| render performance | Four generated 1280x720 workloads, three-sample environment baseline, structured cache metrics, and scheduled reports | Baseline built; optimize Browser first |
-| environment diagnostics | `seqvio-doctor` checks Node, Chromium launch, FFmpeg probe, bundled fonts, `node-pty`, and writable paths | Built |
+| Capability                    | Current state                                                                                                                                              | Disposition                                                                    |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| ExplainerDocument IR          | Five complete scene families plus `ExplanationBeat` cues, phrase anchors, visual actions, capture evidence, validation, compilation, and pacing            | Canonical interchange contract                                                 |
+| chapter-render                | `renderer/chapter-render.ts`: `hashRenderSettings`, `resume`, `onlyChapters`, `changedChapterIds`, `documentPath`                                          | Reuse; incremental render built                                                |
+| render conformance            | Cross-platform semantic golden plus same-host PNG hash/PSNR checks for mixed Terminal/Browser frames                                                       | Three-host CI gate with environment-tagged artifacts                           |
+| seqvio-qa                     | Baseline/capture profiles cover visual, pacing, audio, media, capture-manifest, resolved ExplanationBeat failures, and deterministic browser privacy masks | OCR is intentionally outside the security boundary                             |
+| `@seqvio/capture`             | New: `CaptureSession` contract, `CaptureManifest` union, `compileCaptureManifestToExplainerDocument` dispatcher                                            | Built (Phase 1.1)                                                              |
+| Release/capability governance | `seqvio.release-policy.json`, package lifecycle metadata, core scene registry, docs snapshot, changesets/CI drift verifier                                 | Built; release publication pending                                             |
+| terminal-narrator             | `node-pty` + asciinema/xterm state; compiler emits capture-backed cues/Beats and audio scene timing                                                        | Production pipeline uses shared dispatcher -> IR -> TSX; legacy writer removed |
+| browser-recorder              | Records exact action clocks; compiler emits BrowserSceneSpec plus capture-backed cues/Beats                                                                | Production pipeline uses shared dispatcher -> IR -> TSX; legacy writer removed |
+| technical components          | `CodeWalkthrough{source,steps}`, `ArchitectureDiagram`, `TerminalDemo`, `ansi.ts`, `code-utils.ts`                                                         | Reuse                                                                          |
+| render performance            | Four generated 1280x720 workloads, three-sample environment baseline, structured cache metrics, and scheduled reports                                      | Baseline built; optimize Browser first                                         |
+| environment diagnostics       | `seqvio-doctor` checks Node, Chromium launch, FFmpeg probe, bundled fonts, `node-pty`, and writable paths                                                  | Built                                                                          |
 
 ## Architectural Decisions
 
@@ -70,10 +70,12 @@
 README/README.zh-CN, package READMEs, agent skill references, authoring docs,
 VISION/ROADMAP, and this plan are aligned with the ExplanationBeat pipeline.
 
-### 0.3 Test baseline - DEFERRED
+### 0.3 Test baseline - DONE (2026-08-06)
 
-Characterization tests for `chapter-render`/`qa-cli`/`terminal-narrator` to be
-added when those are refactored (Phase 1.2/1.3 pipeline migration).
+Characterization coverage now exists for `chapter-render`, QA diagnostics, and
+the terminal/browser adapter contracts. Adapter tests cover validation,
+compilation, timing, CLI envelopes, and capture-session behavior after the
+Phase 1.2/1.3 pipeline migration.
 
 ## Phase 1 - System Capture Adapters
 
@@ -87,14 +89,15 @@ added when those are refactored (Phase 1.2/1.3 pipeline migration).
 
 `compileTerminalCapture` (manifest -> `TerminalSceneSpec` IR + audio manifest,
 ports compose.ts timing logic) + `terminalCaptureSession` (CaptureSession impl)
-+ `toCaptureManifest`. The production pipeline compiles manifest -> IR -> TSX,
-including visual control through `TerminalSceneSpec.renderOptions`. Each captured
-step emits a cue, a phrase anchor, visual focus, and capture evidence. The
-production pipeline now uses the shared dispatcher and the legacy writer is
-removed. CLI contract `1.0` fixes JSON results, exit codes, progress, safe job
-ids, artifact layout, per-job capture QA, and independent audio/caption options.
-Windows package/CLI verification passes locally; the three-host CI matrix is
-configured and must pass before promotion.
+
+- `toCaptureManifest`. The production pipeline compiles manifest -> IR -> TSX,
+  including visual control through `TerminalSceneSpec.renderOptions`. Each captured
+  step emits a cue, a phrase anchor, visual focus, and capture evidence. The
+  production pipeline now uses the shared dispatcher and the legacy writer is
+  removed. CLI contract `2.0` fixes JSON results, exit codes, progress, safe job
+  ids, artifact layout, per-job capture QA, and independent audio/caption options.
+  Windows package/CLI verification passes locally; the three-host CI matrix is
+  configured and must pass before promotion.
 
 ### 1.3 browser-recorder - DONE (core)
 
@@ -103,69 +106,71 @@ configured and must pass before promotion.
 compiles manifest -> IR -> TSX. New recordings retain exact per-action start
 times instead of evenly distributing steps; older recording manifests keep the
 fallback. The production pipeline now uses the shared dispatcher and the legacy
-writer is removed. CLI contract `1.0` adds direct plan execution, JSON results,
-exit codes, progress, safe job ids, and artifact layout. Remaining:
-per-job capture QA and audio parity. Windows package/CLI verification passes
+writer is removed. CLI contract `2.0` adds direct plan execution, JSON results,
+exit codes, progress, safe job ids, and artifact layout. Per-job capture QA,
+audio parity, and privacy masking are implemented. Windows package/CLI verification passes
 locally; the three-host CI matrix is configured and must pass before promotion.
 
 ### 1.5 Promote out of pre-stable (in progress)
 
 README/skill/current-capability docs now describe the working IR path and its
 pre-stable CLI status. Shared dispatcher routing and legacy writer removal are
-complete. CLI contract `1.0`, per-job QA, audio parity, and independent caption
+complete. CLI contract `2.0`, per-job QA, audio parity, and independent caption
 burn-in are also complete. Windows host verification passes locally; Linux and
-macOS execution remains pending the configured CI matrix. Screenshot privacy
-remains an explicitly deferred boundary.
+macOS execution remains pending the configured CI matrix. Deterministic
+selector/rectangle privacy masking is implemented; OCR remains an explicitly
+deferred boundary.
 
 ## Phase 2 - Generic QA Checks
 
-### 2.1 Generic checks - DONE (partial)
+### 2.1 Generic checks - DONE
 
 `seqvio-qa` checks: blank/empty/offscreen + text-overflow + font-size (12px) +
 contrast (WCAG AA 4.5:1). Deterministic, no LLM, `exit(1)` on error. The capture
 profile additionally validates manifest timing/state/media, credential-like
 content, narration/caption timing, narration-track presence, audio silence and
 clipping risk, and sampled visual change. Missing/corrupt/truncated browser media
-  has Chromium coverage. Speech-rate and per-highlight perceptual duration checks
-  are implemented; screenshot masking/OCR is intentionally deferred. Renderer QA
-  now retains failure artifacts, checks cue/audio duration tolerance, and supports
-  configurable warning promotion.
-  A shared core pacing policy is also used by agent authoring guidance,
-  ExplainerDocument timing resolution, synthesized narration retiming, and QA
-  speech-rate/highlight diagnostics.
-  TTS resolution now performs a full scene-aware timeline reflow and `seqvio-qa`
-  accepts `--audioManifest` so final QA evaluates the same resolved timing used
-  by rendering.
-  Reflow also preserves each authored/captured source duration and supplies a
-  monotonic scene-local time map. ExplanationBeats resolve exact normalized
-  phrases inside TTS chunks; providers without fine chunks use a lower-confidence
-  whole-cue character position. Chunk-order/highlight pairing remains only a
-  legacy fallback when semantic Beats are absent. React
-  frame hooks, GSAP adapters, browser media seeking, and final pacing QA consume
-  the same mapping. Stretch beyond the profile's 2x limit emits
-  `scene_time_stretch_excessive`.
-  `npm run smoke:release-pipeline` now exercises terminal and browser
-  `CaptureManifest` paths through the capture dispatcher, IR/TSX compilation,
-  deterministic local narration, scene reflow, capture-profile QA, MP4 rendering,
-  and full FFmpeg decode. The browser case also validates the captured local
-  video and mapped media seeking. It requires no network or TTS credentials and
-  removes each repository-local temporary job directory after completion. CI and
-  the npm release workflow run this combined gate; adapter-specific commands are
-  available as `smoke:release-pipeline:terminal` and
-  `smoke:release-pipeline:browser`. CI and release gates render at the default
-  1280x720 resolution. For human review, run
-  `node scripts/release-pipeline-smoke.mjs --outDir output/release-pipeline-preview`
-  to retain the 720p MP4s and QA sidecars; the smoke gate also checks decoded
-  video frame count, not only container validity. `--width` and `--height`
-  remain available for explicit diagnostic variants.
-  The release contract now records `explainer-v1` end to end and accepts a
-  versioned `--qaConfig`; suppressions require an exact code/path and documented
-  reason, never apply to errors, and remain auditable in `qa-report.json`.
-  Terminal and Browser production jobs now run this capture profile after
-  rendering and include `qa-report.json` in `artifacts.json`. QA errors return
-  pipeline exit code 3 while retaining diagnostic artifacts. Explicitly silent
-  jobs still run capture/visual/pacing checks without requiring an audio track;
-  `--withAudio` jobs must contain valid synthesized narration.
+has Chromium coverage. Speech-rate and per-highlight perceptual duration checks
+are implemented; deterministic pre-capture screenshot masking is enforced for
+Browser plans, while OCR remains intentionally deferred. Renderer QA
+now retains failure artifacts, checks cue/audio duration tolerance, and supports
+configurable warning promotion.
+A shared core pacing policy is also used by agent authoring guidance,
+ExplainerDocument timing resolution, synthesized narration retiming, and QA
+speech-rate/highlight diagnostics.
+TTS resolution now performs a full scene-aware timeline reflow and `seqvio-qa`
+accepts `--audioManifest` so final QA evaluates the same resolved timing used
+by rendering.
+Reflow also preserves each authored/captured source duration and supplies a
+monotonic scene-local time map. ExplanationBeats resolve exact normalized
+phrases inside TTS chunks; providers without fine chunks use a lower-confidence
+whole-cue character position. Chunk-order/highlight pairing remains only a
+legacy fallback when semantic Beats are absent. React
+frame hooks, GSAP adapters, browser media seeking, and final pacing QA consume
+the same mapping. Stretch beyond the profile's 2x limit emits
+`scene_time_stretch_excessive`.
+`npm run smoke:release-pipeline` now exercises terminal and browser
+`CaptureManifest` paths through the capture dispatcher, IR/TSX compilation,
+deterministic local narration, scene reflow, capture-profile QA, MP4 rendering,
+and full FFmpeg decode. The browser case also validates the captured local
+video and mapped media seeking. It requires no network or TTS credentials and
+removes each repository-local temporary job directory after completion. CI and
+the npm release workflow run this combined gate; adapter-specific commands are
+available as `smoke:release-pipeline:terminal` and
+`smoke:release-pipeline:browser`. CI and release gates render at the default
+1280x720 resolution. For human review, run
+`node scripts/release-pipeline-smoke.mjs --outDir output/release-pipeline-preview`
+to retain the 720p MP4s and QA sidecars; the smoke gate also checks decoded
+video frame count, not only container validity. `--width` and `--height`
+remain available for explicit diagnostic variants.
+The release contract now records `explainer-v1` end to end and accepts a
+versioned `--qaConfig`; suppressions require an exact code/path and documented
+reason, never apply to errors, and remain auditable in `qa-report.json`.
+Terminal and Browser production jobs now run this capture profile after
+rendering and include `qa-report.json` in `artifacts.json`. QA errors return
+pipeline exit code 3 while retaining diagnostic artifacts. Explicitly silent
+jobs still run capture/visual/pacing checks without requiring an audio track;
+`--withAudio` jobs must contain valid synthesized narration.
 
 ### Ground-truth verification - DROPPED
 
@@ -538,7 +543,7 @@ Phase 2.1/2.2 -> 3.1 (infographic) -> 3.2 (attention) -> 3.3 (direction)
   pipelines and release smoke use the shared dispatcher, canonical artifact
   tests cover both adapters, and legacy `writeComposition` exports are removed.
 - **Scope.** Capture, joint ExplanationBeat authoring, post-TTS semantic timing,
-  release QA, and CLI/artifact contract `1.0` are implemented. Remaining:
+  release QA, and CLI/artifact contract `2.0` are implemented. Remaining:
   CI confirmation on Linux/macOS and lifecycle promotion. Windows host package
-  and CLI verification passes locally. Screenshot privacy remains explicitly
-  deferred.
+  and CLI verification passes locally. Deterministic privacy masking is
+  implemented; OCR remains explicitly deferred.

@@ -126,12 +126,12 @@ Capture adapters are available but pre-stable:
   start times when compiling Browser scenes and Beats.
 
 Their shared-dispatcher data path is implemented, legacy writers are removed,
-and release smoke is tested at `1280x720`. CLI contract `1.0` provides direct
+and release smoke is tested at `1280x720`. CLI contract `2.0` provides direct
 commands, JSON results, stable exit codes, monotonic progress, safe job ids, and
 portable `artifacts.json` paths. Windows package and real runtime verification
 passes locally; the configured Windows/Linux/macOS matrix must pass before
-lifecycle promotion. Screenshot privacy work is intentionally deferred and must
-not be assumed.
+lifecycle promotion. Browser capture supports deterministic selector/rectangle
+privacy masks before frame capture; OCR is not treated as a security boundary.
 
 ## Narration providers
 
@@ -167,21 +167,21 @@ Supported today:
 
 Preferred starting points:
 
-| File | Use case |
-| --- | --- |
-| `examples/compositions/seqvio-overview-en.tsx` | Narrated English product overview |
-| `examples/compositions/seqvio-overview-zh.tsx` | Narrated Chinese product overview |
-| `examples/compositions/seqvio-audio-demo.tsx` | Audio and caption metadata |
-| `examples/compositions/seqvio-intro.tsx` | Multi-scene framework intro |
-| `examples/compositions/technical-demo.tsx` | Short technical smoke (whiteboard + code + diagram) |
-| `examples/compositions/technical-explainer.tsx` | ~4.5 min technical reference composition (`lockToAudio`) |
-| `examples/ir/technical-demo.explainer.json` | Short ExplainerDocument IR |
-| `examples/ir/technical-explainer.explainer.json` | Full ExplainerDocument IR + chapters |
-| `examples/compositions/infographic-chart-validation.tsx` | Chart/series/axis/legend reference |
-| `examples/compositions/manim-end-to-end-validation.tsx` | Real graph/proof Manim playback with narration |
-| `examples/compositions/style-playbook-*.tsx` | Same semantic composition under three visual profiles |
-| `examples/manim/` | Equation, graph, symbolic proof, and geometric proof Python fixtures |
-| `packages/whiteboard/examples/` | Single-scene whiteboard samples |
+| File                                                     | Use case                                                             |
+| -------------------------------------------------------- | -------------------------------------------------------------------- |
+| `examples/compositions/seqvio-overview-en.tsx`           | Narrated English product overview                                    |
+| `examples/compositions/seqvio-overview-zh.tsx`           | Narrated Chinese product overview                                    |
+| `examples/compositions/seqvio-audio-demo.tsx`            | Audio and caption metadata                                           |
+| `examples/compositions/seqvio-intro.tsx`                 | Multi-scene framework intro                                          |
+| `examples/compositions/technical-demo.tsx`               | Short technical smoke (whiteboard + code + diagram)                  |
+| `examples/compositions/technical-explainer.tsx`          | ~4.5 min technical reference composition (`lockToAudio`)             |
+| `examples/ir/technical-demo.explainer.json`              | Short ExplainerDocument IR                                           |
+| `examples/ir/technical-explainer.explainer.json`         | Full ExplainerDocument IR + chapters                                 |
+| `examples/compositions/infographic-chart-validation.tsx` | Chart/series/axis/legend reference                                   |
+| `examples/compositions/manim-end-to-end-validation.tsx`  | Real graph/proof Manim playback with narration                       |
+| `examples/compositions/style-playbook-*.tsx`             | Same semantic composition under three visual profiles                |
+| `examples/manim/`                                        | Equation, graph, symbolic proof, and geometric proof Python fixtures |
+| `packages/whiteboard/examples/`                          | Single-scene whiteboard samples                                      |
 
 Narrated technical reference loop:
 
@@ -199,22 +199,22 @@ Local render intermediates belong in `output/` / `.media/` and are gitignored.
 
 ## Repository layout
 
-| Path | Purpose |
-| --- | --- |
-| `packages/whiteboard` | Whiteboard components |
-| `packages/scatterbrain` | Scatterbrain sticky-note / cork-board style components |
-| `packages/technical` | Technical explainer components |
-| `packages/core` | Scene, transition, and IR runtime |
-| `packages/renderer` | Bundler and CLIs |
-| `packages/product-demo` | Product walkthrough components |
-| `packages/manim-adapter` | Optional external Manim execution and media manifest adapter |
-| `packages/capture` | Shared capture manifest and evidence contracts |
-| `packages/terminal-narrator` | Pre-stable terminal capture adapter |
-| `packages/browser-recorder` | Pre-stable browser capture adapter |
-| `examples/compositions/` | Renderable compositions |
-| `examples/ir/` | Storyboard / ExplainerDocument JSON examples |
-| `skills/seqvio/` | Agent skill and references |
-| `docs/` | Human-facing docs |
+| Path                         | Purpose                                                      |
+| ---------------------------- | ------------------------------------------------------------ |
+| `packages/whiteboard`        | Whiteboard components                                        |
+| `packages/scatterbrain`      | Scatterbrain sticky-note / cork-board style components       |
+| `packages/technical`         | Technical explainer components                               |
+| `packages/core`              | Scene, transition, and IR runtime                            |
+| `packages/renderer`          | Bundler and CLIs                                             |
+| `packages/product-demo`      | Product walkthrough components                               |
+| `packages/manim-adapter`     | Optional external Manim execution and media manifest adapter |
+| `packages/capture`           | Shared capture manifest and evidence contracts               |
+| `packages/terminal-narrator` | Pre-stable terminal capture adapter                          |
+| `packages/browser-recorder`  | Pre-stable browser capture adapter                           |
+| `examples/compositions/`     | Renderable compositions                                      |
+| `examples/ir/`               | Storyboard / ExplainerDocument JSON examples                 |
+| `skills/seqvio/`             | Agent skill and references                                   |
+| `docs/`                      | Human-facing docs                                            |
 
 ## Not implemented yet
 

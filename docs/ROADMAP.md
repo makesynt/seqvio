@@ -1,7 +1,7 @@
 # Seqvio Roadmap
 
-> **Status:** directional. This file states *what we are betting on and in what
-> order*, not dated deliverables. Time-boxed work items live in GitHub issues and
+> **Status:** directional. This file states _what we are betting on and in what
+> order_, not dated deliverables. Time-boxed work items live in GitHub issues and
 > milestones. For positioning and scope, read [`VISION.md`](./VISION.md) - when
 > the two disagree, `VISION.md` wins.
 >
@@ -27,8 +27,8 @@ The reordering moves effort to the layer HyperFrames does not have and is
 architecturally poorly positioned to add: **system capture.** This is not a
 change to `VISION.md` - it is `VISION.md`'s own "depth before breadth" and
 coding-agent-centric positioning applied to a changed landscape. The framing
-stays: *give an agent a visual output channel for things that already happened
-in a real system.* What changes is which bet earns the first dollars.
+stays: _give an agent a visual output channel for things that already happened
+in a real system._ What changes is which bet earns the first dollars.
 
 ## The Threat We Are Planning Against
 
@@ -43,11 +43,11 @@ is needed at all. Two things that threat does not solve:
 2. **The closed layer is now a commodity.** A composition-to-MP4 pipeline with
    static linting and regression is no longer a differentiator - HyperFrames has
    it, with cloud rendering and a studio on top. Seqvio cannot win there and
-   should not try. The asymmetry that remains is the *opening* layer: turning
+   should not try. The asymmetry that remains is the _opening_ layer: turning
    real system activity into a composition.
 
-The strategic move is the one `VISION.md` already names: from *"help an agent
-generate a video"* to **"give an agent a visual output channel for things that
+The strategic move is the one `VISION.md` already names: from _"help an agent
+generate a video"_ to **"give an agent a visual output channel for things that
 already happened in a real system."** This revision just stops pretending the
 closed layer is part of the moat.
 
@@ -73,11 +73,11 @@ describes itself.
 
 Three feature tracks are implemented and tested but unreachable end to end:
 
-| Track | Status | Resolution |
-| --- | --- | --- |
-| `packages/renderer/src/shader-transitions/` | Five GLSL transitions compiled, but nothing in the repo ever set `window.__seqvio_shaderTransitions`, so the four reads in `runtime.tsx` never saw a value. `compositor.ts` drew an `Image` synchronously after assigning `src` without awaiting `decode()`, yielding empty textures. | **Deleted** (closed-layer render effect, not on the differentiation path). |
-| `packages/renderer/src/audio/ducking.ts` + `volume-envelope.ts` | `audio-mux.ts` honors `options.autoDuck`, but no CLI passes it. | **Marked `@internal`** (wire-up is medium cost; Phase 2 audio checks don't need it). |
-| `packages/core/src/clock.ts` (`TransportClock`) | Nothing imports it outside its own test. | **Marked `@internal`** (retained as Phase 5 preview seed). |
+| Track                                                           | Status                                                                                                                                                                                                                                                                                | Resolution                                                                           |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `packages/renderer/src/shader-transitions/`                     | Five GLSL transitions compiled, but nothing in the repo ever set `window.__seqvio_shaderTransitions`, so the four reads in `runtime.tsx` never saw a value. `compositor.ts` drew an `Image` synchronously after assigning `src` without awaiting `decode()`, yielding empty textures. | **Deleted** (closed-layer render effect, not on the differentiation path).           |
+| `packages/renderer/src/audio/ducking.ts` + `volume-envelope.ts` | `audio-mux.ts` honors `options.autoDuck`, but no CLI passes it.                                                                                                                                                                                                                       | **Marked `@internal`** (wire-up is medium cost; Phase 2 audio checks don't need it). |
+| `packages/core/src/clock.ts` (`TransportClock`)                 | Nothing imports it outside its own test.                                                                                                                                                                                                                                              | **Marked `@internal`** (retained as Phase 5 preview seed).                           |
 
 For each: wire it up, mark it explicitly internal/unreleased, or delete it.
 Shipping code that no user can reach is worse than a stale doc - it violates
@@ -130,8 +130,8 @@ have never been able to explain clearly:
 The differentiator inside capture is **temporal fidelity**, not a screenshot
 montage. `terminal-narrator` replays a real pty session from a cast (keystrokes
 and output in their real timing); `website-to-video`-style DOM snapshots are a
-different, weaker thing. Hold that line: capture is *what actually happened, in
-the order it happened*, not a reconstruction.
+different, weaker thing. Hold that line: capture is _what actually happened, in
+the order it happened_, not a reconstruction.
 
 This layer needs integrations, permissions, format adapters, redaction (the
 `redact.ts` in `terminal-narrator` already proves the repo has tasted this), and
@@ -147,8 +147,9 @@ floor, contrast (WCAG AA), and offscreen elements. Its baseline/capture profiles
 also validate narration/captions, speech rate, highlight hold time, audio health,
 capture media/state, semantic time maps, unresolved phrase anchors, and reversed
 ExplanationBeats. These checks are deterministic, use no LLM, and ship as a
-`--ci` mode that exits non-zero. Screenshot privacy masking remains explicitly
-deferred.
+`--ci` mode that exits non-zero. Browser capture plans also support deterministic
+selector/rectangle privacy masks before screenshots are taken; OCR is not a
+security boundary.
 
 Ground-truth verification (code vs source AST, diagram edges vs dependency graph,
 terminal vs real stdout) was considered and dropped: capture-produced IR is
@@ -261,13 +262,13 @@ Cross-host confirmation remains part of the lifecycle-promotion gate.
 
 ## Deprioritized
 
-Restating what is *not* getting first dollars, and why:
+Restating what is _not_ getting first dollars, and why:
 
 - **Multi-target IR output.** The hedge is real but opportunistic; it waits
   until capture has a reason to emit non-MP4 targets.
 - **Preview / Studio** (previous Phase 5). HyperFrames has a studio. Seqvio's
   review surface stays the minimum - scene list, diagnostics, partial re-render
-  - and explicitly *not* a nonlinear editor, per `VISION.md`.
+  - and explicitly _not_ a nonlinear editor, per `VISION.md`.
 - **Whiteboard polish and a fourth/fifth style.** `whiteboard` is the contract
   reference; it stays correct and maintained, not a feature target. No style
   race.

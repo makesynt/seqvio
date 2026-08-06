@@ -1,4 +1,3 @@
-
 # Seqvio
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
@@ -31,10 +30,10 @@ primary product demo.
 
 Seqvio has two separate pieces:
 
-| Piece | What it is | Install with |
-| --- | --- | --- |
-| **Agent skill** | Teaches Cursor and other agents how to author TSX compositions and run the render workflow | `npx skills add ...` |
-| **Renderer CLI** | Runs `seqvio-render`, `seqvio-audio`, and `seqvio-qa` | `npm install @seqvio/renderer` or a local repo build |
+| Piece            | What it is                                                                                 | Install with                                         |
+| ---------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
+| **Agent skill**  | Teaches Cursor and other agents how to author TSX compositions and run the render workflow | `npx skills add ...`                                 |
+| **Renderer CLI** | Runs `seqvio-render`, `seqvio-audio`, and `seqvio-qa`                                      | `npm install @seqvio/renderer` or a local repo build |
 
 Installing the skill alone is **not** enough to render videos. You also need the CLI (or a local checkout of this repository).
 
@@ -150,18 +149,18 @@ Open `http://127.0.0.1:4175`. The built-in sample runs without an AI provider; c
 
 Start from examples:
 
-| Example | Description |
-| --- | --- |
-| [`seqvio-overview-en.tsx`](./examples/compositions/seqvio-overview-en.tsx) | Narrated English product overview |
-| [`seqvio-overview-zh.tsx`](./examples/compositions/seqvio-overview-zh.tsx) | Narrated Chinese product overview |
-| [`seqvio-audio-demo.tsx`](./examples/compositions/seqvio-audio-demo.tsx) | Audio and caption metadata |
-| [`seqvio-style-manifest-demo.tsx`](./examples/compositions/seqvio-style-manifest-demo.tsx) | Whiteboard style preset manifest demo |
-| [`seqvio-product-demo-preview.tsx`](./examples/compositions/seqvio-product-demo-preview.tsx) | Product walkthrough components demo |
-| [`seqvio-scatterbrain.tsx`](./examples/compositions/seqvio-scatterbrain.tsx) | Sticky-note / workshop style demo |
-| [`loop-engineering-explainer.tsx`](./examples/compositions/loop-engineering-explainer.tsx) | Long-form narrated explainer composition |
-| [`technical-explainer.tsx`](./examples/compositions/technical-explainer.tsx) | Technical explainer with code walkthrough and architecture diagram |
-| [`technical-demo.tsx`](./examples/compositions/technical-demo.tsx) | Terminal demo and ANSI rendering showcase |
-| [`packages/whiteboard/examples/`](./packages/whiteboard/examples/) | Single-scene whiteboard samples |
+| Example                                                                                      | Description                                                        |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| [`seqvio-overview-en.tsx`](./examples/compositions/seqvio-overview-en.tsx)                   | Narrated English product overview                                  |
+| [`seqvio-overview-zh.tsx`](./examples/compositions/seqvio-overview-zh.tsx)                   | Narrated Chinese product overview                                  |
+| [`seqvio-audio-demo.tsx`](./examples/compositions/seqvio-audio-demo.tsx)                     | Audio and caption metadata                                         |
+| [`seqvio-style-manifest-demo.tsx`](./examples/compositions/seqvio-style-manifest-demo.tsx)   | Whiteboard style preset manifest demo                              |
+| [`seqvio-product-demo-preview.tsx`](./examples/compositions/seqvio-product-demo-preview.tsx) | Product walkthrough components demo                                |
+| [`seqvio-scatterbrain.tsx`](./examples/compositions/seqvio-scatterbrain.tsx)                 | Sticky-note / workshop style demo                                  |
+| [`loop-engineering-explainer.tsx`](./examples/compositions/loop-engineering-explainer.tsx)   | Long-form narrated explainer composition                           |
+| [`technical-explainer.tsx`](./examples/compositions/technical-explainer.tsx)                 | Technical explainer with code walkthrough and architecture diagram |
+| [`technical-demo.tsx`](./examples/compositions/technical-demo.tsx)                           | Terminal demo and ANSI rendering showcase                          |
+| [`packages/whiteboard/examples/`](./packages/whiteboard/examples/)                           | Single-scene whiteboard samples                                    |
 
 ## How It Works
 
@@ -192,13 +191,13 @@ See [`docs/COMPOSITION-AUTHORING.md`](./docs/COMPOSITION-AUTHORING.md) for the a
 
 The skill lives in [`skills/seqvio/SKILL.md`](./skills/seqvio/SKILL.md) with supporting references:
 
-| Reference | Purpose |
-| --- | --- |
-| [`authoring-patterns.md`](./skills/seqvio/references/authoring-patterns.md) | TSX composition patterns and timing rules |
-| [`audio-workflow.md`](./skills/seqvio/references/audio-workflow.md) | Extract, synthesize, and mux narration |
-| [`render-workflow.md`](./skills/seqvio/references/render-workflow.md) | Build, render, and smoke-test commands |
+| Reference                                                                         | Purpose                                                           |
+| --------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| [`authoring-patterns.md`](./skills/seqvio/references/authoring-patterns.md)       | TSX composition patterns and timing rules                         |
+| [`audio-workflow.md`](./skills/seqvio/references/audio-workflow.md)               | Extract, synthesize, and mux narration                            |
+| [`render-workflow.md`](./skills/seqvio/references/render-workflow.md)             | Build, render, and smoke-test commands                            |
 | [`production-techniques.md`](./skills/seqvio/references/production-techniques.md) | Voice-first timing, reference-style analysis, and visual QA rules |
-| [`planning-workflow.md`](./skills/seqvio/references/planning-workflow.md) | Editorial/visual planning and agent handoff |
+| [`planning-workflow.md`](./skills/seqvio/references/planning-workflow.md)         | Editorial/visual planning and agent handoff                       |
 
 Install the skill (see [Quick Start](#quick-start)):
 
@@ -295,17 +294,17 @@ Voiceover is muxed automatically from the manifest. **Do not** add `--burnCaptio
 
 ## Packages
 
-| Package | Description |
-| --- | --- |
-| [`@seqvio/whiteboard`](./packages/whiteboard) | Whiteboard drawing components and timing helpers |
-| [`@seqvio/core`](./packages/core) | Composition container, scenes, transitions, and timeline runtime |
-| [`@seqvio/scatterbrain`](./packages/scatterbrain) | Sticky-note / cork-board style components |
-| [`@seqvio/product-demo`](./packages/product-demo) | Browser frames, cursor paths, screenshot placeholders, callouts, and product walkthrough components |
-| [`@seqvio/technical`](./packages/technical) | Technical explainer runtime: code walkthroughs, architecture diagrams, terminal demos, annotations, and bundled fonts |
-| [`@seqvio/terminal-narrator`](./packages/terminal-narrator) | Pre-stable node-pty/xterm capture → IR/ExplanationBeat → optional narrated MP4 |
-| [`@seqvio/browser-recorder`](./packages/browser-recorder) | Pre-stable Chromium action capture with exact action timing → IR/ExplanationBeat |
-| [`@seqvio/capture`](./packages/capture) | Shared experimental capture session and artifact contracts |
-| [`@seqvio/renderer`](./packages/renderer) | TSX bundler plus `seqvio-render` and `seqvio-audio` CLIs |
+| Package                                                     | Description                                                                                                           |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| [`@seqvio/whiteboard`](./packages/whiteboard)               | Whiteboard drawing components and timing helpers                                                                      |
+| [`@seqvio/core`](./packages/core)                           | Composition container, scenes, transitions, and timeline runtime                                                      |
+| [`@seqvio/scatterbrain`](./packages/scatterbrain)           | Sticky-note / cork-board style components                                                                             |
+| [`@seqvio/product-demo`](./packages/product-demo)           | Browser frames, cursor paths, screenshot placeholders, callouts, and product walkthrough components                   |
+| [`@seqvio/technical`](./packages/technical)                 | Technical explainer runtime: code walkthroughs, architecture diagrams, terminal demos, annotations, and bundled fonts |
+| [`@seqvio/terminal-narrator`](./packages/terminal-narrator) | Pre-stable node-pty/xterm capture → IR/ExplanationBeat → optional narrated MP4                                        |
+| [`@seqvio/browser-recorder`](./packages/browser-recorder)   | Pre-stable Chromium action capture with exact action timing → IR/ExplanationBeat                                      |
+| [`@seqvio/capture`](./packages/capture)                     | Shared experimental capture session and artifact contracts                                                            |
+| [`@seqvio/renderer`](./packages/renderer)                   | TSX bundler plus `seqvio-render` and `seqvio-audio` CLIs                                                              |
 
 ## Documentation
 
@@ -331,8 +330,8 @@ Full phase ordering and the reasoning behind it: [`docs/ROADMAP.md`](./docs/ROAD
 
 1. **Singular capture/IR path** - shared dispatcher routing and legacy writer removal are complete; stabilize adapter CLIs around `CaptureSession -> ExplainerDocument`.
 2. **ExplanationBeat timing** - now implemented across all stable scenes, including capture evidence and post-TTS phrase alignment.
-3. **Release QA** - baseline/capture profiles now cover visual, pacing, audio, media, and semantic Beat failures; screenshot privacy masking remains deferred.
-4. **Packaging and promotion** - CLI/artifact contract `1.0` is implemented; verify supported npm/runtime hosts before lifecycle promotion. Screenshot privacy remains deferred.
+3. **Release QA** - baseline/capture profiles now cover visual, pacing, audio, media, semantic Beat failures, and deterministic browser privacy masks; OCR is not a security boundary.
+4. **Packaging and promotion** - CLI/artifact contract `2.0` is implemented; verify supported npm/runtime hosts before lifecycle promotion.
 
 Product positioning and scope:
 

@@ -24,3 +24,39 @@ test('validatePlan rejects executable URL protocols', () => {
     actions: [{ id: 'wait', type: 'wait', label: 'Wait' }],
   }), /http, https, or file/);
 });
+
+test('validatePlan normalizes deterministic privacy masks', () => {
+  const plan = validatePlan({
+    version: '1.0',
+    name: 'Private demo',
+    startUrl: 'https://example.com',
+    viewport: { width: 1280, height: 720 },
+    privacy: {
+      masks: [
+        { id: 'api-token', selector: '#token' },
+        { id: 'account', rect: { x: 20, y: 30, width: 200, height: 40 }, required: false },
+      ],
+    },
+    actions: [{ id: 'wait', type: 'wait', label: 'Wait' }],
+  });
+  assert.deepEqual(plan.privacy.masks, [
+    { id: 'api-token', selector: '#token', padding: 4, color: '#111827', required: true },
+    { id: 'account', rect: { x: 20, y: 30, width: 200, height: 40 }, padding: 4, color: '#111827', required: false },
+  ]);
+});
+
+test('validatePlan rejects ambiguous and unsafe privacy masks', () => {
+  const base = {
+    version: '1.0', name: 'Private demo', startUrl: 'https://example.com',
+    viewport: { width: 1280, height: 720 },
+    actions: [{ id: 'wait', type: 'wait', label: 'Wait' }],
+  };
+  assert.throws(() => validatePlan({
+    ...base,
+    privacy: { masks: [{ id: 'ambiguous', selector: '#token', rect: { x: 0, y: 0, width: 1, height: 1 } }] },
+  }), /exactly one/);
+  assert.throws(() => validatePlan({
+    ...base,
+    privacy: { masks: [{ id: 'bad color', selector: '#token', color: 'transparent' }] },
+  }), /safe 1-64 character identifier/);
+});

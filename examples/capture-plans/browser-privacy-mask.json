@@ -1,0 +1,49 @@
+{
+  "version": "1.0",
+  "name": "Browser privacy mask verification",
+  "startUrl": "http://127.0.0.1:4176/demo",
+  "viewport": { "width": 1280, "height": 720 },
+  "captureFps": 12,
+  "renderFps": 30,
+  "maxZoom": 2.0,
+  "privacy": {
+    "masks": [
+      {
+        "id": "project-secret",
+        "selector": "#project-name",
+        "padding": 5,
+        "color": "#111827"
+      }
+    ]
+  },
+  "actions": [
+    {
+      "id": "secret",
+      "type": "fill",
+      "label": "Enter protected project token",
+      "selector": "#project-name",
+      "value": "MASKED-DEMO-VALUE",
+      "afterMs": 700
+    },
+    {
+      "id": "template",
+      "type": "click",
+      "label": "Choose tutorial template",
+      "selector": "[data-template=\"tutorial\"]",
+      "afterMs": 500
+    },
+    {
+      "id": "create",
+      "type": "click",
+      "label": "Create protected recording task",
+      "selector": "#create-task",
+      "afterMs": 900
+    },
+    {
+      "id": "hold",
+      "type": "wait",
+      "label": "Verify masked result",
+      "durationMs": 900
+    }
+  ]
+}

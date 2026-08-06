@@ -28,10 +28,10 @@ Seqvio 为 coding agent 提供从真实系统捕获到讲解视频的完整路�
 
 Seqvio 分两部分，需要分别安装：
 
-| 组件 | 作用 | 安装方式 |
-| --- | --- | --- |
-| **Agent skill** | 教 Cursor 等 agent 如何编写 TSX composition 并走渲染流程 | `npx skills add ...` |
-| **Renderer CLI** | 执行 `seqvio-render`、`seqvio-audio`、`seqvio-qa` | `npm install @seqvio/renderer` 或本地仓库 build |
+| 组件             | 作用                                                     | 安装方式                                        |
+| ---------------- | -------------------------------------------------------- | ----------------------------------------------- |
+| **Agent skill**  | 教 Cursor 等 agent 如何编写 TSX composition 并走渲染流程 | `npx skills add ...`                            |
+| **Renderer CLI** | 执行 `seqvio-render`、`seqvio-audio`、`seqvio-qa`        | `npm install @seqvio/renderer` 或本地仓库 build |
 
 **只执行 `npx skills add` 不够**，还需要安装 CLI（或 clone 本仓库并 build）才能真正渲染视频。
 
@@ -145,18 +145,18 @@ node packages/browser-recorder/dist/cli.js record --plan plan.json --jobId demo 
 
 示例入口：
 
-| 示例 | 说明 |
-| --- | --- |
-| [`seqvio-overview-zh.tsx`](./examples/compositions/seqvio-overview-zh.tsx) | 中文旁白产品介绍 |
-| [`seqvio-overview-en.tsx`](./examples/compositions/seqvio-overview-en.tsx) | 英文旁白产品介绍 |
-| [`seqvio-audio-demo.tsx`](./examples/compositions/seqvio-audio-demo.tsx) | 音频和字幕元数据 |
-| [`seqvio-style-manifest-demo.tsx`](./examples/compositions/seqvio-style-manifest-demo.tsx) | 白板 style preset manifest 示例 |
-| [`seqvio-product-demo-preview.tsx`](./examples/compositions/seqvio-product-demo-preview.tsx) | 产品 walkthrough 组件示例 |
-| [`seqvio-scatterbrain.tsx`](./examples/compositions/seqvio-scatterbrain.tsx) | 便签 / workshop 风格示例 |
-| [`loop-engineering-explainer.tsx`](./examples/compositions/loop-engineering-explainer.tsx) | 长篇旁白讲解 composition |
-| [`technical-explainer.tsx`](./examples/compositions/technical-explainer.tsx) | 技术讲解：代码走读与架构图 |
-| [`technical-demo.tsx`](./examples/compositions/technical-demo.tsx) | 终端演示与 ANSI 渲染展示 |
-| [`packages/whiteboard/examples/`](./packages/whiteboard/examples/) | 单场景白板示例 |
+| 示例                                                                                         | 说明                            |
+| -------------------------------------------------------------------------------------------- | ------------------------------- |
+| [`seqvio-overview-zh.tsx`](./examples/compositions/seqvio-overview-zh.tsx)                   | 中文旁白产品介绍                |
+| [`seqvio-overview-en.tsx`](./examples/compositions/seqvio-overview-en.tsx)                   | 英文旁白产品介绍                |
+| [`seqvio-audio-demo.tsx`](./examples/compositions/seqvio-audio-demo.tsx)                     | 音频和字幕元数据                |
+| [`seqvio-style-manifest-demo.tsx`](./examples/compositions/seqvio-style-manifest-demo.tsx)   | 白板 style preset manifest 示例 |
+| [`seqvio-product-demo-preview.tsx`](./examples/compositions/seqvio-product-demo-preview.tsx) | 产品 walkthrough 组件示例       |
+| [`seqvio-scatterbrain.tsx`](./examples/compositions/seqvio-scatterbrain.tsx)                 | 便签 / workshop 风格示例        |
+| [`loop-engineering-explainer.tsx`](./examples/compositions/loop-engineering-explainer.tsx)   | 长篇旁白讲解 composition        |
+| [`technical-explainer.tsx`](./examples/compositions/technical-explainer.tsx)                 | 技术讲解：代码走读与架构图      |
+| [`technical-demo.tsx`](./examples/compositions/technical-demo.tsx)                           | 终端演示与 ANSI 渲染展示        |
+| [`packages/whiteboard/examples/`](./packages/whiteboard/examples/)                           | 单场景白板示例                  |
 
 ## 工作原理
 
@@ -187,13 +187,13 @@ node packages/browser-recorder/dist/cli.js record --plan plan.json --jobId demo 
 
 Skill 主文件：[`skills/seqvio/SKILL.md`](./skills/seqvio/SKILL.md)，参考文档：
 
-| 参考 | 用途 |
-| --- | --- |
-| [`authoring-patterns.md`](./skills/seqvio/references/authoring-patterns.md) | TSX composition 模式与 timing 规则 |
-| [`audio-workflow.md`](./skills/seqvio/references/audio-workflow.md) | 提取、合成、混流旁白 |
-| [`render-workflow.md`](./skills/seqvio/references/render-workflow.md) | build、render、smoke test 命令 |
+| 参考                                                                              | 用途                                           |
+| --------------------------------------------------------------------------------- | ---------------------------------------------- |
+| [`authoring-patterns.md`](./skills/seqvio/references/authoring-patterns.md)       | TSX composition 模式与 timing 规则             |
+| [`audio-workflow.md`](./skills/seqvio/references/audio-workflow.md)               | 提取、合成、混流旁白                           |
+| [`render-workflow.md`](./skills/seqvio/references/render-workflow.md)             | build、render、smoke test 命令                 |
 | [`production-techniques.md`](./skills/seqvio/references/production-techniques.md) | voice-first timing、参考风格分析和视觉 QA 规则 |
-| [`planning-workflow.md`](./skills/seqvio/references/planning-workflow.md) | Editorial/Visual 规划和 agent handoff |
+| [`planning-workflow.md`](./skills/seqvio/references/planning-workflow.md)         | Editorial/Visual 规划和 agent handoff          |
 
 安装 skill（见 [快速开始](#快速开始)）：
 
@@ -291,17 +291,17 @@ node packages/renderer/dist/cli.js \
 
 ## Packages
 
-| Package | 说明 |
-| --- | --- |
-| [`@seqvio/whiteboard`](./packages/whiteboard) | 白板绘制组件和 timing helpers |
-| [`@seqvio/core`](./packages/core) | Composition 容器、场景、转场和 timeline runtime |
-| [`@seqvio/scatterbrain`](./packages/scatterbrain) | 便签 / cork-board 风格组件 |
-| [`@seqvio/product-demo`](./packages/product-demo) | 浏览器框、光标路径、截图占位、callout 和产品 walkthrough 组件 |
-| [`@seqvio/technical`](./packages/technical) | 技术讲解 runtime：代码走读、架构图、终端演示、标注和内置字体 |
-| [`@seqvio/terminal-narrator`](./packages/terminal-narrator) | Pre-stable node-pty/xterm 捕获 → IR/ExplanationBeat → 可选旁白 MP4 |
-| [`@seqvio/browser-recorder`](./packages/browser-recorder) | Pre-stable Chromium action 捕获，保留真实动作时间 → IR/ExplanationBeat |
-| [`@seqvio/capture`](./packages/capture) | 实验性的共享 capture session 和 artifact 契约 |
-| [`@seqvio/renderer`](./packages/renderer) | TSX bundler，以及 `seqvio-render` / `seqvio-audio` CLI |
+| Package                                                     | 说明                                                                   |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------- |
+| [`@seqvio/whiteboard`](./packages/whiteboard)               | 白板绘制组件和 timing helpers                                          |
+| [`@seqvio/core`](./packages/core)                           | Composition 容器、场景、转场和 timeline runtime                        |
+| [`@seqvio/scatterbrain`](./packages/scatterbrain)           | 便签 / cork-board 风格组件                                             |
+| [`@seqvio/product-demo`](./packages/product-demo)           | 浏览器框、光标路径、截图占位、callout 和产品 walkthrough 组件          |
+| [`@seqvio/technical`](./packages/technical)                 | 技术讲解 runtime：代码走读、架构图、终端演示、标注和内置字体           |
+| [`@seqvio/terminal-narrator`](./packages/terminal-narrator) | Pre-stable node-pty/xterm 捕获 → IR/ExplanationBeat → 可选旁白 MP4     |
+| [`@seqvio/browser-recorder`](./packages/browser-recorder)   | Pre-stable Chromium action 捕获，保留真实动作时间 → IR/ExplanationBeat |
+| [`@seqvio/capture`](./packages/capture)                     | 实验性的共享 capture session 和 artifact 契约                          |
+| [`@seqvio/renderer`](./packages/renderer)                   | TSX bundler，以及 `seqvio-render` / `seqvio-audio` CLI                 |
 
 ## 文档
 
@@ -327,8 +327,8 @@ node packages/renderer/dist/cli.js \
 
 1. **统一捕获/IR 路径** -- shared dispatcher 路由与 legacy writer 移除已经完成，下一步围绕 `CaptureSession -> ExplainerDocument` 稳定适配器 CLI。
 2. **ExplanationBeat 时间模型** -- 已覆盖所有稳定场景，包括捕获证据和 TTS 后短语对齐。
-3. **发布 QA** -- baseline/capture profile 已覆盖视觉、节奏、音频、媒体和语义 Beat 故障；截图隐私 masking 暂缓。
-4. **打包与晋级** -- CLI/产物 contract `1.0` 已完成；验证支持的 npm/runtime 主机后再晋级生命周期。截图隐私仍暂缓。
+3. **发布 QA** -- baseline/capture profile 已覆盖视觉、节奏、音频、媒体、语义 Beat 故障和确定性的浏览器隐私遮罩；OCR 不作为安全边界。
+4. **打包与晋级** -- CLI/产物 contract `2.0` 已完成；验证支持的 npm/runtime 主机后再晋级生命周期。
 
 产品定位与范围：
 
