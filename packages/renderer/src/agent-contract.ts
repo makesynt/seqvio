@@ -63,12 +63,14 @@ The plan must contain these headings:
 - Explanation Strategy
 - Content Decisions (each item: stable id, include/omit, role, reason, prerequisites, time estimate)
 - Explanation Structure (each section: stable id, purpose, concept ids, audience outcome, target seconds)
+- Hook (the opening narration promise or tension, not a title-card sentence)
 
 Rules:
 - Make omissions explicit; do not merely summarize everything in the source.
 - Every included essential concept must appear in the explanation structure.
 - Keep the section budget within the intended video length.
 - One section should perform one cognitive job.
+- Declare whether evidence is authored, terminal capture, browser capture, or recorded media.
 - Select zero to two explanation patterns only when they improve the content.
 - If selected, use exactly one primary pattern, optionally one supporting pattern,
   and state the reason and any adaptations. Patterns are guidance, not templates:
@@ -114,9 +116,12 @@ The brief must contain these headings:
 - Avoid
 
 For every editorial section, choose one supported visual form: whiteboard, code,
-diagram, terminal, or browser. Terminal/browser may only be selected when real
+diagram, infographic, terminal, browser, or manim. Terminal/browser may only be selected when real
 capture material exists; otherwise choose a truthful authored fallback.
-Specify hierarchy, composition, emphasis, and motion behavior rather than vague
+Declare visualRole, one focalTarget, evidenceSource, a maximum concurrent
+onScreenTextBudget in words, and transitionIntent. Narration carries full
+sentences; screen text carries labels, keywords, commands, filenames, and short
+conclusions. Specify hierarchy, composition, emphasis, and motion behavior rather than vague
 mood words. Return Markdown only, beginning with "# Visual Design Brief:".
 
 ${language}

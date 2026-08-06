@@ -12,6 +12,9 @@ This project follows a simple keep-a-changelog style:
 
 ### Added
 
+- Added complete documentation for the experimental Python Manim adapter,
+  including cross-platform setup, deterministic external rendering, manifests,
+  cache behavior, `ManimClip`, ExplanationBeat markers, and troubleshooting.
 - Added the CompositionDocument `ExplanationBeat` contract for jointly authored
   narration cues, exact phrase anchors, visual actions, and capture evidence.
 - Added post-TTS phrase resolution and semantic scene-local time maps. Fine TTS

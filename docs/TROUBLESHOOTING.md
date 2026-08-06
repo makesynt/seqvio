@@ -218,6 +218,24 @@ Check that you are rendering with:
 
 Also verify that the manifest `tracks[].src` values still point to existing MP3 files.
 
+## Python Manim Integration
+
+### `seqvio-doctor` cannot find Manim
+
+The adapter uses the Python interpreter selected for the current process. A
+repository checkout first checks `.venv-manim`; otherwise it falls back to
+`python`. Set `SEQVIO_MANIM_PYTHON` to the full interpreter path when Manim is
+installed in another environment. Confirm that the same executable can run
+`-m manim --version`.
+
+### The adapter rendered, but reports unreadable or incomplete media
+
+Make `--expectedOutput` match Manim's actual MP4 path and confirm `ffprobe` can
+read it. The adapter requires dimensions, frame rate, duration, and pixel-format
+metadata before accepting a render. See
+[`MANIM-INTEGRATION.md`](./MANIM-INTEGRATION.md) for commands, cache behavior,
+diagnostic codes, and the `ManimClip` playback contract.
+
 ## Docs and Repo Hygiene
 
 ### Which doc is the source of truth?

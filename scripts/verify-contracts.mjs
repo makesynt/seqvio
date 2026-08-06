@@ -74,8 +74,8 @@ for (const name of policy.independentPackages) {
 
 for (const name of policy.adapterPackages) {
   const entry = packages.get(name);
-  if (entry?.manifest.seqvio?.adapterLifecycle !== 'pre-stable') {
-    fail(`${entry?.file ?? name}: capture adapters must remain pre-stable until host promotion`);
+  if (entry?.manifest.seqvio?.adapterLifecycle !== 'stable') {
+    fail(`${entry?.file ?? name}: capture adapters must declare the promoted stable lifecycle`);
   }
 }
 
@@ -116,8 +116,10 @@ if (capabilities) {
   for (const scene of actual.scenes) {
     const required = packages.get(scene.requiredPackage)?.manifest;
     if (!required) fail(`Scene ${scene.type} requires missing package ${scene.requiredPackage}`);
-    else if (required.seqvio?.lifecycle !== 'public') {
-      fail(`Scene ${scene.type} requires non-public package ${scene.requiredPackage}`);
+    else if (scene.lifecycle === 'public' && required.seqvio?.lifecycle !== 'public') {
+      fail(`Public scene ${scene.type} requires non-public package ${scene.requiredPackage}`);
+    } else if (scene.lifecycle === 'experimental' && !['public', 'experimental'].includes(required.seqvio?.lifecycle)) {
+      fail(`Experimental scene ${scene.type} requires unavailable package ${scene.requiredPackage}`);
     }
   }
 }

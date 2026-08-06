@@ -14,7 +14,14 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
 import { compileBrowserCapture } from '@seqvio/browser-recorder';
 import { compileCaptureManifestToExplainerDocument } from '@seqvio/capture';
-import { compileExplainerDocumentToTsx, resolveScenePacing } from '@seqvio/core';
+import {
+  compileExplainerDocumentToTsx,
+  computeDocumentTimeline,
+  deriveDirectionPlan,
+  resolveScenePacing,
+  validateAttentionSequence,
+  validateDirectionPlan,
+} from '@seqvio/core';
 import { compileTerminalCapture } from '@seqvio/terminal-narrator';
 import puppeteer from 'puppeteer';
 import {
@@ -41,10 +48,10 @@ const height = numericArgument('height', quick ? 360 : 720);
 function requestedKinds() {
   const kindIndex = process.argv.indexOf('--kind');
   const kind = kindIndex >= 0 ? process.argv[kindIndex + 1] : 'all';
-  if (!['all', 'terminal', 'browser'].includes(kind)) {
-    throw new Error('--kind must be all, terminal, or browser.');
+  if (!['all', 'terminal', 'browser', 'semantic'].includes(kind)) {
+    throw new Error('--kind must be all, terminal, browser, or semantic.');
   }
-  return kind === 'all' ? ['terminal', 'browser'] : [kind];
+  return kind === 'all' ? ['terminal', 'browser', 'semantic'] : [kind];
 }
 
 function artifactOutputDir() {
@@ -372,11 +379,90 @@ async function runPipeline(kind, smokeTempRoot, artifactDir) {
   }
 }
 
+function semanticHealth(document) {
+  const compiled = compileExplainerDocumentToTsx(document);
+  const pacedAttention = document.scenes.flatMap((scene) => {
+    const paced = resolveScenePacing(scene, document.fps ?? fps).scene;
+    return paced.type === 'infographic' ? (paced.attention ?? []) : [];
+  });
+  const markerScenes = document.scenes.filter((scene) => scene.type === 'manim');
+  const markers = markerScenes.flatMap((scene) => (scene.markers ?? []).map((marker) => ({ marker, duration: scene.duration ?? 0 })));
+  const validMarkers = markers.filter(({ marker, duration }) => marker.frame >= 0 && marker.frame < duration).length;
+  const focalTargets = new Set(document.scenes.flatMap((scene) => (scene.explanation?.beats ?? []).flatMap((beat) => beat.visuals.map((visual) => visual.targetId))));
+  const addressableTargets = new Set(document.scenes.flatMap((scene) => [
+    ...(scene.type === 'infographic' ? [...(scene.metrics ?? []), ...(scene.comparisons ?? []), ...(scene.process ?? []), ...(scene.timeline ?? []), ...(scene.charts ?? [])].map((item) => item.id) : []),
+    ...(scene.type === 'manim' ? (scene.markers ?? []).map((marker) => marker.id) : []),
+  ]));
+  const textCharacters = JSON.stringify(document).match(/[A-Za-z0-9]/g)?.length ?? 0;
+  const megapixels = ((document.width ?? width) * (document.height ?? height)) / 1_000_000;
+  const direction = deriveDirectionPlan(document);
+  return {
+    attentionDiagnosticCount: validateAttentionSequence(pacedAttention).length,
+    directionDiagnosticCount: validateDirectionPlan(direction, document).filter((issue) => issue.severity === 'error').length,
+    markerConfidence: markers.length ? Number((validMarkers / markers.length).toFixed(4)) : 1,
+    textDensityPerMegapixel: Number((textCharacters / Math.max(0.01, megapixels)).toFixed(2)),
+    focalCoverage: addressableTargets.size ? Number((focalTargets.size / addressableTargets.size).toFixed(4)) : 1,
+    directionSegmentCount: compiled.directionPlan.segments.length,
+  };
+}
+
+async function runSemanticPipeline(smokeTempRoot, artifactDir) {
+  const workDir = await mkdtemp(path.join(smokeTempRoot, 'semantic-release-pipeline-'));
+  try {
+    const mediaPath = path.join(workDir, 'manim-fixture.mp4');
+    const manifestPath = path.join(workDir, 'manim-fixture.manifest.json');
+    const componentPath = path.join(workDir, 'composition.tsx');
+    const qaDir = path.join(workDir, 'qa');
+    const outputPath = path.join(workDir, 'final.mp4');
+    await runFfmpeg(['-y', '-f', 'lavfi', '-i', `testsrc2=size=${width}x${height}:rate=${fps}:duration=2`, '-an', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', mediaPath]);
+    const manifest = { format: 'seqvio-manim-render', version: '1.0', status: 'rendered', outputPath: mediaPath, width, height, fps, durationSeconds: 2, alphaMode: 'opaque' };
+    await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+    const source = JSON.parse(await readFile(path.join(root, 'examples', 'ir', 'integrated-semantic-validation.explainer.json'), 'utf8'));
+    const document = {
+      ...source, width, height, fps, lockToAudio: false, transitionDuration: quick ? 2 : 6,
+      scenes: source.scenes.map((scene) => scene.type === 'manim'
+        ? { ...scene, sourceVideo: pathToFileURL(mediaPath).href, sourceManifest: manifestPath, mediaWidth: width, mediaHeight: height, mediaFps: fps, duration: quick ? 20 : 60, markers: [{ id: 'equation-result', frame: quick ? 10 : 30 }] }
+        : { ...scene, duration: quick ? 24 : scene.duration }),
+    };
+    const compiled = compileExplainerDocumentToTsx(document);
+    await writeFile(componentPath, compiled.code, 'utf8');
+    const timeline = computeDocumentTimeline(document);
+    await runNode(path.join(root, 'packages/renderer/dist/qa-cli.js'), [
+      '--component', componentPath, '--outDir', qaDir, '--width', String(width), '--height', String(height), '--fps', String(fps),
+      '--frames', `0,${Math.max(0, timeline.totalFrames - 1)}`, '--allowSilentNarration', '--ci',
+    ]);
+    await runNode(path.join(root, 'packages/renderer/dist/cli.js'), [
+      '--component', componentPath, '--output', outputPath, '--width', String(width), '--height', String(height), '--fps', String(fps),
+      '--quality', 'low', '--pixelRatio', '1', '--workers', '1',
+    ]);
+    await assertDecodedFrameCount(outputPath, timeline.totalFrames);
+    const metrics = semanticHealth(document);
+    const metricsPath = path.join(workDir, 'semantic.metrics.json');
+    await writeFile(metricsPath, `${JSON.stringify(metrics, null, 2)}\n`);
+    if (metrics.attentionDiagnosticCount || metrics.directionDiagnosticCount || metrics.markerConfidence < 1) throw new Error(`Semantic health failed: ${JSON.stringify(metrics)}`);
+    console.log(`semantic release pipeline smoke passed (${timeline.totalFrames} frames, ${JSON.stringify(metrics)})`);
+    if (artifactDir) {
+      await mkdir(artifactDir, { recursive: true });
+      await Promise.all([
+        copyFile(outputPath, path.join(artifactDir, 'semantic.mp4')),
+        copyFile(path.join(qaDir, 'qa-report.json'), path.join(artifactDir, 'semantic.qa-report.json')),
+        copyFile(metricsPath, path.join(artifactDir, 'semantic.metrics.json')),
+        copyFile(manifestPath, path.join(artifactDir, 'semantic.manim-manifest.json')),
+      ]);
+    }
+  } finally {
+    await rm(workDir, { recursive: true, force: true });
+  }
+}
+
 async function main() {
   const smokeTempRoot = path.join(root, 'temp');
   await mkdir(smokeTempRoot, { recursive: true });
   const artifactDir = artifactOutputDir();
-  for (const kind of requestedKinds()) await runPipeline(kind, smokeTempRoot, artifactDir);
+  for (const kind of requestedKinds()) {
+    if (kind === 'semantic') await runSemanticPipeline(smokeTempRoot, artifactDir);
+    else await runPipeline(kind, smokeTempRoot, artifactDir);
+  }
 }
 
 main().catch((error) => {

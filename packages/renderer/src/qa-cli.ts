@@ -24,6 +24,8 @@ import { buildManifestFromMeta, loadAudioManifest, validateAudioManifest } from 
 import { inspectAudioFile } from './audio-health';
 import {
   classifyQaRuntimeError,
+  diagnoseProductFrame,
+  diagnoseManimFrame,
   diagnosePacing,
   expectedNarrationTrackDurationMs,
   promoteQaWarnings,
@@ -339,6 +341,12 @@ async function inspectDom(page: import('puppeteer').Page): Promise<{
   textOverflowCount: number;
   smallFontCount: number;
   lowContrastCount: number;
+  attentionMissingTargets: string[];
+  attentionOffscreenLabels: string[];
+  attentionLabelCollisions: string[];
+  attentionTargetOcclusions: string[];
+  productFrame?: import('./qa-diagnostics').ProductFrameObservation;
+  manimFrames: import('./qa-diagnostics').ManimFrameObservation[];
 }> {
   return page.evaluate(() => {
     const elements = Array.from(document.querySelectorAll('#root *'));
@@ -350,6 +358,10 @@ async function inspectDom(page: import('puppeteer').Page): Promise<{
     let textOverflowCount = 0;
     let smallFontCount = 0;
     let lowContrastCount = 0;
+    const attentionMissingTargets: string[] = [];
+    const attentionOffscreenLabels: string[] = [];
+    const attentionLabelCollisions: string[] = [];
+    const attentionTargetOcclusions: string[] = [];
     const MIN_FONT_PX = 12;
     const MIN_CONTRAST = 4.5;
 
@@ -358,6 +370,7 @@ async function inspectDom(page: import('puppeteer').Page): Promise<{
       if (!m) return null;
       const parts = m[1].split(',').map((p) => parseFloat(p.trim()));
       if (parts.length < 3 || parts.some((n) => !Number.isFinite(n))) return null;
+      if (parts.length >= 4 && parts[3] < 0.95) return null;
       return [parts[0], parts[1], parts[2]];
     };
     const luminance = (rgb: [number, number, number]): number => {
@@ -412,6 +425,97 @@ async function inspectDom(page: import('puppeteer').Page): Promise<{
         }
       }
     }
+    const wrappers = Array.from(document.querySelectorAll<HTMLElement>('[data-seqvio-annotation-id]'));
+    const labels: Array<{ id: string; rect: DOMRect }> = [];
+    for (const wrapper of wrappers) {
+      const id = wrapper.dataset.seqvioAnnotationId ?? 'unknown';
+      if (wrapper.dataset.seqvioAnnotationTargetResolved === 'false') {
+        attentionMissingTargets.push(id);
+        continue;
+      }
+      const candidates = Array.from(wrapper.querySelectorAll<HTMLElement | SVGTextElement>('div,text'))
+        .filter((element) => (element.textContent ?? '').trim().length > 0);
+      for (const label of candidates) {
+        const rect = label.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) continue;
+        labels.push({ id, rect });
+        if (rect.left < 0 || rect.top < 0 || rect.right > viewport.width || rect.bottom > viewport.height) {
+          attentionOffscreenLabels.push(id);
+        }
+      }
+    }
+    for (let leftIndex = 0; leftIndex < labels.length; leftIndex++) {
+      for (let rightIndex = leftIndex + 1; rightIndex < labels.length; rightIndex++) {
+        const left = labels[leftIndex];
+        const right = labels[rightIndex];
+        if (left.id !== right.id && left.rect.left < right.rect.right && left.rect.right > right.rect.left && left.rect.top < right.rect.bottom && left.rect.bottom > right.rect.top) {
+          attentionLabelCollisions.push(`${left.id}:${right.id}`);
+        }
+      }
+    }
+    const targets = Array.from(document.querySelectorAll<HTMLElement>('[data-annotation-target]'));
+    for (const label of labels) {
+      const ownTarget = wrappers.find((wrapper) => wrapper.dataset.seqvioAnnotationId === label.id)?.dataset.seqvioAnnotationTargetId;
+      for (const target of targets) {
+        const targetId = target.dataset.annotationTarget;
+        if (!targetId || targetId === ownTarget) continue;
+        const rect = target.getBoundingClientRect();
+        if (label.rect.left < rect.right && label.rect.right > rect.left && label.rect.top < rect.bottom && label.rect.bottom > rect.top) {
+          attentionTargetOcclusions.push(`${label.id}:${targetId}`);
+        }
+      }
+    }
+    const productRoot = document.querySelector<HTMLElement>('[data-seqvio-product-explainer]');
+    const productFrame = productRoot ? (() => {
+      const visible = (element: Element): element is HTMLElement => {
+        const rect = element.getBoundingClientRect();
+        const style = window.getComputedStyle(element);
+        return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none' && Number(style.opacity) > 0;
+      };
+      const primary = Array.from(productRoot.querySelectorAll<HTMLElement>('h1,h2,[data-seqvio-text-role="primary"]')).filter(visible);
+      const evidenceSelector = '[data-seqvio-evidence-source="terminal-capture"],[data-seqvio-evidence-source="browser-capture"],[data-seqvio-evidence-source="recorded-media"]';
+      const fullSentenceOverlayIds = primary.filter((element) => {
+        if (element.closest(evidenceSelector)) return false;
+        const text = (element.textContent ?? '').trim();
+        const wordCount = text.split(/\s+/).filter(Boolean).length;
+        return wordCount >= 12 && /[.!?。！？]/.test(text);
+      }).map((element, index) => element.dataset.seqvioTextId ?? element.id ?? `primary-${index + 1}`);
+      const templateCounts = new Map<string, number>();
+      for (const element of Array.from(productRoot.querySelectorAll<HTMLElement>('[data-seqvio-template]')).filter(visible)) {
+        const id = element.dataset.seqvioTemplate;
+        if (id) templateCounts.set(id, (templateCounts.get(id) ?? 0) + 1);
+      }
+      const graphics = Array.from(productRoot.querySelectorAll<HTMLElement>('[data-seqvio-visual-role="graphic"]')).filter(visible);
+      const titleGraphicOverlaps: string[] = [];
+      primary.forEach((title, titleIndex) => graphics.forEach((graphic, graphicIndex) => {
+        const a = title.getBoundingClientRect();
+        const b = graphic.getBoundingClientRect();
+        if (a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top) {
+          titleGraphicOverlaps.push(`${title.dataset.seqvioTextId ?? title.id ?? `title-${titleIndex + 1}`}:${graphic.id || `graphic-${graphicIndex + 1}`}`);
+        }
+      }));
+      const declaredBudget = Number(productRoot.dataset.seqvioOnScreenTextBudget);
+      return {
+        fullSentenceOverlayIds,
+        primaryTextCount: primary.length,
+        primaryTextBudget: Number.isFinite(declaredBudget) && declaredBudget > 0 ? declaredBudget : 1,
+        repeatedTemplateIds: [...templateCounts.entries()].filter(([, count]) => count > 1).map(([id]) => id),
+        titleGraphicOverlaps: [...new Set(titleGraphicOverlaps)],
+        hasFocalTarget: Array.from(productRoot.querySelectorAll<HTMLElement>('[data-seqvio-focal-target]')).some(visible),
+      };
+    })() : undefined;
+    const manimFrames = Array.from(document.querySelectorAll<HTMLElement>('[data-seqvio-manim-clip]')).map((clip) => {
+      const video = clip.querySelector('video');
+      return {
+        id: clip.dataset.seqvioManimClip ?? 'unknown',
+        frame: Number(clip.dataset.seqvioManimFrame ?? 0),
+        fps: Number(video?.dataset.seqvioMediaFps ?? 30),
+        currentTime: video?.currentTime ?? 0,
+        duration: video && Number.isFinite(video.duration) ? video.duration : undefined,
+        marker: clip.dataset.seqvioManimMarker || undefined,
+        markerCount: Number(clip.dataset.seqvioManimMarkerCount ?? 0),
+      };
+    });
     return {
       elementCount: elements.length,
       bodyTextLength: document.body.innerText.trim().length,
@@ -420,6 +524,12 @@ async function inspectDom(page: import('puppeteer').Page): Promise<{
       textOverflowCount,
       smallFontCount,
       lowContrastCount,
+      attentionMissingTargets: [...new Set(attentionMissingTargets)],
+      attentionOffscreenLabels: [...new Set(attentionOffscreenLabels)],
+      attentionLabelCollisions: [...new Set(attentionLabelCollisions)],
+      attentionTargetOcclusions: [...new Set(attentionTargetOcclusions)],
+      productFrame,
+      manimFrames,
     };
   });
 }
@@ -585,6 +695,12 @@ async function main(): Promise<void> {
         repair: 'Increase foreground/background contrast to at least 4.5:1.',
       });
     }
+    for (const id of dom.attentionMissingTargets) issues.push({ severity: 'error', code: 'attention_target_missing', path: `attention.${id}`, frame: sourceFrame, message: `Attention item "${id}" has no measurable target at frame ${sourceFrame}.`, repair: 'Use a stable target id that exists and is visible during the attention window.' });
+    for (const id of dom.attentionOffscreenLabels) issues.push({ severity: 'warning', code: 'attention_label_offscreen', path: `attention.${id}`, frame: sourceFrame, message: `Attention label "${id}" extends outside the viewport.`, repair: 'Use safe-area label placement or move the target away from the edge.' });
+    for (const pair of dom.attentionLabelCollisions) issues.push({ severity: 'warning', code: 'attention_label_collision', path: `attention.${pair}`, frame: sourceFrame, message: `Attention labels "${pair}" overlap.`, repair: 'Change label placement, shorten copy, or serialize the attention items.' });
+    for (const pair of dom.attentionTargetOcclusions) issues.push({ severity: 'warning', code: 'attention_target_occluded', path: `attention.${pair}`, frame: sourceFrame, message: `Attention label "${pair.split(':')[0]}" occludes target "${pair.split(':')[1]}".`, repair: 'Move the label to another safe candidate or reroute its leader.' });
+    issues.push(...diagnoseProductFrame(dom.productFrame, sourceFrame));
+    for (const manimFrame of dom.manimFrames) issues.push(...diagnoseManimFrame(manimFrame, sourceFrame));
 
     // narration/visual agreement: the current cue's keywords should overlap
     // with the visible text. Catches the common AI-video failure where the
@@ -595,10 +711,13 @@ async function main(): Promise<void> {
       (c) => frameTimeMs >= (c.startMs ?? 0) && frameTimeMs < (c.endMs ?? Infinity)
     );
     if (currentCue && dom.bodyText) {
-      const cueWords = currentCue.text
+      const latinWords = currentCue.text
         .toLowerCase()
         .split(/\s+/)
-        .filter((w) => w.length > 3 && /[a-z一-龥]/.test(w));
+        .filter((word) => word.length > 3 && /[a-z]/.test(word));
+      const cjkChunks = currentCue.text.match(/[一-龥]{2,}/g) ?? [];
+      const cjkBigrams = cjkChunks.flatMap((chunk) => Array.from({ length: Math.max(0, chunk.length - 1) }, (_, index) => chunk.slice(index, index + 2)));
+      const cueWords = [...latinWords, ...cjkBigrams];
       const bodyLower = dom.bodyText.toLowerCase();
       const matched = cueWords.filter((w) => bodyLower.includes(w));
       if (cueWords.length > 0 && matched.length === 0) {

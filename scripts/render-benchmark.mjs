@@ -10,7 +10,14 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
 import puppeteer from 'puppeteer';
 
-import { compileExplainerDocumentToTsx, computeDocumentTimeline } from '../packages/core/dist/index.js';
+import {
+  compileExplainerDocumentToTsx,
+  computeDocumentTimeline,
+  deriveDirectionPlan,
+  resolveScenePacing,
+  validateAttentionSequence,
+  validateDirectionPlan,
+} from '../packages/core/dist/index.js';
 import { render } from '../packages/renderer/dist/index.js';
 
 const execFileAsync = promisify(execFile);
@@ -193,11 +200,57 @@ function documents(browserVideo) {
         ],
       },
     },
+    {
+      name: 'semantic-720p',
+      document: {
+        ...base, id: 'benchmark-semantic', transitionDuration: 6,
+        scenes: [
+          {
+            type: 'infographic', id: 'overview', duration: 45, title: 'From evidence to explanation',
+            metrics: [
+              { id: 'evidence', label: 'Evidence', value: 'Recorded', detail: 'source state', color: '#38bdf8', at: 0 },
+              { id: 'model', label: 'Model', value: 'Explained', detail: 'semantic path', color: '#a78bfa', at: 15 },
+            ],
+            explanation: {
+              cues: [{ id: 'overview-cue', text: 'Evidence becomes an explanation.' }],
+              beats: [
+                { id: 'evidence-beat', cueId: 'overview-cue', anchor: { text: 'Evidence' }, visuals: [{ targetId: 'evidence', action: 'focus', minHoldMs: 500 }] },
+                { id: 'model-beat', cueId: 'overview-cue', anchor: { text: 'explanation' }, visuals: [{ targetId: 'model', action: 'highlight', minHoldMs: 500 }] },
+              ],
+            },
+          },
+          { type: 'manim', id: 'equation', duration: 45, sourceVideo: browserVideo, sourceManifest: 'benchmark-local-manifest.json', mediaWidth: width, mediaHeight: height, mediaFps: fps, markers: [{ id: 'equation-result', frame: 20 }] },
+        ],
+      },
+    },
   ];
   return definitions.map((definition) => ({
     ...definition,
     frames: computeDocumentTimeline(definition.document).totalFrames,
+    semanticMetrics: definition.name === 'semantic-720p' ? semanticHealth(definition.document) : undefined,
   }));
+}
+
+function semanticHealth(document) {
+  const pacedAttention = document.scenes.flatMap((scene) => {
+    const paced = resolveScenePacing(scene, document.fps ?? fps).scene;
+    return paced.type === 'infographic' ? (paced.attention ?? []) : [];
+  });
+  const markers = document.scenes.filter((scene) => scene.type === 'manim').flatMap((scene) => (scene.markers ?? []).map((marker) => ({ marker, duration: scene.duration ?? 0 })));
+  const focalTargets = new Set(document.scenes.flatMap((scene) => (scene.explanation?.beats ?? []).flatMap((beat) => beat.visuals.map((visual) => visual.targetId))));
+  const addressableTargets = new Set(document.scenes.flatMap((scene) => [
+    ...(scene.type === 'infographic' ? [...(scene.metrics ?? []), ...(scene.comparisons ?? []), ...(scene.process ?? []), ...(scene.timeline ?? []), ...(scene.charts ?? [])].map((item) => item.id) : []),
+    ...(scene.type === 'manim' ? (scene.markers ?? []).map((marker) => marker.id) : []),
+  ]));
+  const textCharacters = JSON.stringify(document).match(/[A-Za-z0-9]/g)?.length ?? 0;
+  const direction = deriveDirectionPlan(document);
+  return {
+    attentionDiagnosticCount: validateAttentionSequence(pacedAttention).length,
+    directionDiagnosticCount: validateDirectionPlan(direction, document).filter((item) => item.severity === 'error').length,
+    markerConfidence: markers.length ? Number((markers.filter(({ marker, duration }) => marker.frame >= 0 && marker.frame < duration).length / markers.length).toFixed(4)) : 1,
+    textDensityPerMegapixel: Number((textCharacters / ((width * height) / 1_000_000)).toFixed(2)),
+    focalCoverage: addressableTargets.size ? Number((focalTargets.size / addressableTargets.size).toFixed(4)) : 1,
+  };
 }
 
 async function environment() {
@@ -272,6 +325,7 @@ async function runCase(definition, workDir, runIndex) {
 
 function summarize(definition, samples) {
   const metric = (name) => median(samples.map((sample) => sample[name]));
+  const cacheHitRate = Number(metric('cacheHitRate').toFixed(4));
   return {
     name: definition.name,
     width, height, fps, frames: definition.frames,
@@ -284,13 +338,14 @@ function summarize(definition, samples) {
       peakProcessTreeRssMb: Number(metric('peakProcessTreeRssMb').toFixed(1)),
       outputBytes: Math.round(metric('outputBytes')),
       reusedFrames: Math.round(metric('reusedFrames')),
-      cacheHitRate: Number(metric('cacheHitRate').toFixed(4)),
+      cacheHitRate,
     },
     p90: {
       totalMs: Math.round(percentile(samples.map((sample) => sample.totalMs), 0.9)),
       peakProcessTreeRssMb: Number(percentile(samples.map((sample) => sample.peakProcessTreeRssMb), 0.9).toFixed(1)),
     },
     samples,
+    semanticMetrics: definition.semanticMetrics ? { ...definition.semanticMetrics, cacheHitRate } : undefined,
   };
 }
 

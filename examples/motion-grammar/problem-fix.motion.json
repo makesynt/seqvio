@@ -1,0 +1,11 @@
+{
+  "format": "seqvio-motion-grammar",
+  "version": "1.0",
+  "id": "problem-fix",
+  "steps": [
+    { "id": "state-problem", "sceneId": "problem-fix", "action": "question" },
+    { "id": "show-problem", "sceneId": "problem-fix", "action": "emphasize", "targetId": "problem", "startFrame": 12, "holdFrames": 30 },
+    { "id": "apply-fix", "sceneId": "problem-fix", "action": "transform", "targetId": "fix", "startFrame": 48, "holdFrames": 30 },
+    { "id": "confirm-fix", "sceneId": "problem-fix", "action": "answer", "targetId": "verified", "startFrame": 78, "holdFrames": 22 }
+  ]
+}

@@ -1,12 +1,12 @@
 # Seqvio Roadmap
 
-> **Status:** directional. This file states *what we are betting on and in what
-> order*, not dated deliverables. Time-boxed work items live in GitHub issues and
+> **Status:** directional. This file states _what we are betting on and in what
+> order_, not dated deliverables. Time-boxed work items live in GitHub issues and
 > milestones. For positioning and scope, read [`VISION.md`](./VISION.md) - when
 > the two disagree, `VISION.md` wins.
 >
-> Last revised: 2026-08-01 (implementation status aligned with the current
-> ExplanationBeat and terminal/browser IR pipelines).
+> Last revised: 2026-08-05 (ordered semantic direction before the final style
+> layer and added product-explainer production contracts).
 
 ## What Changed in This Revision
 
@@ -27,8 +27,8 @@ The reordering moves effort to the layer HyperFrames does not have and is
 architecturally poorly positioned to add: **system capture.** This is not a
 change to `VISION.md` - it is `VISION.md`'s own "depth before breadth" and
 coding-agent-centric positioning applied to a changed landscape. The framing
-stays: *give an agent a visual output channel for things that already happened
-in a real system.* What changes is which bet earns the first dollars.
+stays: _give an agent a visual output channel for things that already happened
+in a real system._ What changes is which bet earns the first dollars.
 
 ## The Threat We Are Planning Against
 
@@ -43,11 +43,11 @@ is needed at all. Two things that threat does not solve:
 2. **The closed layer is now a commodity.** A composition-to-MP4 pipeline with
    static linting and regression is no longer a differentiator - HyperFrames has
    it, with cloud rendering and a studio on top. Seqvio cannot win there and
-   should not try. The asymmetry that remains is the *opening* layer: turning
+   should not try. The asymmetry that remains is the _opening_ layer: turning
    real system activity into a composition.
 
-The strategic move is the one `VISION.md` already names: from *"help an agent
-generate a video"* to **"give an agent a visual output channel for things that
+The strategic move is the one `VISION.md` already names: from _"help an agent
+generate a video"_ to **"give an agent a visual output channel for things that
 already happened in a real system."** This revision just stops pretending the
 closed layer is part of the moat.
 
@@ -73,11 +73,11 @@ describes itself.
 
 Three feature tracks are implemented and tested but unreachable end to end:
 
-| Track | Status | Resolution |
-| --- | --- | --- |
-| `packages/renderer/src/shader-transitions/` | Five GLSL transitions compiled, but nothing in the repo ever set `window.__seqvio_shaderTransitions`, so the four reads in `runtime.tsx` never saw a value. `compositor.ts` drew an `Image` synchronously after assigning `src` without awaiting `decode()`, yielding empty textures. | **Deleted** (closed-layer render effect, not on the differentiation path). |
-| `packages/renderer/src/audio/ducking.ts` + `volume-envelope.ts` | `audio-mux.ts` honors `options.autoDuck`, but no CLI passes it. | **Marked `@internal`** (wire-up is medium cost; Phase 2 audio checks don't need it). |
-| `packages/core/src/clock.ts` (`TransportClock`) | Nothing imports it outside its own test. | **Marked `@internal`** (retained as Phase 5 preview seed). |
+| Track                                                           | Status                                                                                                                                                                                                                                                                                | Resolution                                                                           |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `packages/renderer/src/shader-transitions/`                     | Five GLSL transitions compiled, but nothing in the repo ever set `window.__seqvio_shaderTransitions`, so the four reads in `runtime.tsx` never saw a value. `compositor.ts` drew an `Image` synchronously after assigning `src` without awaiting `decode()`, yielding empty textures. | **Deleted** (closed-layer render effect, not on the differentiation path).           |
+| `packages/renderer/src/audio/ducking.ts` + `volume-envelope.ts` | `audio-mux.ts` honors `options.autoDuck`, but no CLI passes it.                                                                                                                                                                                                                       | **Marked `@internal`** (wire-up is medium cost; Phase 2 audio checks don't need it). |
+| `packages/core/src/clock.ts` (`TransportClock`)                 | Nothing imports it outside its own test.                                                                                                                                                                                                                                              | **Marked `@internal`** (retained as Phase 5 preview seed).                           |
 
 For each: wire it up, mark it explicitly internal/unreleased, or delete it.
 Shipping code that no user can reach is worse than a stale doc - it violates
@@ -130,8 +130,8 @@ have never been able to explain clearly:
 The differentiator inside capture is **temporal fidelity**, not a screenshot
 montage. `terminal-narrator` replays a real pty session from a cast (keystrokes
 and output in their real timing); `website-to-video`-style DOM snapshots are a
-different, weaker thing. Hold that line: capture is *what actually happened, in
-the order it happened*, not a reconstruction.
+different, weaker thing. Hold that line: capture is _what actually happened, in
+the order it happened_, not a reconstruction.
 
 This layer needs integrations, permissions, format adapters, redaction (the
 `redact.ts` in `terminal-narrator` already proves the repo has tasted this), and
@@ -147,14 +147,110 @@ floor, contrast (WCAG AA), and offscreen elements. Its baseline/capture profiles
 also validate narration/captions, speech rate, highlight hold time, audio health,
 capture media/state, semantic time maps, unresolved phrase anchors, and reversed
 ExplanationBeats. These checks are deterministic, use no LLM, and ship as a
-`--ci` mode that exits non-zero. Screenshot privacy masking remains explicitly
-deferred.
+`--ci` mode that exits non-zero. Browser capture plans also support deterministic
+selector/rectangle privacy masks before screenshots are taken; OCR is not a
+security boundary.
 
 Ground-truth verification (code vs source AST, diagram edges vs dependency graph,
 terminal vs real stdout) was considered and dropped: capture-produced IR is
 faithful (same-source as the real recording, so verification is self-consistent),
 and hand-written IR either has no ground truth (whiteboard) or was dropped
 (code/diagram char-level checks conflate simplification with fabrication).
+
+## Phase 3 - Semantic Direction and Mathematical Animation
+
+Build a semantic visual-expression layer for moments where captured footage,
+code, and architecture diagrams do not fully explain the idea. These connected
+capabilities share the same ExplanationBeat timing contract.
+
+### Explainable motion graphics
+
+Add `InfographicScene` to `@seqvio/technical` with reusable metric, comparison,
+process, timeline, chart, and relationship primitives. Motion must communicate
+an explicit semantic change: reveal a quantity, compare values, trace a process,
+show a state transition, or connect cause and effect. Every addressable datum and
+relationship receives a stable target id so `ExplanationBeat.visualActions` can
+drive `reveal`, `compare`, `trace`, `emphasize`, and `transform` actions from
+phrase anchors.
+
+Ship deterministic layouts, shared number/chart formatting, data-source labels,
+responsive safe areas, and seek-safe animation states. Add reference scenes for
+a metric explanation, a before/after comparison, a multi-step process, and a
+time-series change.
+
+### Reusable attention guidance
+
+Extend the shared annotation system into a cross-scene attention vocabulary:
+highlight, focus ring, spotlight, callout, arrow, bracket, connector, region
+shade, and guided focus path. An `AttentionSequence` coordinates activation,
+handoff, persistence, and clearing across stable annotation targets while the
+layout layer keeps labels and connectors inside safe areas and resolves common
+collisions.
+
+Make the same primitives usable across whiteboard, code, diagram, terminal,
+browser, product-demo, infographic, and externally rendered animation scenes.
+Connect attention actions to phrase-anchored ExplanationBeats and include
+random-access, reverse-seek, overlap, contrast, and minimum-hold QA coverage.
+
+### DirectionPlan
+
+Add a minimal, versioned, renderer-agnostic direction plan that references
+scenes, stable targets, `ExplanationBeat`s, and capture manifests. It records
+purpose, focal target, pace, camera intent, and transition intent without
+encoding CSS, opacity, scale, or renderer APIs. Compile it into the existing
+actions, `AttentionSequence`, and timing system, and validate unknown
+references and conflicting intents before rendering.
+
+### Manim adapter
+
+**Implemented as an experimental external adapter.**
+`@seqvio/manim-adapter` invokes a selected local Python interpreter and its
+installed `manim` package; it is not a JavaScript implementation of Manim. Its
+versioned external-render `ManimSceneSpec` describes the Python source, scene
+class, render settings, and assets. Execution produces a content-addressed
+`ManimRenderManifest` containing the rendered-media contract, source and asset
+hashes, runtime versions, cache identity, logs, and diagnostics.
+
+`ManimClip` and the ExplainerDocument `manim` compiler path consume the
+pre-rendered video as deterministic seekable media. Named markers can align
+with narration phrases and ExplanationBeats and expose annotation targets.
+Runtime preflight, cache reuse, progress events, cancellation, timeouts, media
+probing, marker/seek QA, and equation, graph, symbolic-proof, and geometric-proof
+fixtures are implemented. See [`MANIM-INTEGRATION.md`](./MANIM-INTEGRATION.md)
+for the current usage contract.
+
+### Motion Grammar
+
+Define a small semantic motion vocabulary - `question`, `pause`, `reveal`,
+`trace`, `compare`, `emphasize`, `transform`, `answer`, and `summarize` - that
+maps to semantic actions, `AttentionSequence`, and `DirectionPlan`. Ship
+question/answer, compare/merge, problem/fix, and process/verification fixtures.
+This is a constrained explanation grammar, not a general animation DSL.
+
+### Director Skills
+
+Add host-agent skills that generate and repair reviewable `DirectionPlan`,
+`AttentionSequence`, and Motion Grammar artifacts. Keep planning outside the
+renderer, store versioned plans and receipts, and use the same deterministic
+validation and frame QA as hand-authored compositions.
+
+### Style Playbook (final phase)
+
+Only after semantic actions, direction, motion grammar, Manim integration, and
+QA are stable, add a versioned style profile. Profiles such as
+`clean-technical`, `editorial-explainer`, `chalk-process`, and `terminal-first`
+control typography, motion density, camera behavior, transitions, attention
+persistence, spacing, and palette. They must not change narration timing,
+target identity, evidence order, or semantic actions; avoid brand-name
+imitation and limit the first release to two or three profiles.
+
+### Integrated authoring and QA
+
+Exercise one authoring path across captured terminal/browser media, authored
+diagrams, infographic scenes, annotation primitives, DirectionPlan, Motion
+Grammar, and Manim clips. Release smoke must cover voice-first timing, focal
+target coverage, text-density and collision diagnostics, transition intent,
+seek/reverse behavior, marker alignment, and content-addressed cache reuse.
 
 ## Operational Stabilization
 
@@ -168,13 +264,13 @@ Cross-host confirmation remains part of the lifecycle-promotion gate.
 
 ## Deprioritized
 
-Restating what is *not* getting first dollars, and why:
+Restating what is _not_ getting first dollars, and why:
 
 - **Multi-target IR output.** The hedge is real but opportunistic; it waits
   until capture has a reason to emit non-MP4 targets.
 - **Preview / Studio** (previous Phase 5). HyperFrames has a studio. Seqvio's
   review surface stays the minimum - scene list, diagnostics, partial re-render
-  - and explicitly *not* a nonlinear editor, per `VISION.md`.
+  - and explicitly _not_ a nonlinear editor, per `VISION.md`.
 - **Whiteboard polish and a fourth/fifth style.** `whiteboard` is the contract
   reference; it stays correct and maintained, not a feature target. No style
   race.

@@ -19,27 +19,33 @@ import {
   Callout,
   ProductDemoScene,
 } from '@seqvio/product-demo';
-import seqvioIcon from '../../docs/assets/brand/seqvio-icon.svg';
-import seqvioIconSmall from '../../docs/assets/brand/seqvio-icon-small.svg';
+import seqvioMark from '../../docs/assets/brand/seqvio-mark.svg';
 
 const W = 1280;
 const H = 720;
 export const OVERVIEW_FPS = 30;
 
 const C = {
-  navy: '#0B1020',
-  navy2: '#131C35',
-  paper: '#F6F8FC',
-  white: '#FFFFFF',
-  ink: '#101828',
-  muted: '#667085',
-  cyan: '#5EE7FF',
-  blue: '#38B6FF',
-  indigo: '#6E7BFF',
-  amber: '#F4B740',
-  green: '#32D583',
-  rose: '#FF6B7A',
+  navy: '#0C1118',
+  navy2: '#151C26',
+  paper: '#F3F5F7',
+  white: '#FCFDFE',
+  ink: '#171A1F',
+  muted: '#68717D',
+  cyan: '#78DCF4',
+  blue: '#3F9CF4',
+  indigo: '#7A7FF2',
+  amber: '#E8A23A',
+  green: '#36B98A',
+  rose: '#DF6D78',
 };
+
+const DARK_SURFACE = '#141B24';
+const DARK_SURFACE_RAISED = '#19222E';
+const DARK_BORDER = 'rgba(184, 205, 228, 0.16)';
+const LIGHT_BORDER = '#D9DEE5';
+const PANEL_RADIUS = 8;
+const PANEL_SHADOW = '0 22px 60px rgba(7, 13, 22, 0.18)';
 
 const UI_STACK = 'Inter, "Segoe UI", Arial, sans-serif';
 const MONO_STACK = '"JetBrains Mono", "Cascadia Code", Consolas, monospace';
@@ -75,7 +81,7 @@ export interface OverviewCopy {
   hookTeaser?: string;
   /** Badge shown on the scene-4 player reveal, e.g. 'RENDERED BY SEQVIO · UNEDITED'. */
   outputBadge?: string;
-  /** File name shown in the scene-4 player chrome, e.g. 'rag-explainer.mp4'. */
+  /** File name shown in the scene-4 player chrome, e.g. 'technical-explainer.mp4'. */
   playerFile?: string;
   /** Install command shown on the closing scene, e.g. 'npm install -g @seqvio/renderer'. */
   ctaInstall?: string;
@@ -131,58 +137,16 @@ function reveal(frame: number, start: number, duration = 18, distance = 20): CSS
   const p = easeOut((frame - start) / duration);
   return {
     opacity: p,
-    transform: `translateY(${(1 - p) * distance}px) scale(${0.97 + p * 0.03})`,
+    transform: `translateY(${(1 - p) * distance}px) scale(${0.985 + p * 0.015})`,
+    filter: `blur(${(1 - p) * 5}px)`,
   };
 }
 
 function BrandBug({ light = false }: { light?: boolean }) {
   return (
-    <div style={{ position: 'absolute', left: 42, top: 32, zIndex: 40, display: 'flex', alignItems: 'center', gap: 13, color: light ? C.ink : C.white, fontFamily: UI_STACK, fontSize: 24, fontWeight: 750 }}>
-      <img src={seqvioIconSmall} alt="" style={{ width: 44, height: 44 }} />
+    <div style={{ position: 'absolute', left: 46, top: 34, zIndex: 40, display: 'flex', alignItems: 'center', gap: 10, color: light ? C.ink : '#EEF3F8', fontFamily: UI_STACK, fontSize: 22, fontWeight: 720 }}>
+      <img src={seqvioMark} alt="" style={{ width: 35, height: 35, objectFit: 'contain' }} />
       <span>Seqvio</span>
-    </div>
-  );
-}
-
-function Rail({ children, light = false }: { children: ReactNode; light?: boolean }) {
-  return (
-    <div style={{ position: 'absolute', zIndex: 50, left: 60, right: 60, bottom: 28, minHeight: 54, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px 22px', borderTop: `2px solid ${light ? '#D7DEEA' : 'rgba(94,231,255,0.34)'}`, color: light ? C.ink : '#E9F7FF', fontFamily: UI_STACK, fontSize: 27, lineHeight: 1.25, textAlign: 'center', fontWeight: 650 }}>
-      {children}
-    </div>
-  );
-}
-
-function SceneMeta({
-  index,
-  label,
-  light = false,
-}: {
-  index: string;
-  label: string;
-  light?: boolean;
-}) {
-  const color = light ? C.ink : '#D9E8FF';
-  const line = light ? '#B9C5D8' : 'rgba(94,231,255,0.42)';
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        right: 54,
-        top: 36,
-        zIndex: 45,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        color,
-        fontFamily: MONO_STACK,
-        fontSize: 13,
-        fontWeight: 700,
-        letterSpacing: 1.2,
-      }}
-    >
-      <span style={{ width: 42, height: 28, display: 'grid', placeItems: 'center', border: `2px solid ${line}` }}>{index}</span>
-      <span>{label}</span>
-      <span style={{ width: 54, height: 2, background: line }} />
     </div>
   );
 }
@@ -195,21 +159,16 @@ function DarkStage({
   dense?: boolean;
 }) {
   const frame = useCurrentFrame();
-  const drift = Math.sin(frame / 34) * 10;
-  const sweep = (frame * 1.8) % 420;
+  const drift = Math.sin(frame / 52) * 6;
   return (
     <div style={{ position: 'relative', width: W, height: H, overflow: 'hidden', background: C.navy, color: C.white, fontFamily: UI_STACK }}>
-      <div style={{ position: 'absolute', inset: 0, opacity: 0.24, transform: `translateX(${drift}px)`, backgroundImage: 'linear-gradient(rgba(94,231,255,0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(94,231,255,0.10) 1px, transparent 1px)', backgroundSize: '56px 56px' }} />
-      <div style={{ position: 'absolute', width: 480, height: 480, right: -120 + drift, top: -190, border: '2px solid rgba(110,123,255,0.24)', borderRadius: '50%' }} />
+      <div style={{ position: 'absolute', inset: 0, opacity: 0.18, transform: `translateX(${drift}px)`, backgroundImage: 'linear-gradient(rgba(184,205,228,0.055) 1px, rgba(184,205,228,0) 1px), linear-gradient(90deg, rgba(184,205,228,0.055) 1px, rgba(184,205,228,0) 1px)', backgroundSize: '72px 72px' }} />
+      <div style={{ position: 'absolute', left: 44, right: 44, top: 90, height: 1, background: DARK_BORDER }} />
       {dense ? (
         <>
-          <div style={{ position: 'absolute', left: -300, top: 250, width: 400, height: 400, border: '1px dashed rgba(94,231,255,0.18)', borderRadius: '50%', transform: `rotate(${frame * 0.12}deg)` }} />
-          <div style={{ position: 'absolute', left: 312, top: -120, width: 2, height: 420, background: 'rgba(110,123,255,0.18)', transform: 'rotate(36deg)', transformOrigin: 'top center' }} />
-          <div style={{ position: 'absolute', right: 56, top: 112, width: 190, height: 7, borderTop: '2px solid rgba(94,231,255,0.28)', borderBottom: '2px solid rgba(94,231,255,0.14)' }} />
-          <div style={{ position: 'absolute', left: 0, top: 96 + sweep, width: 54, height: 2, background: C.cyan, opacity: 0.5 }} />
-          {[0, 1, 2, 3, 4].map((index) => (
-            <span key={index} style={{ position: 'absolute', right: 36 + index * 34, bottom: 104, width: 8, height: 8, border: `2px solid ${index % 2 ? C.indigo : C.cyan}`, transform: `rotate(${45 + index * 9}deg)`, opacity: 0.42 }} />
-          ))}
+          <div style={{ position: 'absolute', right: 46, top: 118, width: 220, height: 1, background: 'rgba(120,220,244,0.22)' }} />
+          <div style={{ position: 'absolute', right: 46, top: 126, width: 120, height: 1, background: DARK_BORDER }} />
+          <div style={{ position: 'absolute', left: 44, bottom: 104, width: 96, height: 3, borderRadius: 2, background: C.blue, opacity: 0.72 }} />
         </>
       ) : null}
       <BrandBug />
@@ -228,13 +187,13 @@ function LightStage({
   const frame = useCurrentFrame();
   return (
     <div style={{ position: 'relative', width: W, height: H, overflow: 'hidden', background: C.paper, color: C.ink, fontFamily: UI_STACK }}>
-      <div style={{ position: 'absolute', inset: 0, opacity: 0.32, backgroundImage: 'radial-gradient(#B9C5D8 1px, transparent 1px)', backgroundPosition: `${frame % 28}px ${frame % 28}px`, backgroundSize: '28px 28px' }} />
+      <div style={{ position: 'absolute', inset: 0, opacity: 0.23, backgroundImage: 'radial-gradient(#AEB7C2 0.8px, rgba(174,183,194,0) 0.8px)', backgroundPosition: `${frame % 36}px ${frame % 36}px`, backgroundSize: '36px 36px' }} />
+      <div style={{ position: 'absolute', left: 44, right: 44, top: 90, height: 1, background: LIGHT_BORDER }} />
       {dense ? (
         <>
-          <div style={{ position: 'absolute', left: -150, top: 150, width: 360, height: 360, border: '30px solid rgba(56,182,255,0.07)', borderRadius: '50%' }} />
-          <div style={{ position: 'absolute', right: -88, top: 96, width: 290, height: 290, border: '2px dashed rgba(110,123,255,0.20)', transform: `rotate(${frame * 0.16}deg)` }} />
-          <div style={{ position: 'absolute', right: 42, bottom: 112, width: 210, height: 12, background: 'rgba(50,213,131,0.12)', transform: 'skewX(-24deg)' }} />
-          <div style={{ position: 'absolute', left: 54, right: 54, top: 88, height: 2, background: 'linear-gradient(90deg, rgba(56,182,255,0.52), rgba(110,123,255,0.12), transparent)' }} />
+          <div style={{ position: 'absolute', right: 46, top: 118, width: 220, height: 1, background: '#C9D0D8' }} />
+          <div style={{ position: 'absolute', right: 46, top: 126, width: 120, height: 1, background: '#E2E6EB' }} />
+          <div style={{ position: 'absolute', right: 44, bottom: 108, width: 170, height: 5, borderRadius: 3, background: 'rgba(54,185,138,0.16)' }} />
         </>
       ) : null}
       <BrandBug light />
@@ -243,131 +202,122 @@ function LightStage({
   );
 }
 
+function SoftSceneReveal({ light = false }: { light?: boolean }) {
+  const frame = useCurrentFrame();
+  const p = easeOut(frame / 10);
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        inset: 0,
+        zIndex: 90,
+        pointerEvents: 'none',
+        background: light ? C.paper : C.navy,
+        opacity: 1 - p,
+      }}
+    />
+  );
+}
+
 function HookScene({ copy, duration, enhanced }: { copy: OverviewCopy; duration: number; enhanced: boolean }) {
   const frame = useCurrentFrame() * 126 / Math.max(1, duration);
-  const fragments = [
-    { label: 'CLIP 01', x: 112, y: 180, color: C.indigo, delay: 0 },
-    { label: 'B-ROLL', x: 922, y: 144, color: C.amber, delay: 6 },
-    { label: 'MOTION', x: 850, y: 430, color: C.blue, delay: 12 },
-    { label: 'FX', x: 160, y: 452, color: C.rose, delay: 18 },
-  ];
-  const focus = easeOut((frame - 52) / 28);
+  const terminalP = easeOut((frame - 2) / 18);
+  const commandP = easeOut((frame - 36) / 16);
+  const outputP = easeOut((frame - 66) / 24);
+  const progress = Math.min(100, Math.max(0, (frame - 58) * 2.1));
+  const cursorOn = Math.floor(frame / 8) % 2 === 0;
   return (
-    <DarkStage dense={enhanced}>
-      {enhanced ? (
-        <>
-          <SceneMeta index="01" label="THE PROBLEM" />
-          <div style={{ position: 'absolute', left: 76, top: 112, display: 'flex', alignItems: 'end', gap: 7, opacity: 0.48 }}>
-            {[18, 34, 22, 48, 30, 58, 26, 42, 20, 52, 32, 62].map((height, index) => (
-              <span key={index} style={{ width: 8, height: height * (0.72 + focus * 0.28), background: index < 6 ? C.indigo : C.cyan, transform: `skewY(${index % 2 ? -8 : 8}deg)` }} />
-            ))}
+    <div style={{ position: 'relative', width: W, height: H, overflow: 'hidden', background: C.navy, color: C.white, fontFamily: UI_STACK }}>
+      <div style={{ position: 'absolute', inset: 0, opacity: 0.14, backgroundImage: 'linear-gradient(rgba(184,205,228,0.055) 1px, rgba(184,205,228,0) 1px), linear-gradient(90deg, rgba(184,205,228,0.055) 1px, rgba(184,205,228,0) 1px)', backgroundSize: '72px 72px' }} />
+      <div style={{ position: 'absolute', left: 74, right: 74, top: 82, bottom: 74, opacity: terminalP, transform: `scale(${0.975 + terminalP * 0.025})`, border: `1px solid ${DARK_BORDER}`, borderRadius: PANEL_RADIUS, background: '#0E141C', boxShadow: '0 34px 90px rgba(0,0,0,0.38)', overflow: 'hidden' }}>
+        <div style={{ height: 48, display: 'flex', alignItems: 'center', gap: 9, padding: '0 18px', borderBottom: `1px solid ${DARK_BORDER}`, background: DARK_SURFACE_RAISED }}>
+          {[C.rose, C.amber, C.green].map((color) => <span key={color} style={{ width: 10, height: 10, borderRadius: '50%', background: color }} />)}
+          <span style={{ marginLeft: 12, color: '#8FA5C7', fontFamily: MONO_STACK, fontSize: 14 }}>agent-session / completed task</span>
+          <span style={{ marginLeft: 'auto', color: C.green, fontFamily: MONO_STACK, fontSize: 12 }}>● VERIFIED</span>
+        </div>
+        <div style={{ padding: '34px 40px', fontFamily: MONO_STACK }}>
+          <div style={{ color: '#D8E5FF', fontSize: 22, ...reveal(frame, 8, 18, 8) }}><span style={{ color: C.green }}>$</span> codex run technical-workflow</div>
+          <div style={{ marginTop: 24, color: '#8296B6', fontSize: 17, lineHeight: 1.8, ...reveal(frame, 18, 18, 8) }}>
+            <div><span style={{ color: C.green }}>✓</span> task complete</div>
+            <div><span style={{ color: C.green }}>✓</span> evidence captured</div>
+            <div><span style={{ color: C.green }}>✓</span> result verified</div>
           </div>
-          <div style={{ position: 'absolute', left: 76, top: 178, width: 154, height: 2, background: 'rgba(216,229,255,0.28)' }}>
-            <span style={{ position: 'absolute', left: `${Math.min(142, frame * 1.4)}px`, top: -6, width: 12, height: 12, background: C.rose, transform: 'rotate(45deg)' }} />
+          <div style={{ marginTop: 32, color: '#EEF5FF', fontSize: 25, opacity: commandP, transform: `translateX(${(1 - commandP) * 18}px)` }}>
+            <span style={{ color: C.green }}>$</span> /seqvio explain
+            <span style={{ display: 'inline-block', width: 12, height: 27, marginLeft: 8, verticalAlign: '-4px', background: C.cyan, opacity: cursorOn ? 1 : 0.2 }} />
           </div>
-          {copy.hookTeaser ? (
-            <div style={{ position: 'absolute', right: 64, bottom: 92, width: 236, opacity: focus, transform: `translateY(${(1 - focus) * 18}px) rotate(-1.5deg)`, zIndex: 30 }}>
-              <div style={{ position: 'absolute', right: -12, top: -16, zIndex: 2, padding: '5px 10px', background: C.amber, color: C.navy, fontFamily: MONO_STACK, fontSize: 11, fontWeight: 800, letterSpacing: 0.8, transform: 'rotate(4deg)', boxShadow: '0 8px 18px rgba(11,16,32,0.35)' }}>{copy.hookTeaser}</div>
-              <div style={{ border: '2px solid #2A3A5F', background: C.navy2, boxShadow: '0 18px 40px rgba(0,0,0,0.42)' }}>
-                <div style={{ height: 26, display: 'flex', alignItems: 'center', gap: 5, padding: '0 10px', borderBottom: '1px solid #2A3A5F' }}>
-                  {[C.rose, C.amber, C.green].map((color) => <span key={color} style={{ width: 7, height: 7, borderRadius: '50%', background: color }} />)}
-                  <span style={{ marginLeft: 8, fontFamily: MONO_STACK, fontSize: 10.5, color: '#8FA5C7' }}>{copy.playerFile ?? 'rag-explainer.mp4'}</span>
-                </div>
-                <div style={{ position: 'relative', height: 104, background: '#FBFCFE', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9 }}>
-                  {[C.blue, C.indigo, C.amber, C.green].map((color, index) => (
-                    <React.Fragment key={color}>
-                      <span style={{ width: 25, height: 25, borderRadius: index === 0 || index === 3 ? '50%' : 5, background: color, opacity: 0.92, transform: `rotate(${index % 2 ? 2 : -2}deg)` }} />
-                      {index < 3 ? <span style={{ width: 11, height: 2.5, background: '#98A2B3' }} /> : null}
-                    </React.Fragment>
-                  ))}
-                  <span style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', width: 34, height: 34, borderRadius: '50%', background: 'rgba(11,16,32,0.72)', display: 'grid', placeItems: 'center' }}>
-                    <span style={{ marginLeft: 3, width: 0, height: 0, borderTop: '7px solid transparent', borderBottom: '7px solid transparent', borderLeft: '11px solid #fff' }} />
-                  </span>
-                </div>
-                <div style={{ height: 30, display: 'flex', alignItems: 'center', gap: 8, padding: '0 10px' }}>
-                  <span style={{ flex: 1, height: 4, background: '#253451', position: 'relative' }}>
-                    <span style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '68%', background: C.cyan }} />
-                  </span>
-                  <span style={{ fontFamily: MONO_STACK, fontSize: 10.5, color: '#8FA5C7' }}>0:09</span>
-                </div>
-              </div>
+          <div style={{ marginTop: 30, width: 740, height: 6, borderRadius: 3, background: '#253451', overflow: 'hidden', opacity: commandP }}>
+            <div style={{ width: `${progress}%`, height: '100%', background: C.cyan }} />
+          </div>
+        </div>
+        <div style={{ position: 'absolute', right: 38, bottom: 34, width: 330, height: 186, opacity: outputP, transform: `translateY(${(1 - outputP) * 18}px) scale(${0.94 + outputP * 0.06})`, border: `1px solid ${C.cyan}55`, borderRadius: 6, background: '#151E29', boxShadow: '0 20px 54px rgba(0,0,0,0.32)', overflow: 'hidden' }}>
+          <div style={{ height: 34, padding: '9px 12px', color: '#8FA5C7', borderBottom: `1px solid ${DARK_BORDER}`, fontFamily: MONO_STACK, fontSize: 11 }}>explanation.preview</div>
+          <div style={{ position: 'absolute', inset: '34px 0 0', display: 'grid', placeItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 15, fontFamily: MONO_STACK, fontWeight: 800 }}>
+              <span style={{ color: C.blue }}>WORK</span>
+              <span style={{ width: 54, height: 2, background: C.cyan }} />
+              <span style={{ color: C.green }}>EXPLANATION</span>
             </div>
-          ) : (
-            <div style={{ position: 'absolute', right: 94, bottom: 118, display: 'flex', gap: 10, color: '#8FA5C7', fontFamily: MONO_STACK, fontSize: 13 }}>
-              <span>00:00</span><span style={{ color: C.cyan }}>/</span><span>00:42</span>
-            </div>
-          )}
-        </>
-      ) : null}
-      {fragments.map((item, index) => {
-        const p = easeOut((frame - item.delay) / 22) * (1 - focus * 0.78);
-        const float = Math.sin((frame + index * 13) / 15) * 8;
-        return (
-          <div key={item.label} style={{ position: 'absolute', left: item.x, top: item.y + float, width: 190, height: 88, opacity: p, border: `2px solid ${item.color}`, background: 'rgba(19,28,53,0.88)', display: 'grid', placeItems: 'center', color: item.color, fontFamily: MONO_STACK, fontSize: 22, fontWeight: 700, transform: `rotate(${index % 2 ? 4 : -4}deg)` }}>
-            {item.label}
           </div>
-        );
-      })}
-      <div style={{ position: 'absolute', left: 130, right: 130, top: 214, textAlign: 'center', opacity: focus }}>
-        <div style={{ fontSize: 72, lineHeight: 1.05, fontWeight: 850 }}>{copy.hookTop}</div>
-        <div style={{ marginTop: 20, fontSize: 72, lineHeight: 1.05, fontWeight: 850, color: C.cyan }}>{copy.hookBottom}</div>
+        </div>
       </div>
-      <Rail>{copy.hookRail}</Rail>
-    </DarkStage>
+      {enhanced ? <div style={{ position: 'absolute', left: 92, top: 38, color: '#91A4C4', fontFamily: MONO_STACK, fontSize: 12, letterSpacing: 1.2, opacity: easeOut((frame - 78) / 18) }}>{copy.hookTeaser ?? 'MADE BY AN AGENT'}</div> : null}
+    </div>
   );
 }
 
 function PromiseScene({ copy, duration, enhanced }: { copy: OverviewCopy; duration: number; enhanced: boolean }) {
   const frame = useCurrentFrame() * 168 / Math.max(1, duration);
-  const iconP = easeOut(frame / 30);
-  const nodes = [
-    { label: copy.vocabulary[0], x: 142, y: 270, color: C.amber, start: 42 },
-    { label: copy.vocabulary[1], x: 920, y: 210, color: C.green, start: 62 },
-    { label: copy.vocabulary[2], x: 890, y: 430, color: C.rose, start: 82 },
+  const flowP = easeOut((frame - 18) / 110);
+  const previewP = easeOut((frame - 82) / 30);
+  const stages = [
+    { label: copy.vocabulary[0], color: C.amber, start: 24 },
+    { label: copy.vocabulary[1], color: C.blue, start: 52 },
+    { label: copy.vocabulary[2], color: C.green, start: 78 },
   ];
   return (
     <DarkStage dense={enhanced}>
-      {enhanced ? <SceneMeta index="02" label="THE SYSTEM" /> : null}
-      <div style={{ position: 'absolute', left: 86, top: 116, ...reveal(frame, 8, 24) }}>
-        <div style={{ fontSize: 58, maxWidth: 720, lineHeight: 1.06, fontWeight: 850 }}>{copy.promiseTitle}</div>
-      </div>
-      <svg width={W} height={H} style={{ position: 'absolute', inset: 0 }}>
-        {enhanced ? (
-          <>
-            <circle cx="640" cy="386" r="156" fill="none" stroke="rgba(94,231,255,0.22)" strokeWidth="2" strokeDasharray="6 12" transform={`rotate(${frame * 0.34} 640 386)`} />
-            <circle cx="640" cy="386" r="194" fill="none" stroke="rgba(110,123,255,0.18)" strokeWidth="1.5" />
-            {[0, 1, 2, 3, 4, 5].map((index) => {
-              const angle = frame * 0.012 + index * Math.PI / 3;
-              return <circle key={index} cx={640 + Math.cos(angle) * 194} cy={386 + Math.sin(angle) * 194} r={index % 2 ? 5 : 8} fill={index % 3 === 0 ? C.cyan : index % 3 === 1 ? C.indigo : C.green} opacity="0.72" />;
-            })}
-          </>
-        ) : null}
-        {nodes.map((node) => {
-          const p = easeOut((frame - node.start) / 26);
-          return <line key={node.label} x1={640} y1={386} x2={node.x + 106} y2={node.y + 38} stroke={node.color} strokeWidth={3} strokeDasharray="10 10" opacity={0.56 * p} />;
-        })}
-      </svg>
-      <img src={seqvioIcon} alt="" style={{ position: 'absolute', left: 522, top: 270, width: 236, height: 236, opacity: iconP, transform: `scale(${0.78 + iconP * 0.22}) rotate(${(1 - iconP) * -8}deg)` }} />
-      {enhanced ? (
-        <>
-          <div style={{ position: 'absolute', left: 548, top: 242, color: '#91A4C4', fontFamily: MONO_STACK, fontSize: 12, letterSpacing: 1.4 }}>AGENT INPUT</div>
-          <div style={{ position: 'absolute', left: 750, top: 500, color: C.cyan, fontFamily: MONO_STACK, fontSize: 12, letterSpacing: 1.4 }}>VISUAL OUTPUT</div>
-        </>
-      ) : null}
-      {nodes.map((node) => (
-        <div key={node.label} style={{ position: 'absolute', left: node.x, top: node.y, width: 212, height: 76, display: 'grid', placeItems: 'center', border: `2px solid ${node.color}`, background: 'rgba(11,16,32,0.92)', color: node.color, fontFamily: MONO_STACK, fontSize: 20, fontWeight: 700, ...reveal(frame, node.start, 24, 12) }}>
-          {node.label}
+      <div style={{ position: 'absolute', left: 86, top: 126, color: '#91A4C4', fontFamily: MONO_STACK, fontSize: 13, letterSpacing: 1.3, ...reveal(frame, 6, 20, 8) }}>AGENT WORK</div>
+      <div style={{ position: 'absolute', left: 86, top: 170, width: 360, height: 360, border: `1px solid ${DARK_BORDER}`, borderRadius: PANEL_RADIUS, background: '#0E141C', boxShadow: PANEL_SHADOW, overflow: 'hidden', ...reveal(frame, 10, 24, 14) }}>
+        <div style={{ height: 42, padding: '12px 16px', borderBottom: `1px solid ${DARK_BORDER}`, color: '#8FA5C7', background: DARK_SURFACE_RAISED, fontFamily: MONO_STACK, fontSize: 12 }}>agent-session.log</div>
+        <div style={{ padding: 24, color: '#B8C7E3', fontFamily: MONO_STACK, fontSize: 15, lineHeight: 2 }}>
+          <div><span style={{ color: C.green }}>✓</span> task complete</div>
+          <div><span style={{ color: C.green }}>✓</span> browser captured</div>
+          <div><span style={{ color: C.green }}>✓</span> result verified</div>
+          <div style={{ marginTop: 22, color: C.cyan }}>/seqvio explain</div>
         </div>
-      ))}
-      <Rail>{copy.promiseRail}</Rail>
+      </div>
+      <div style={{ position: 'absolute', left: 482, top: 222, width: 240, height: 258 }}>
+        {stages.map((stage, index) => {
+          const p = easeOut((frame - stage.start) / 22);
+          return (
+            <div key={stage.label} style={{ height: 66, marginBottom: 22, display: 'flex', alignItems: 'center', gap: 14, opacity: p, transform: `translateX(${(1 - p) * 20}px)` }}>
+              <span style={{ width: 42, height: 42, display: 'grid', placeItems: 'center', borderRadius: '50%', border: `2px solid ${stage.color}`, color: stage.color, fontFamily: MONO_STACK, fontSize: 12, fontWeight: 900 }}>{String(index + 1).padStart(2, '0')}</span>
+              <span style={{ color: stage.color, fontFamily: MONO_STACK, fontSize: 17, fontWeight: 800 }}>{stage.label}</span>
+            </div>
+          );
+        })}
+        <div style={{ position: 'absolute', left: 20, top: 42, width: 2, height: 176, background: `linear-gradient(${C.amber}, ${C.blue}, ${C.green})`, transform: `scaleY(${flowP})`, transformOrigin: 'top' }} />
+      </div>
+      <div style={{ position: 'absolute', right: 72, top: 144, width: 440, height: 420, opacity: previewP, transform: `translateX(${(1 - previewP) * 24}px) scale(${0.96 + previewP * 0.04})`, border: `1px solid ${C.cyan}55`, borderRadius: PANEL_RADIUS, background: '#111923', boxShadow: '0 28px 70px rgba(0,0,0,0.34)', overflow: 'hidden' }}>
+        <div style={{ height: 44, padding: '13px 16px', borderBottom: `1px solid ${DARK_BORDER}`, color: '#8FA5C7', background: DARK_SURFACE_RAISED, fontFamily: MONO_STACK, fontSize: 12 }}>technical-explainer.mp4</div>
+        <div style={{ position: 'relative', height: 322, background: '#F5F7F9', color: C.ink }}>
+          <img src={seqvioMark} alt="" style={{ position: 'absolute', left: 168, top: 58, width: 104, height: 104, objectFit: 'contain' }} />
+          <div style={{ position: 'absolute', left: 66, right: 66, top: 196, display: 'flex', justifyContent: 'space-between', color: C.muted, fontFamily: MONO_STACK, fontSize: 12, fontWeight: 800 }}>
+            <span>INTENT</span><span>EVIDENCE</span><span>CLARITY</span>
+          </div>
+          <div style={{ position: 'absolute', left: 66, right: 66, top: 226, height: 3, background: '#DCE3EA' }}><span style={{ display: 'block', width: `${Math.min(100, Math.max(0, (frame - 88) * 2.5))}%`, height: '100%', background: C.green }} /></div>
+        </div>
+        <div style={{ height: 54, display: 'flex', alignItems: 'center', gap: 12, padding: '0 16px', color: '#8FA5C7', fontFamily: MONO_STACK, fontSize: 12 }}><span style={{ width: 0, height: 0, borderTop: '6px solid transparent', borderBottom: '6px solid transparent', borderLeft: `10px solid ${C.cyan}` }} /> WORK → EXPLANATION</div>
+      </div>
     </DarkStage>
   );
 }
 
 function TerminalWindow({ children }: { children: ReactNode }) {
   return (
-    <div style={{ position: 'absolute', left: 76, top: 152, width: 710, height: 414, background: '#080D19', border: '2px solid #263556', boxShadow: '0 24px 56px rgba(11,16,32,0.25)', overflow: 'hidden' }}>
-      <div style={{ height: 44, display: 'flex', alignItems: 'center', gap: 9, padding: '0 16px', borderBottom: '1px solid #263556', background: '#10182B' }}>
+    <div style={{ position: 'absolute', left: 66, top: 122, width: 748, height: 454, background: '#0E141C', border: `1px solid ${DARK_BORDER}`, borderRadius: PANEL_RADIUS, boxShadow: PANEL_SHADOW, overflow: 'hidden' }}>
+      <div style={{ height: 44, display: 'flex', alignItems: 'center', gap: 9, padding: '0 16px', borderBottom: `1px solid ${DARK_BORDER}`, background: DARK_SURFACE_RAISED }}>
         {[C.rose, C.amber, C.green].map((color) => <span key={color} style={{ width: 11, height: 11, borderRadius: '50%', background: color }} />)}
         <span style={{ marginLeft: 12, fontFamily: MONO_STACK, fontSize: 15, color: '#91A4C4' }}>agent / seqvio</span>
       </div>
@@ -380,15 +330,13 @@ function PromptScene({ copy, duration, enhanced }: { copy: OverviewCopy; duratio
   const frame = useCurrentFrame() * 228 / Math.max(1, duration);
   return (
     <LightStage dense={enhanced}>
-      {enhanced ? <SceneMeta index="03" label="REAL AGENT TASK" light /> : null}
-      <div style={{ position: 'absolute', left: 76, top: 102, fontSize: 18, color: C.muted, fontFamily: MONO_STACK }}>{copy.promptLabel}</div>
       <TerminalWindow>
         <div style={{ padding: 30, fontFamily: MONO_STACK, color: '#D8E5FF' }}>
           <div style={{ fontSize: 18, color: C.green, ...reveal(frame, 8, 18) }}>$ codex</div>
           <div style={{ marginTop: 24, fontSize: 27, lineHeight: 1.48, ...reveal(frame, 28, 26) }}><span style={{ color: C.cyan }}>&gt; </span>{copy.promptText}</div>
           <div style={{ marginTop: 30, fontSize: 17, color: '#8FA5C7', ...reveal(frame, 78, 22) }}>/seqvio&nbsp;&nbsp;planning explainer structure...</div>
-          <div style={{ marginTop: 18, height: 8, background: '#1D2942', ...reveal(frame, 100, 16) }}>
-            <div style={{ width: `${Math.min(100, Math.max(0, (frame - 100) * 1.6))}%`, height: '100%', background: C.blue }} />
+          <div style={{ marginTop: 18, height: 5, borderRadius: 3, background: '#25303D', overflow: 'hidden', ...reveal(frame, 100, 16) }}>
+            <div style={{ width: `${Math.min(100, Math.max(0, (frame - 100) * 1.6))}%`, height: '100%', borderRadius: 3, background: C.blue }} />
           </div>
         </div>
       </TerminalWindow>
@@ -399,19 +347,18 @@ function PromptScene({ copy, duration, enhanced }: { copy: OverviewCopy; duratio
           <path d="M790 430 C828 430 818 446 842 446" fill="none" stroke={C.green} strokeWidth="3" strokeDasharray="8 8" opacity="0.52" />
         </svg>
       ) : null}
-      <div style={{ position: 'absolute', left: 842, top: 160, width: 348 }}>
+      <div style={{ position: 'absolute', left: 858, top: 142, width: 332 }}>
         {copy.files.map((file, index) => (
-          <div key={file} style={{ height: 96, marginBottom: 22, padding: '18px 20px', border: `2px solid ${index === 0 ? C.blue : index === 1 ? C.indigo : C.green}`, background: C.white, boxShadow: '0 14px 30px rgba(16,24,40,0.10)', fontFamily: MONO_STACK, fontSize: 20, fontWeight: 700, display: 'flex', alignItems: 'center', ...reveal(frame, 104 + index * 28, 22, 18) }}>
-            <span style={{ width: 34, height: 34, marginRight: 14, display: 'grid', placeItems: 'center', color: C.white, background: index === 0 ? C.blue : index === 1 ? C.indigo : C.green, fontSize: 13 }}>{String(index + 1).padStart(2, '0')}</span>{file}
+          <div key={file} style={{ height: 88, marginBottom: 16, padding: '16px 18px', border: `1px solid ${LIGHT_BORDER}`, borderRadius: 6, background: 'rgba(252,253,254,0.94)', boxShadow: '0 14px 34px rgba(24,32,43,0.08)', fontFamily: MONO_STACK, fontSize: 17, fontWeight: 680, display: 'flex', alignItems: 'center', ...reveal(frame, 104 + index * 28, 22, 18) }}>
+            <span style={{ width: 34, height: 34, marginRight: 14, display: 'grid', placeItems: 'center', borderRadius: 5, color: C.white, background: index === 0 ? C.blue : index === 1 ? C.indigo : C.green, fontSize: 12 }}>{String(index + 1).padStart(2, '0')}</span>{file}
           </div>
         ))}
       </div>
       {enhanced ? (
-        <div style={{ position: 'absolute', left: 842, top: 524, width: 348, display: 'flex', justifyContent: 'space-between', fontFamily: MONO_STACK, fontSize: 12, color: C.muted, ...reveal(frame, 176, 20, 8) }}>
-          <span>PLAN</span><span style={{ color: C.blue }}>●</span><span>AUTHOR</span><span style={{ color: C.indigo }}>●</span><span>ALIGN</span><span style={{ color: C.green }}>●</span><span>RENDER</span>
+        <div style={{ position: 'absolute', left: 858, top: 454, width: 332, display: 'flex', alignItems: 'center', gap: 12, color: C.muted, fontFamily: MONO_STACK, fontSize: 12, ...reveal(frame, 176, 20, 8) }}>
+          <span style={{ color: C.blue }}>TASK</span><span style={{ flex: 1, height: 1, background: LIGHT_BORDER }} /><span style={{ color: C.green }}>EXPLAINER DOCUMENT</span>
         </div>
       ) : null}
-      <Rail light>{copy.promptRail}</Rail>
     </LightStage>
   );
 }
@@ -425,7 +372,7 @@ function RagExplanationScene({ copy, duration, enhanced }: { copy: OverviewCopy;
   const t = (frame: number) => Math.max(1, Math.round(frame * drawDuration / 330));
   const pull = enhanced ? easeOut((frame - (drawDuration - 18)) / 40) : 0;
   const badgeP = enhanced ? easeOut((frame - (drawDuration + 4)) / 16) : 0;
-  const boardScale = 1 - pull * 0.26;
+  const boardScale = 1 - pull * 0.34;
   const boardW = W * boardScale;
   const boardH = H * boardScale;
   const boardX = (W - boardW) / 2;
@@ -435,6 +382,7 @@ function RagExplanationScene({ copy, duration, enhanced }: { copy: OverviewCopy;
     ? ['观察', '追踪', '诊断', '验证']
     : ['OBSERVE', 'TRACE', 'DIAGNOSE', 'VERIFY'];
   const icons = ['lightbulb', 'plus', 'document', 'check'];
+  const visualLink = copy.lang === 'zh' ? '旁白 ↔ 视觉动作' : 'VOICE ↔ VISUAL ACTION';
   return (
     <div
       style={{
@@ -569,10 +517,10 @@ function RagExplanationScene({ copy, duration, enhanced }: { copy: OverviewCopy;
           );
         })}
         <DrawText
-          text={copy.ragRail}
+          text={visualLink}
           position={{ x: 640, y: 546 }}
           align="center"
-          fontSize={31}
+          fontSize={25}
           fontWeight="bold"
           strokeColor={C.ink}
           start={t(280)}
@@ -599,17 +547,19 @@ function RagExplanationScene({ copy, duration, enhanced }: { copy: OverviewCopy;
             width: boardW + 6,
             opacity: pull,
             zIndex: 20,
-            border: '3px solid #263556',
-            boxShadow: '0 24px 48px rgba(16,24,40,0.28)',
+            border: `1px solid ${DARK_BORDER}`,
+            borderRadius: PANEL_RADIUS,
+            boxShadow: PANEL_SHADOW,
+            overflow: 'hidden',
           }}
         >
-          <div style={{ height: 46, display: 'flex', alignItems: 'center', gap: 8, padding: '0 16px', background: '#10182B', borderBottom: '3px solid #263556' }}>
+          <div style={{ height: 46, display: 'flex', alignItems: 'center', gap: 8, padding: '0 16px', background: DARK_SURFACE_RAISED, borderBottom: `1px solid ${DARK_BORDER}` }}>
             {[C.rose, C.amber, C.green].map((color) => <span key={color} style={{ width: 10, height: 10, borderRadius: '50%', background: color }} />)}
-            <span style={{ marginLeft: 10, fontFamily: MONO_STACK, fontSize: 14, color: '#8FA5C7' }}>{copy.playerFile ?? 'rag-explainer.mp4'}</span>
+            <span style={{ marginLeft: 10, fontFamily: MONO_STACK, fontSize: 14, color: '#8FA5C7' }}>{copy.playerFile ?? 'technical-explainer.mp4'}</span>
             <span style={{ marginLeft: 'auto', padding: '3px 8px', border: `1px solid ${C.cyan}`, color: C.cyan, fontFamily: MONO_STACK, fontSize: 11, fontWeight: 700 }}>1080p</span>
           </div>
           <div style={{ height: boardH - 6 }} />
-          <div style={{ height: 44, display: 'flex', alignItems: 'center', gap: 12, padding: '0 16px', background: '#10182B', borderTop: '3px solid #263556' }}>
+          <div style={{ height: 44, display: 'flex', alignItems: 'center', gap: 12, padding: '0 16px', background: DARK_SURFACE_RAISED, borderTop: `1px solid ${DARK_BORDER}` }}>
             <span style={{ width: 0, height: 0, borderTop: '6px solid transparent', borderBottom: '6px solid transparent', borderLeft: `10px solid ${C.cyan}` }} />
             <span style={{ flex: 1, height: 5, background: '#253451', position: 'relative' }}>
               <span style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${Math.min(100, (frame / drawDuration) * 100)}%`, background: C.cyan }} />
@@ -623,17 +573,19 @@ function RagExplanationScene({ copy, duration, enhanced }: { copy: OverviewCopy;
           style={{
             position: 'absolute',
             left: boardX + boardW - 330,
-            top: boardY - 74,
+            top: boardY + boardH - 96,
             zIndex: 30,
             padding: '10px 16px',
-            background: C.green,
-            color: C.navy,
+            border: `1px solid ${C.green}55`,
+            borderRadius: 4,
+            background: '#E8F7F1',
+            color: '#157052',
             fontFamily: MONO_STACK,
             fontSize: 15,
             fontWeight: 800,
             letterSpacing: 0.6,
             whiteSpace: 'nowrap',
-            transform: `rotate(-4deg) translateY(${(1 - badgeP) * 14}px)`,
+            transform: `translateY(${(1 - badgeP) * 14}px)`,
             opacity: badgeP,
             boxShadow: '0 14px 30px rgba(16,24,40,0.3)',
           }}
@@ -642,7 +594,6 @@ function RagExplanationScene({ copy, duration, enhanced }: { copy: OverviewCopy;
         </div>
       ) : null}
       <BrandBug light />
-      {enhanced ? <SceneMeta index="04" label="VISUAL EXPLANATION" light /> : null}
     </div>
   );
 }
@@ -751,19 +702,19 @@ function MiniProductDemo() {
         position={{ x: 18, y: 38 }}
         width={308}
         height={248}
-        url="ci-run.local"
+        url="workflow.local"
         title="captured evidence"
         start={18}
         duration={22}
       >
         <div style={{ padding: 18, fontFamily: UI_STACK }}>
           <div style={{ fontSize: 17, fontWeight: 800, color: C.ink }}>
-            Native module load
+            Captured workflow
           </div>
           <div style={{ marginTop: 16, height: 10, width: 230, background: '#DCE5F3' }} />
           <div style={{ marginTop: 9, height: 10, width: 186, background: '#DCE5F3' }} />
           <div style={{ marginTop: 24, display: 'flex', gap: 8 }}>
-            {['BUILD', 'PTY', 'OK'].map((item, index) => (
+            {['STEP', 'CHECK', 'OK'].map((item, index) => (
               <div
                 key={item}
                 style={{
@@ -796,80 +747,40 @@ function MiniProductDemo() {
 
 function StylesScene({ copy, duration, enhanced }: { copy: OverviewCopy; duration: number; enhanced: boolean }) {
   const frame = useCurrentFrame() * 258 / Math.max(1, duration);
-  const cards = [
-    { label: copy.styleLabels[0], child: <MiniWhiteboard copy={copy} />, color: C.blue, width: 370, offset: 0, mark: '01' },
-    { label: copy.styleLabels[1], child: <MiniScatter copy={copy} />, color: C.amber, width: 340, offset: 26, mark: '02' },
-    { label: copy.styleLabels[2], child: <MiniProductDemo />, color: C.green, width: 370, offset: 0, mark: '03' },
+  const views = [
+    { label: copy.styleLabels[0], short: 'MODEL', child: <MiniWhiteboard copy={copy} />, color: C.blue, start: 16 },
+    { label: copy.styleLabels[1], short: 'PLAN', child: <MiniScatter copy={copy} />, color: C.amber, start: 88 },
+    { label: copy.styleLabels[2], short: 'EVIDENCE', child: <MiniProductDemo />, color: C.green, start: 160 },
   ];
   return (
     <LightStage dense={enhanced}>
-      {enhanced ? <SceneMeta index="05" label="EXPLANATION CONTRACT" light /> : null}
-      <div
-        style={{
-          position: 'absolute',
-          left: 74,
-          top: 102,
-          fontSize: enhanced ? 42 : 50,
-          fontWeight: 850,
-          ...reveal(frame, 4, 22),
-        }}
-      >
-        {copy.stylesTitle}
-      </div>
-      <div
-        style={{
-          position: 'absolute',
-          left: 74,
-          right: 74,
-          top: 186,
-          display: 'flex',
-          gap: 28,
-        }}
-      >
-        {cards.map((card, index) => (
-          <div
-            key={card.label}
-            style={{
-              position: 'relative',
-              width: card.width,
-              marginTop: enhanced ? card.offset : 0,
-              ...reveal(frame, 34 + index * 52, 26, 28),
-            }}
-          >
-            <div
-              style={{
-                position: 'relative',
-                width: '100%',
-                background: C.white,
-                border: `3px solid ${card.color}`,
-                boxShadow: '0 18px 40px rgba(16,24,40,0.12)',
-                overflow: 'hidden',
-              }}
-            >
-              {enhanced ? <div style={{ height: 8, background: card.color }} /> : null}
-              <div style={{ height: 330, display: 'grid', placeItems: 'center' }}>{card.child}</div>
-              <div
-                style={{
-                  height: 58,
-                  display: 'grid',
-                  placeItems: 'center',
-                  borderTop: `2px solid ${enhanced ? card.color : '#EEF2F6'}`,
-                  fontFamily: MONO_STACK,
-                  fontSize: 18,
-                  fontWeight: 800,
-                  color: C.ink,
-                }}
-              >
-                {card.label}
-              </div>
+      <div style={{ position: 'absolute', left: 74, top: 112, color: C.muted, fontFamily: MONO_STACK, fontSize: 13, letterSpacing: 1.2, ...reveal(frame, 4, 20, 8) }}>ONE IDEA. ONE VISUAL.</div>
+      <div style={{ position: 'absolute', left: 66, top: 154, width: 770, height: 472, border: `1px solid ${LIGHT_BORDER}`, borderRadius: PANEL_RADIUS, background: '#EEF2F6', boxShadow: '0 24px 62px rgba(24,32,43,0.13)', overflow: 'hidden' }}>
+        {views.map((view, index) => {
+          const enter = easeOut((frame - view.start) / 20);
+          const exit = index < views.length - 1 ? easeOut((frame - (view.start + 58)) / 14) : 0;
+          const opacity = enter * (1 - exit);
+          return (
+            <div key={view.label} style={{ position: 'absolute', inset: 0, opacity, transform: `scale(${0.97 + opacity * 0.03})`, display: 'grid', placeItems: 'center' }}>
+              <div style={{ width: 344, height: 330, transform: 'scale(1.34)', transformOrigin: 'center' }}>{view.child}</div>
             </div>
-            {enhanced ? (
-              <span style={{ position: 'absolute', right: -10, top: -18, width: 48, height: 48, display: 'grid', placeItems: 'center', color: C.white, background: card.color, fontFamily: MONO_STACK, fontSize: 15, fontWeight: 800, transform: `rotate(${index === 1 ? 7 : -7}deg)`, boxShadow: '0 10px 22px rgba(16,24,40,0.16)' }}>{card.mark}</span>
-            ) : null}
-          </div>
-        ))}
+          );
+        })}
       </div>
-      <Rail light>{copy.stylesRail}</Rail>
+      <div style={{ position: 'absolute', left: 894, top: 178, width: 306 }}>
+        {views.map((view, index) => {
+          const p = easeOut((frame - view.start) / 20);
+          const active = frame >= view.start && (index === views.length - 1 || frame < views[index + 1].start);
+          return (
+            <div key={view.label} style={{ position: 'relative', marginBottom: 30, paddingLeft: 30, opacity: active ? 1 : 0.28, transform: `translateX(${(1 - p) * 12}px)`, transition: 'none' }}>
+              <span style={{ position: 'absolute', left: 0, top: 8, width: 12, height: 12, borderRadius: '50%', border: `2px solid ${view.color}`, background: active ? view.color : C.paper }} />
+              <div style={{ color: view.color, fontFamily: MONO_STACK, fontSize: 15, fontWeight: 900 }}>{view.short}</div>
+              <div style={{ marginTop: 7, color: C.ink, fontSize: 20, lineHeight: 1.25, fontWeight: 720 }}>{view.label}</div>
+            </div>
+          );
+        })}
+        <div style={{ marginTop: 22, height: 3, background: '#DCE3EA' }}><span style={{ display: 'block', width: `${Math.min(100, Math.max(0, frame / 2.3))}%`, height: '100%', background: C.green }} /></div>
+      </div>
     </LightStage>
   );
 }
@@ -877,35 +788,26 @@ function StylesScene({ copy, duration, enhanced }: { copy: OverviewCopy; duratio
 function ProofScene({ copy, duration, enhanced }: { copy: OverviewCopy; duration: number; enhanced: boolean }) {
   const frame = useCurrentFrame() * 246 / Math.max(1, duration);
   const commands = [
-    'seqvio-generate validate --ir explainer.json --ir-format explainer',
-    'seqvio-audio synthesize --manifest audio.json',
-    'seqvio-qa --frames 0,120,240',
-    'seqvio-render --component rag-explainer.tsx',
+    'seqvio validate explainer.json',
+    'seqvio align --voice audio.json',
+    'seqvio qa --layout --media --evidence',
+    'seqvio render technical-explainer.tsx',
   ];
   return (
     <DarkStage dense={enhanced}>
-      {enhanced ? <SceneMeta index="06" label="WORKFLOW PROOF" /> : null}
-      <div
-        style={{
-          position: 'absolute',
-          left: 78,
-          top: 104,
-          fontSize: 50,
-          fontWeight: 850,
-          ...reveal(frame, 4, 22),
-        }}
-      >
-        {copy.proofTitle}
-      </div>
+      <div style={{ position: 'absolute', left: 76, top: 112, color: '#91A4C4', fontFamily: MONO_STACK, fontSize: 13, letterSpacing: 1.2, ...reveal(frame, 4, 20, 8) }}>LOCAL RENDER / AUTOMATED CHECKS</div>
       <div
         style={{
           position: 'absolute',
           left: 76,
-          top: 182,
-          width: 718,
-          height: 392,
-          background: '#070B13',
-          border: '2px solid #2A3A5F',
+          top: 152,
+          width: 744,
+          height: 438,
+          background: '#0E141C',
+          border: `1px solid ${DARK_BORDER}`,
+          borderRadius: PANEL_RADIUS,
+          boxShadow: PANEL_SHADOW,
+          overflow: 'hidden',
         }}
       >
         <div
@@ -915,96 +817,73 @@ function ProofScene({ copy, duration, enhanced }: { copy: OverviewCopy; duration
             color: '#8FA5C7',
             fontFamily: MONO_STACK,
             fontSize: 15,
-            borderBottom: '1px solid #2A3A5F',
+            borderBottom: `1px solid ${DARK_BORDER}`,
+            background: DARK_SURFACE_RAISED,
           }}
         >
-          real Seqvio CLI
-          {enhanced ? <span style={{ float: 'right', color: C.green }}>RUN 04/04</span> : null}
+          seqvio / render
+          {enhanced ? <span style={{ float: 'right', color: C.green }}>RUNNING LOCALLY</span> : null}
         </div>
-        <div style={{ position: 'relative', padding: 24, fontFamily: MONO_STACK }}>
-          {enhanced ? <div style={{ position: 'absolute', left: 34, top: 30, bottom: 38, width: 2, background: 'linear-gradient(180deg, #38B6FF, #6E7BFF, #F4B740, #32D583)' }} /> : null}
+        <div style={{ position: 'relative', padding: '30px 26px', fontFamily: MONO_STACK }}>
+          {enhanced ? <div style={{ position: 'absolute', left: 36, top: 36, bottom: 46, width: 2, background: 'linear-gradient(180deg, #38B6FF, #6E7BFF, #F4B740, #32D583)' }} /> : null}
           {commands.map((command, index) => (
             <div
               key={command}
               style={{
                 position: 'relative',
                 paddingLeft: enhanced ? 30 : 0,
-                marginBottom: copy.proofOutputs ? 19 : 25,
-                fontSize: 17,
+                marginBottom: 32,
+                fontSize: 18,
                 color: '#D8E5FF',
-                ...reveal(frame, 28 + index * 42, 20, 10),
+                ...reveal(frame, 24 + index * 38, 18, 10),
               }}
             >
               {enhanced ? <span style={{ position: 'absolute', left: -2, top: 1, width: 20, height: 20, display: 'grid', placeItems: 'center', borderRadius: '50%', color: C.navy, background: [C.blue, C.indigo, C.amber, C.green][index], fontSize: 11, fontWeight: 900 }}>{index + 1}</span> : null}
               <span style={{ color: C.green }}>$ </span>
               {command}
               <span style={{ marginLeft: 14, color: C.green }}>✓</span>
-              {copy.proofOutputs ? (
-                <div style={{ marginTop: 7, fontSize: 13.5, color: '#7E93BC' }}>{copy.proofOutputs[index]}</div>
-              ) : null}
             </div>
           ))}
         </div>
       </div>
-      <div style={{ position: 'absolute', left: 840, top: 184, width: 350 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+      <div style={{ position: 'absolute', left: 866, top: 152, width: 324 }}>
+        <div style={{ padding: '20px 22px', border: `1px solid ${DARK_BORDER}`, borderRadius: PANEL_RADIUS, background: DARK_SURFACE, boxShadow: '0 18px 44px rgba(5,10,17,0.18)' }}>
           {[0, 1, 2, 3].map((index) => (
             <div
               key={index}
               style={{
-                position: 'relative',
-                height: 126,
-                padding: 14,
-                border: `2px solid ${[C.blue, C.indigo, C.amber, C.green][index]}`,
-                background: C.navy2,
-                ...reveal(frame, 64 + index * 34, 20, 14),
+                height: 62,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 14,
+                borderBottom: index < 3 ? `1px solid ${DARK_BORDER}` : 'none',
+                ...reveal(frame, 54 + index * 24, 18, 14),
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ height: 10, width: `${56 + index * 8}%`, background: [C.blue, C.indigo, C.amber, C.green][index] }} />
-                {enhanced ? <span style={{ width: 22, height: 22, display: 'grid', placeItems: 'center', border: `2px solid ${[C.blue, C.indigo, C.amber, C.green][index]}`, borderRadius: '50%', color: [C.blue, C.indigo, C.amber, C.green][index], fontSize: 13, fontWeight: 900 }}>✓</span> : null}
-              </div>
-              <div style={{ marginTop: 16, height: 46, border: '1px solid #35476D', display: 'flex', alignItems: 'end', gap: 5, padding: '8px 9px' }}>
-                {enhanced ? [22, 34, 18, 40, 28, 38].map((height, barIndex) => <span key={barIndex} style={{ width: 8, height: height * 0.7, background: [C.blue, C.indigo, C.amber, C.green][index], opacity: 0.48 + barIndex * 0.07 }} />) : null}
-              </div>
-              <div
-                style={{
-                  marginTop: 10,
-                  fontFamily: MONO_STACK,
-                  color: '#AFC2E2',
-                  fontSize: 13,
-                }}
-              >
-                {copy.checks[index]}
-              </div>
+              <span style={{ width: 28, height: 28, display: 'grid', placeItems: 'center', border: `2px solid ${[C.blue, C.indigo, C.amber, C.green][index]}`, borderRadius: '50%', color: [C.blue, C.indigo, C.amber, C.green][index], fontSize: 14, fontWeight: 900 }}>✓</span>
+              <span style={{ color: '#D8E5FF', fontFamily: MONO_STACK, fontSize: 16 }}>{copy.checks[index]}</span>
             </div>
           ))}
         </div>
         <div
           style={{
-            marginTop: 18,
-            padding: 16,
-            border: `2px solid ${C.green}`,
+            marginTop: 22,
+            padding: '22px 18px',
+            border: `1px solid ${C.green}66`,
+            borderRadius: PANEL_RADIUS,
+            background: 'rgba(54,185,138,0.06)',
             color: C.green,
             fontFamily: MONO_STACK,
-            fontSize: 18,
+            fontSize: 17,
             textAlign: 'center',
-            ...reveal(frame, 198, 22),
+            ...reveal(frame, 154, 20),
           }}
         >
           {enhanced ? <span style={{ display: 'inline-block', marginRight: 12, width: 0, height: 0, borderTop: '7px solid transparent', borderBottom: '7px solid transparent', borderLeft: `12px solid ${C.green}` }} /> : null}
-          output/seqvio-rag.mp4
-          {copy.proofOutputs ? (
-            <div style={{ marginTop: 8, fontSize: 12.5, color: '#7E93BC', fontWeight: 400 }}>1920×1080 · 0:09 · H.264</div>
-          ) : null}
+          output/technical-explainer.mp4
+          <div style={{ marginTop: 9, fontSize: 12.5, color: '#7E93BC', fontWeight: 400 }}>1920×1080 · H.264 · VERIFIED</div>
         </div>
       </div>
-      {enhanced ? (
-        <div style={{ position: 'absolute', left: 76, top: 590, width: 1114, height: 12, display: 'flex', gap: 4, opacity: 0.52 }}>
-          {Array.from({ length: 32 }).map((_, index) => <span key={index} style={{ flex: 1, background: index < Math.min(32, Math.max(0, Math.round((frame - 18) / 6))) ? (index < 9 ? C.blue : index < 17 ? C.indigo : index < 25 ? C.amber : C.green) : '#253451' }} />)}
-        </div>
-      ) : null}
-      <Rail>{copy.proofRail}</Rail>
     </DarkStage>
   );
 }
@@ -1012,31 +891,20 @@ function ProofScene({ copy, duration, enhanced }: { copy: OverviewCopy; duration
 function ClosingScene({ copy, duration, enhanced }: { copy: OverviewCopy; duration: number; enhanced: boolean }) {
   const frame = useCurrentFrame() * 228 / Math.max(1, duration);
   const p = easeOut((frame - 18) / 30);
+  const raysP = easeOut((frame - 44) / 28);
   return (
     <DarkStage>
-      {enhanced ? <SceneMeta index="07" label="SEQVIO" /> : null}
       <div
         style={{
           position: 'absolute',
           left: 76,
-          top: 154,
-          width: 740,
+          top: 176,
+          width: 720,
           ...reveal(frame, 8, 26),
         }}
       >
         <div
           style={{
-            fontFamily: MONO_STACK,
-            color: C.cyan,
-            fontSize: 18,
-            fontWeight: 700,
-          }}
-        >
-          {copy.closeKicker}
-        </div>
-        <div
-          style={{
-            marginTop: 22,
             fontSize: 72,
             lineHeight: 1.04,
             fontWeight: 880,
@@ -1046,22 +914,14 @@ function ClosingScene({ copy, duration, enhanced }: { copy: OverviewCopy; durati
         </div>
         <div
           style={{
-            marginTop: 30,
-            color: '#B8C7E3',
-            fontSize: 25,
-            lineHeight: 1.4,
-          }}
-        >
-          {copy.closeRail}
-        </div>
-        <div
-          style={{
-            marginTop: 34,
+            marginTop: 42,
             display: 'inline-flex',
             alignItems: 'center',
             gap: 14,
             padding: '16px 20px',
-            border: `2px solid ${C.cyan}`,
+            border: `1px solid ${C.cyan}66`,
+            borderRadius: 6,
+            background: 'rgba(120,220,244,0.055)',
             color: C.cyan,
             fontFamily: MONO_STACK,
             fontSize: 18,
@@ -1073,23 +933,17 @@ function ClosingScene({ copy, duration, enhanced }: { copy: OverviewCopy; durati
         {copy.ctaInstall ? (
           <div
             style={{
-              marginTop: 18,
+              marginTop: 20,
               display: 'flex',
               alignItems: 'center',
               gap: 14,
               ...reveal(frame, 102, 24),
             }}
           >
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '13px 16px', background: '#10182B', border: '2px solid #2A3A5F', color: '#D8E5FF', fontFamily: MONO_STACK, fontSize: 16 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '13px 16px', background: DARK_SURFACE, border: `1px solid ${DARK_BORDER}`, borderRadius: 6, color: '#D8E5FF', fontFamily: MONO_STACK, fontSize: 16 }}>
               <span style={{ color: C.green }}>$</span>
               {copy.ctaInstall}
             </div>
-            {copy.ctaStar ? (
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '13px 16px', border: `2px solid ${C.amber}`, color: C.amber, fontFamily: MONO_STACK, fontSize: 16, fontWeight: 700 }}>
-                <span style={{ fontSize: 18, lineHeight: 1 }}>★</span>
-                {copy.ctaStar}
-              </div>
-            ) : null}
           </div>
         ) : null}
       </div>
@@ -1097,45 +951,29 @@ function ClosingScene({ copy, duration, enhanced }: { copy: OverviewCopy; durati
         style={{
           position: 'absolute',
           right: 92,
-          top: 166,
+          top: 174,
           width: 310,
           height: 310,
-          transform: `scale(${0.82 + p * 0.18}) rotate(${(1 - p) * 9}deg)`,
+          transform: `scale(${0.82 + p * 0.18})`,
           opacity: p,
         }}
       >
         {enhanced ? (
           <svg width="310" height="310" style={{ position: 'absolute', inset: 0, overflow: 'visible' }}>
             {[0, 1, 2, 3, 4, 5, 6, 7].map((index) => {
-              const angle = index * Math.PI / 4 + frame * 0.006;
-              return <line key={index} x1={155 + Math.cos(angle) * 176} y1={155 + Math.sin(angle) * 176} x2={155 + Math.cos(angle) * 204} y2={155 + Math.sin(angle) * 204} stroke={index % 2 ? C.indigo : C.cyan} strokeWidth={index % 3 === 0 ? 4 : 2} opacity="0.52" />;
+              const angle = index * Math.PI / 4;
+              const inner = 166 + raysP * 10;
+              const outer = 174 + raysP * 30;
+              return <line key={index} x1={155 + Math.cos(angle) * inner} y1={155 + Math.sin(angle) * inner} x2={155 + Math.cos(angle) * outer} y2={155 + Math.sin(angle) * outer} stroke={index % 2 ? C.indigo : C.cyan} strokeWidth={index % 3 === 0 ? 4 : 2} opacity={0.52 * raysP} />;
             })}
           </svg>
         ) : null}
-        <div
-          style={{
-            position: 'absolute',
-            inset: -30,
-            border: '2px solid rgba(94,231,255,0.28)',
-            borderRadius: '50%',
-            transform: `rotate(${frame * 0.32}deg)`,
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            inset: -62,
-            border: '1px dashed rgba(110,123,255,0.38)',
-            borderRadius: '50%',
-            transform: `rotate(${-frame * 0.22}deg)`,
-          }}
-        />
-        <img src={seqvioIcon} alt="" style={{ width: '100%', height: '100%' }} />
+        <img src={seqvioMark} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
       </div>
       {enhanced && !copy.ctaInstall ? (
         <div style={{ position: 'absolute', left: 76, top: 548, display: 'flex', gap: 12, ...reveal(frame, 104, 24, 10) }}>
           {copy.styleLabels.map((label, index) => (
-            <span key={label} style={{ minWidth: 178, padding: '10px 14px', border: `2px solid ${[C.blue, C.amber, C.green][index]}`, color: [C.blue, C.amber, C.green][index], background: 'rgba(11,16,32,0.72)', fontFamily: MONO_STACK, fontSize: 13, fontWeight: 800, textAlign: 'center' }}>{label}</span>
+            <span key={label} style={{ minWidth: 178, padding: '10px 14px', border: `1px solid ${[C.blue, C.amber, C.green][index]}55`, borderRadius: 5, color: [C.blue, C.amber, C.green][index], background: 'rgba(255,255,255,0.035)', fontFamily: MONO_STACK, fontSize: 13, fontWeight: 750, textAlign: 'center' }}>{label}</span>
           ))}
         </div>
       ) : null}
@@ -1145,8 +983,8 @@ function ClosingScene({ copy, duration, enhanced }: { copy: OverviewCopy; durati
           left: 76,
           right: 76,
           bottom: 46,
-          height: 2,
-          background: 'linear-gradient(90deg, #5EE7FF, #6E7BFF, #32D583)',
+          height: 1,
+          background: DARK_BORDER,
         }}
       />
     </DarkStage>
@@ -1179,22 +1017,22 @@ export function SeqvioOverview({
         <ScaledOverviewStage scale={scale}><HookScene copy={copy} duration={hook} enhanced={enhanced} /></ScaledOverviewStage>
       </Scene>
       <Scene id="promise" duration={promise}>
-        <ScaledOverviewStage scale={scale}><PromiseScene copy={copy} duration={promise} enhanced={enhanced} /></ScaledOverviewStage>
+        <ScaledOverviewStage scale={scale}><PromiseScene copy={copy} duration={promise} enhanced={enhanced} /><SoftSceneReveal /></ScaledOverviewStage>
       </Scene>
       <Scene id="prompt" duration={prompt}>
-        <ScaledOverviewStage scale={scale}><PromptScene copy={copy} duration={prompt} enhanced={enhanced} /></ScaledOverviewStage>
+        <ScaledOverviewStage scale={scale}><PromptScene copy={copy} duration={prompt} enhanced={enhanced} /><SoftSceneReveal light /></ScaledOverviewStage>
       </Scene>
       <Scene id="explanation" duration={explanation}>
-        <ScaledOverviewStage scale={scale}><RagExplanationScene copy={copy} duration={explanation} enhanced={enhanced} /></ScaledOverviewStage>
+        <ScaledOverviewStage scale={scale}><RagExplanationScene copy={copy} duration={explanation} enhanced={enhanced} /><SoftSceneReveal light /></ScaledOverviewStage>
       </Scene>
       <Scene id="styles" duration={styles}>
-        <ScaledOverviewStage scale={scale}><StylesScene copy={copy} duration={styles} enhanced={enhanced} /></ScaledOverviewStage>
+        <ScaledOverviewStage scale={scale}><StylesScene copy={copy} duration={styles} enhanced={enhanced} /><SoftSceneReveal light /></ScaledOverviewStage>
       </Scene>
       <Scene id="proof" duration={proof}>
-        <ScaledOverviewStage scale={scale}><ProofScene copy={copy} duration={proof} enhanced={enhanced} /></ScaledOverviewStage>
+        <ScaledOverviewStage scale={scale}><ProofScene copy={copy} duration={proof} enhanced={enhanced} /><SoftSceneReveal /></ScaledOverviewStage>
       </Scene>
       <Scene id="closing" duration={closing}>
-        <ScaledOverviewStage scale={scale}><ClosingScene copy={copy} duration={closing} enhanced={enhanced} /></ScaledOverviewStage>
+        <ScaledOverviewStage scale={scale}><ClosingScene copy={copy} duration={closing} enhanced={enhanced} /><SoftSceneReveal /></ScaledOverviewStage>
       </Scene>
     </VideoComposition>
   );

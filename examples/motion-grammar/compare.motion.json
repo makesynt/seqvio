@@ -1,0 +1,11 @@
+{
+  "format": "seqvio-motion-grammar",
+  "version": "1.0",
+  "id": "compare-flow",
+  "steps": [
+    { "id": "question", "sceneId": "results", "action": "question" },
+    { "id": "reveal-before", "sceneId": "results", "action": "reveal", "targetId": "before" },
+    { "id": "compare", "sceneId": "results", "action": "compare", "targetId": "before", "relatedTargetId": "after", "startFrame": 45, "holdFrames": 36 },
+    { "id": "answer", "sceneId": "results", "action": "answer", "targetId": "after", "startFrame": 96, "holdFrames": 36 }
+  ]
+}

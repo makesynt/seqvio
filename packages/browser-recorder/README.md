@@ -1,6 +1,6 @@
 # Seqvio Browser Capture Adapter
 
-A local, pre-stable browser walkthrough adapter that executes a validated action
+A local browser walkthrough adapter with a stable capture contract that executes a validated action
 plan, captures the page, records cursor/focus/click metadata and exact action
 start times, then compiles the capture through `ExplainerDocument`.
 
@@ -55,7 +55,7 @@ node packages/browser-recorder/dist/cli.js record --plan plan.json --jobId narra
 - `qa-report.json` — capture, visual, pacing, media, and audio diagnostics
 - `artifacts.json` — versioned status and relative artifact paths
 
-CLI contract `1.0` provides structured JSON output, stable exit codes, monotonic
+CLI contract `2.0` provides structured JSON output, stable exit codes, monotonic
 progress, and overwrite protection. See
 [`docs/CAPTURE-CLI-CONTRACT.md`](../../docs/CAPTURE-CLI-CONTRACT.md).
 
@@ -70,6 +70,15 @@ progress, and overwrite protection. See
   "captureFps": 15,
   "renderFps": 30,
   "maxZoom": 2.2,
+  "privacy": {
+    "masks": [
+      { "id": "account-email", "selector": "#account-email" },
+      {
+        "id": "api-token",
+        "rect": { "x": 920, "y": 24, "width": 320, "height": 44 }
+      }
+    ]
+  },
   "actions": [
     {
       "id": "project-name",
@@ -90,6 +99,13 @@ progress, and overwrite protection. See
 
 Supported actions: `click`, `fill`, `scroll`, `wait`, `navigate`, and `press`.
 
+`privacy.masks` applies opaque overlays before page frames are captured. A mask
+targets either a live CSS selector or a fixed viewport rectangle. Selector masks
+are required by default: if one never matches during the recording, the job
+fails instead of silently producing an unprotected video. Use stable,
+non-sensitive mask ids because ids and match evidence are retained in
+`recording-manifest.json`; selectors and page content are not copied there.
+
 ## AI planner adapter
 
 The recorder does not force one model provider. Set `BROWSER_RECORDER_PLANNER_URL` to an HTTP endpoint. The endpoint receives the task, start URL, viewport, a compact list of interactive DOM elements, and the output contract. Return either a plan object or `{ "plan": ... }`.
@@ -107,6 +123,8 @@ The UI enables **AI 规划** only when the planner URL is configured. Generated 
 
 - Chromium web pages only; no desktop application control.
 - CSS selectors are the deterministic execution contract.
+- Browser privacy protection is declarative and deterministic; automatic OCR is
+  not treated as a security boundary.
 - Authentication can be scripted, but reusable browser profiles are not included yet.
 - Captures page video only. Microphone and system audio are not recorded. Narration is synthesized from the generated cues when direct CLI jobs use `--withAudio`.
 - Popups, downloads, cross-origin iframes, CAPTCHA, and two-factor authentication require later adapters or human takeover.

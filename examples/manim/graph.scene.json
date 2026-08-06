@@ -1,0 +1,11 @@
+{
+  "format": "seqvio-manim-scene",
+  "version": "1.0",
+  "id": "graph",
+  "pythonFile": "examples/manim/graph.py",
+  "className": "GraphExplanation",
+  "width": 1280,
+  "height": 720,
+  "fps": 30,
+  "quality": "low"
+}

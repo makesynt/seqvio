@@ -1,25 +1,25 @@
 import { programmingMonoFontStack } from './fonts';
 
 export const technicalPalette = {
-  canvas: '#0f172a',
-  surface: '#111827',
-  panel: '#1e293b',
-  ink: '#e2e8f0',
-  muted: '#94a3b8',
-  accent: '#38bdf8',
-  accentSoft: 'rgba(56, 189, 248, 0.18)',
+  canvas: 'var(--seqvio-color-background, #0f172a)',
+  surface: 'color-mix(in srgb, var(--seqvio-color-background, #0f172a) 92%, var(--seqvio-color-ink, #e2e8f0))',
+  panel: 'color-mix(in srgb, var(--seqvio-color-background, #0f172a) 84%, var(--seqvio-color-ink, #e2e8f0))',
+  ink: 'var(--seqvio-color-ink, #e2e8f0)',
+  muted: 'var(--seqvio-color-muted, #94a3b8)',
+  accent: 'var(--seqvio-color-accent, #38bdf8)',
+  accentSoft: 'color-mix(in srgb, var(--seqvio-color-accent, #38bdf8) 18%, transparent)',
   success: '#34d399',
   warning: '#fbbf24',
   danger: '#f87171',
-  line: 'rgba(148, 163, 184, 0.35)',
+  line: 'color-mix(in srgb, var(--seqvio-color-muted, #94a3b8) 35%, transparent)',
   codeBg: '#0b1220',
   gutter: '#64748b',
 };
 
 export const technicalFonts = {
   /** Prefer installed coding fonts, then generic monospace. */
-  mono: programmingMonoFontStack(),
-  sans: 'Inter, "Segoe UI", system-ui, sans-serif',
+  mono: `var(--seqvio-font-mono, ${programmingMonoFontStack()})`,
+  sans: 'var(--seqvio-font-body, Inter, "Segoe UI", system-ui, sans-serif)',
 };
 
 export const technicalCodeTheme = {

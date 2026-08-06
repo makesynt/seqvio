@@ -1,10 +1,10 @@
 export type BrowserActionType =
-  | 'click'
-  | 'fill'
-  | 'scroll'
-  | 'wait'
-  | 'navigate'
-  | 'press';
+  | "click"
+  | "fill"
+  | "scroll"
+  | "wait"
+  | "navigate"
+  | "press";
 
 export interface BrowserAction {
   id: string;
@@ -20,14 +20,34 @@ export interface BrowserAction {
   focus?: boolean;
 }
 
+export interface BrowserPrivacyMask {
+  /** Stable, non-sensitive identifier written to recording metadata. */
+  id: string;
+  /** Mask a live DOM element. Exactly one of selector or rect is required. */
+  selector?: string;
+  /** Mask a fixed viewport region. Exactly one of selector or rect is required. */
+  rect?: { x: number; y: number; width: number; height: number };
+  /** Extra pixels around the matched element or rectangle. */
+  padding?: number;
+  /** Solid CSS hex color. Defaults to #111827. */
+  color?: string;
+  /** Fail the recording when a selector never matches. Defaults to true. */
+  required?: boolean;
+}
+
+export interface BrowserPrivacyPolicy {
+  masks: BrowserPrivacyMask[];
+}
+
 export interface BrowserRecordingPlan {
-  version: '1.0';
+  version: "1.0";
   name: string;
   startUrl: string;
   viewport: { width: number; height: number };
   captureFps?: number;
   renderFps?: number;
   maxZoom?: number;
+  privacy?: BrowserPrivacyPolicy;
   actions: BrowserAction[];
 }
 
@@ -45,7 +65,7 @@ export interface RecordedFocusTarget extends TimedPoint {
 }
 
 export interface RecordingManifest {
-  version: '1.0';
+  version: "1.0";
   name: string;
   sourceVideo: string;
   recordingWidth: number;
@@ -60,15 +80,26 @@ export interface RecordingManifest {
   clicks: TimedPoint[];
   /** Exact action start times captured from the recording clock. */
   actionTimings?: Array<{ id: string; timeMs: number }>;
+  /** Privacy evidence without retaining selectors or page content. */
+  privacy?: { maskIds: string[]; matchedMaskIds: string[] };
 }
 
 export interface PipelineProgress {
-  phase: 'queued' | 'recording' | 'encoding' | 'composing' | 'synthesizing' | 'rendering' | 'qa' | 'done' | 'failed';
+  phase:
+    | "queued"
+    | "recording"
+    | "encoding"
+    | "composing"
+    | "synthesizing"
+    | "rendering"
+    | "qa"
+    | "done"
+    | "failed";
   percent: number;
   message: string;
 }
 
-export type TtsProvider = 'elevenlabs' | 'minimax' | 'edge-tts' | 'openai';
+export type TtsProvider = "elevenlabs" | "minimax" | "edge-tts" | "openai";
 
 export interface BrowserPipelineOptions {
   withAudio?: boolean;

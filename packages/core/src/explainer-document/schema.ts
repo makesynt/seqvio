@@ -23,7 +23,13 @@ export type AnnotationKind =
   | 'circle'
   | 'box'
   | 'underline'
-  | 'spotlight';
+  | 'spotlight'
+  | 'focus-ring'
+  | 'callout'
+  | 'bracket'
+  | 'connector'
+  | 'region-shade'
+  | 'guided-path';
 
 export const ANNOTATION_KINDS: AnnotationKind[] = [
   'arrow',
@@ -31,13 +37,27 @@ export const ANNOTATION_KINDS: AnnotationKind[] = [
   'box',
   'underline',
   'spotlight',
+  'focus-ring',
+  'callout',
+  'bracket',
+  'connector',
+  'region-shade',
+  'guided-path',
 ];
 
 export interface AddressableElement {
   id: string;
 }
 
-export type VisualBeatActionKind = 'reveal' | 'highlight' | 'focus' | 'annotate';
+export type VisualBeatActionKind =
+  | 'reveal'
+  | 'highlight'
+  | 'focus'
+  | 'annotate'
+  | 'compare'
+  | 'trace'
+  | 'emphasize'
+  | 'transform';
 
 export interface ExplanationCueSpec {
   id: string;
@@ -55,6 +75,8 @@ export interface ExplanationBeatAnchorSpec {
 export interface VisualBeatAction {
   targetId: string;
   action: VisualBeatActionKind;
+  relatedTargetId?: string;
+  pathTargetIds?: string[];
   /** Negative values reveal before speech; positive values delay the action. */
   offsetMs?: number;
   minHoldMs?: number;
@@ -76,10 +98,13 @@ export interface SceneExplanationSpec {
 
 export interface AnnotationSpec extends AddressableElement {
   targetId: string;
+  toTargetId?: string;
+  pathTargetIds?: string[];
   kind: AnnotationKind;
   start: number;
   duration: number;
   label?: string;
+  priority?: number;
 }
 
 export interface LineRange {
@@ -153,6 +178,115 @@ export interface DiagramSceneSpec {
   nodes: DiagramNode[];
   edges: DiagramEdge[];
   steps: DiagramStep[];
+  narration?: string;
+  explanation?: SceneExplanationSpec;
+  duration?: number;
+  annotations?: AnnotationSpec[];
+}
+
+export interface InfographicMetricSpec extends AddressableElement {
+  label: string;
+  value: string;
+  detail?: string;
+  color?: string;
+  at?: number;
+}
+
+export interface InfographicComparisonSpec extends AddressableElement {
+  label: string;
+  before: number;
+  after: number;
+  beforeLabel?: string;
+  afterLabel?: string;
+  at?: number;
+}
+
+export interface InfographicProcessStepSpec extends AddressableElement {
+  label: string;
+  detail?: string;
+  at?: number;
+}
+
+export interface InfographicTimelineEventSpec extends AddressableElement {
+  label: string;
+  detail?: string;
+  at?: number;
+}
+
+export interface InfographicRelationshipNodeSpec extends AddressableElement {
+  label: string;
+  x: number;
+  y: number;
+}
+
+export interface InfographicRelationshipSpec extends AddressableElement {
+  from: string;
+  to: string;
+  label?: string;
+  at?: number;
+}
+
+export interface InfographicChartPointSpec {
+  x: string;
+  y: number;
+}
+
+export interface InfographicChartSeriesSpec extends AddressableElement {
+  label: string;
+  color?: string;
+  points: InfographicChartPointSpec[];
+}
+
+export interface InfographicChartAxisSpec {
+  label?: string;
+  min?: number;
+  max?: number;
+  ticks?: number;
+}
+
+export interface InfographicChartSpec extends AddressableElement {
+  title: string;
+  kind: 'bar' | 'line';
+  series: InfographicChartSeriesSpec[];
+  xAxis?: InfographicChartAxisSpec;
+  yAxis?: InfographicChartAxisSpec;
+  legend?: 'none' | 'top' | 'bottom';
+  unit?: string;
+  sourceLabel?: string;
+  at?: number;
+}
+
+export interface AttentionSequenceSpec extends AddressableElement {
+  sceneId?: string;
+  targetId: string;
+  toTargetId?: string;
+  pathTargetIds?: string[];
+  kind: AnnotationKind;
+  start: number;
+  duration: number;
+  label?: string;
+  handoffTo?: string;
+  minHoldFrames?: number;
+  sourceBeatId?: string;
+  persistence?: 'timed' | 'until-handoff' | 'until-clear';
+  clearAt?: number;
+  handoffToSceneId?: string;
+  priority?: number;
+}
+
+export interface InfographicSceneSpec {
+  type: 'infographic';
+  id: string;
+  title?: string;
+  density?: 'auto' | 'standard' | 'reduced';
+  metrics?: InfographicMetricSpec[];
+  comparisons?: InfographicComparisonSpec[];
+  process?: InfographicProcessStepSpec[];
+  timeline?: InfographicTimelineEventSpec[];
+  relationshipNodes?: InfographicRelationshipNodeSpec[];
+  relationships?: InfographicRelationshipSpec[];
+  charts?: InfographicChartSpec[];
+  attention?: AttentionSequenceSpec[];
   narration?: string;
   explanation?: SceneExplanationSpec;
   duration?: number;
@@ -276,12 +410,37 @@ export interface BrowserSceneSpec {
   annotations?: AnnotationSpec[];
 }
 
+export interface ManimMarkerSpec extends AddressableElement {
+  frame: number;
+  targetId?: string;
+  beatId?: string;
+}
+
+/** Pre-rendered mathematical animation produced by @seqvio/manim-adapter. */
+export interface ManimSceneSpec {
+  type: 'manim';
+  id: string;
+  sourceVideo: string;
+  sourceManifest?: string;
+  markers?: ManimMarkerSpec[];
+  mediaWidth?: number;
+  mediaHeight?: number;
+  mediaFps?: number;
+  fit?: 'contain' | 'cover' | 'fill';
+  narration?: string;
+  explanation?: SceneExplanationSpec;
+  duration?: number;
+  annotations?: AnnotationSpec[];
+}
+
 export type SceneSpec =
   | WhiteboardSceneSpec
   | CodeSceneSpec
   | DiagramSceneSpec
+  | InfographicSceneSpec
   | TerminalSceneSpec
-  | BrowserSceneSpec;
+  | BrowserSceneSpec
+  | ManimSceneSpec;
 
 export interface ChapterSpec {
   id: string;
@@ -302,6 +461,8 @@ export interface ExplainerDocument {
   transitionDuration?: number;
   /** Versioned pacing policy used by authoring, timing resolution, and QA. */
   pacingProfile?: string;
+  /** Optional visual profile; semantic ids, evidence, and timing remain unchanged. */
+  styleProfile?: import('../style-profile').StyleProfile;
   chapters?: ChapterSpec[];
   scenes: SceneSpec[];
   /** Document-level annotations that may target any scene element id. */

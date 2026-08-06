@@ -1,0 +1,25 @@
+{
+  "format": "seqvio-explainer",
+  "schemaVersion": "1.0",
+  "id": "manim-ir-validation",
+  "width": 1280,
+  "height": 720,
+  "fps": 30,
+  "scenes": [
+    {
+      "type": "manim",
+      "id": "external-animation",
+      "sourceVideo": "file:///D:/video-agent/seqvio/output/direction-plan-validation-v2.mp4",
+      "sourceManifest": "output/manim-execution-validation-v2.dry-run.json",
+      "mediaWidth": 1280,
+      "mediaHeight": 720,
+      "mediaFps": 30,
+      "duration": 180,
+      "markers": [
+        { "id": "start", "frame": 0, "targetId": "animation-start" },
+        { "id": "explain", "frame": 60, "targetId": "animation-explain" },
+        { "id": "result", "frame": 140, "targetId": "animation-result" }
+      ]
+    }
+  ]
+}

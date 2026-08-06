@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { doctorExitCode, supportsNodeVersion } from '../dist/doctor.js';
+import { doctorExitCode, resolveManimPythonCommand, supportsNodeVersion } from '../dist/doctor.js';
 
 test('doctor enforces the supported Node.js floor', () => {
   assert.equal(supportsNodeVersion('v18.0.0'), true);
@@ -13,4 +13,8 @@ test('doctor enforces the supported Node.js floor', () => {
 test('doctor exit code follows blocking failures', () => {
   assert.equal(doctorExitCode({ ok: true }), 0);
   assert.equal(doctorExitCode({ ok: false }), 1);
+});
+
+test('doctor honors an explicit Manim Python command', () => {
+  assert.equal(resolveManimPythonCommand(process.cwd(), 'custom-python'), 'custom-python');
 });

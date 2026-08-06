@@ -1,0 +1,13 @@
+{
+  "format": "seqvio-style-profile",
+  "version": "1.0",
+  "id": "editorial-explainer",
+  "label": "Editorial Explainer",
+  "typography": { "headingFamily": "Georgia", "bodyFamily": "Inter", "monoFamily": "JetBrains Mono", "scale": "large" },
+  "motionDensity": "balanced",
+  "cameraPolicy": "static",
+  "transitionPolicy": "crossfade",
+  "attentionPersistence": "until-handoff",
+  "spacing": "airy",
+  "paletteRoles": { "background": "#f7f8fa", "ink": "#17202a", "accent": "#2563eb", "muted": "#64748b" }
+}

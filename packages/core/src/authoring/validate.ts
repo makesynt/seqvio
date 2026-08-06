@@ -32,6 +32,9 @@ export function validateEditorialPlan(plan: EditorialPlan): AuthoringIssue[] {
   if (!Number.isFinite(plan.durationBudgetSec) || plan.durationBudgetSec <= 0) {
     issues.push({ severity: 'error', path: 'durationBudgetSec', code: 'invalid_duration_budget', message: 'Duration budget must be greater than zero.' });
   }
+  if (plan.hook !== undefined && !plan.hook.trim()) {
+    issues.push({ severity: 'warning', path: 'hook', code: 'empty_hook', message: 'Omit hook or state a concrete opening promise.' });
+  }
 
   const strategy = plan.explanationStrategy;
   if (strategy) {
@@ -192,6 +195,17 @@ export function validateVisualDesignBrief(brief: VisualDesignBrief, plan?: Edito
     for (const treatment of brief.sceneTreatments) {
       if (!sectionIds.has(treatment.sectionId)) {
         issues.push({ severity: 'error', path: 'sceneTreatments', code: 'unknown_section', message: `Visual treatment references unknown section "${treatment.sectionId}".` });
+      }
+      if (treatment.onScreenTextBudget !== undefined && (!Number.isInteger(treatment.onScreenTextBudget) || treatment.onScreenTextBudget <= 0)) {
+        issues.push({ severity: 'error', path: `sceneTreatments.${treatment.sectionId}.onScreenTextBudget`, code: 'invalid_text_budget', message: 'On-screen text budget must be a positive whole-word count.' });
+      }
+      const usesProductionContract = treatment.visualRole !== undefined
+        || treatment.focalTarget !== undefined
+        || treatment.evidenceSource !== undefined
+        || treatment.onScreenTextBudget !== undefined
+        || treatment.transitionIntent !== undefined;
+      if (usesProductionContract && !treatment.focalTarget) {
+        issues.push({ severity: 'warning', path: `sceneTreatments.${treatment.sectionId}.focalTarget`, code: 'missing_focal_target', message: 'A production-contract treatment should declare one focal target.' });
       }
     }
   }

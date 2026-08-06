@@ -66,6 +66,21 @@ const CASES = [
     // hook whiteboard, code walkthrough, architecture diagram
     frames: [20, 100, 250],
   },
+  {
+    name: 'style-clean-technical',
+    component: 'examples/compositions/style-playbook-clean-technical.tsx',
+    width: 1280, height: 720, frames: [24, 90, 132, 174],
+  },
+  {
+    name: 'style-editorial-explainer',
+    component: 'examples/compositions/style-playbook-editorial-explainer.tsx',
+    width: 1280, height: 720, frames: [24, 90, 132, 174],
+  },
+  {
+    name: 'style-terminal-first',
+    component: 'examples/compositions/style-playbook-terminal-first.tsx',
+    width: 1280, height: 720, frames: [24, 90, 132, 174],
+  },
 ];
 
 // PSNR below this (dB) for any frame is treated as a regression. Pixel-identical
@@ -73,6 +88,8 @@ const CASES = [
 const PSNR_THRESHOLD_DB = 40;
 
 const isUpdate = process.argv.includes('--update');
+const caseIndex = process.argv.indexOf('--case');
+const selectedCases = new Set(caseIndex >= 0 ? String(process.argv[caseIndex + 1] ?? '').split(',').filter(Boolean) : []);
 
 function frameFileName(caseName, frame) {
   return `${caseName}-f${String(frame).padStart(6, '0')}.png`;
@@ -176,6 +193,7 @@ async function main() {
   let compared = 0;
 
   for (const testCase of CASES) {
+    if (selectedCases.size > 0 && !selectedCases.has(testCase.name)) continue;
     for (const frame of testCase.frames) {
       const fileName = frameFileName(testCase.name, frame);
       const baselinePath = path.join(baselineDir, fileName);

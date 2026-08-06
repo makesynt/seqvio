@@ -62,8 +62,51 @@ From `@seqvio/technical`:
 - `AnnotationProvider` / `AnnotationTarget` / `AnnotationLayer` (also exported from `@seqvio/core` for cross-style use)
 - `CodeWalkthrough` — Shiki sync highlighter, stable line ids, focus / type / insert / replace / delete / annotate
 - `ArchitectureDiagram` — dagre layout with reveal / connect / trace / emphasize / collapse / expand
+- `InfographicScene` — metrics, comparisons, process, timeline, relationships,
+  bar/line charts, series targets, axes, legends, units, and source labels
+- `ManimClip` — seekable externally rendered mathematical animation with named,
+  narration-reflowable markers
+
+Shared attention includes spotlight, focus ring, callout, bracket, connector,
+region shade, and guided path primitives. Simultaneous callouts use deterministic
+collision-aware placement; connectors choose safe-area routes around occupied
+targets. Explicit priority provides deterministic stacking, and every primitive
+has random-access and reverse-seek coverage.
+
+Semantic direction is available through versioned `DirectionPlan` and Motion
+Grammar contracts. `npm run director:task` prepares host-agent generate/repair
+tasks and auditable receipts; the renderer executes their validated artifacts
+without a model call.
+
+Style profiles apply typography, palette, spacing, motion density, camera,
+transition, and attention persistence policies. The shipped reference profiles
+are `clean-technical`, `editorial-explainer`, and `terminal-first`; semantic
+timing and target identity remain invariant across them.
 
 Whiteboard drawables and product-demo chrome accept `annotationId` / element `id` so annotations can target them under a shared `AnnotationProvider`.
+
+## External Python Manim integration
+
+`@seqvio/manim-adapter` is an experimental TypeScript/Node.js adapter for the
+independently installed Python package `manim`. It does not implement Manim in
+JavaScript. The adapter validates an external-render `ManimSceneSpec`, runs
+`python -m manim`, probes the output, and records source/assets/runtime hashes,
+media metadata, cache identity, progress, logs, and diagnostics in a
+`ManimRenderManifest`.
+
+The external render and Seqvio playback contracts are separate:
+
+- `@seqvio/manim-adapter` turns a Python file and scene class into validated
+  media plus a manifest.
+- The ExplainerDocument `manim` scene references that pre-rendered media and is
+  compiled into `@seqvio/technical` `ManimClip`.
+- `ManimClip` seeks the media from the current composition frame. Named markers
+  may follow resolved ExplanationBeats and expose shared annotation targets.
+
+`seqvio-doctor` discovers a repository-local `.venv-manim` or uses
+`SEQVIO_MANIM_PYTHON`. See
+[`docs/MANIM-INTEGRATION.md`](../../../docs/MANIM-INTEGRATION.md) for the complete
+setup and rendering workflow.
 
 ## Core composition components
 
@@ -94,8 +137,11 @@ From `@seqvio/renderer`:
 - `seqvio-audio extract` — narration manifest extraction
 - `seqvio-audio synthesize` — TTS synthesis and resolved manifest generation
 - `seqvio-qa` — visual, pacing, media, capture, and resolved timing checks
+- `seqvio-doctor` — environment checks including optional local Manim discovery
+- `npm run director:task -- --mode generate|repair ...` — versioned host-agent
+  direction task and receipt generation
 
-Capture adapters are available but pre-stable:
+Capture adapters are available with a stable CLI/artifact contract:
 
 - `@seqvio/terminal-narrator` converts xterm recordings into terminal scenes,
   capture-backed ExplanationBeats, and optional synthesized narration.
@@ -103,12 +149,13 @@ Capture adapters are available but pre-stable:
   start times when compiling Browser scenes and Beats.
 
 Their shared-dispatcher data path is implemented, legacy writers are removed,
-and release smoke is tested at `1280x720`. CLI contract `1.0` provides direct
+and release smoke is tested at `1280x720`. CLI contract `2.0` provides direct
 commands, JSON results, stable exit codes, monotonic progress, safe job ids, and
 portable `artifacts.json` paths. Windows package and real runtime verification
-passes locally; the configured Windows/Linux/macOS matrix must pass before
-lifecycle promotion. Screenshot privacy work is intentionally deferred and must
-not be assumed.
+passes locally; the configured Windows/Linux/macOS matrix and lifecycle
+promotion pass for the current contract. Browser capture supports deterministic
+selector/rectangle privacy masks before frame capture; OCR is not treated as a
+security boundary.
 
 ## Narration providers
 
@@ -144,17 +191,21 @@ Supported today:
 
 Preferred starting points:
 
-| File | Use case |
-| --- | --- |
-| `examples/compositions/seqvio-overview-en.tsx` | Narrated English product overview |
-| `examples/compositions/seqvio-overview-zh.tsx` | Narrated Chinese product overview |
-| `examples/compositions/seqvio-audio-demo.tsx` | Audio and caption metadata |
-| `examples/compositions/seqvio-intro.tsx` | Multi-scene framework intro |
-| `examples/compositions/technical-demo.tsx` | Short technical smoke (whiteboard + code + diagram) |
-| `examples/compositions/technical-explainer.tsx` | ~4.5 min technical reference composition (`lockToAudio`) |
-| `examples/ir/technical-demo.explainer.json` | Short ExplainerDocument IR |
-| `examples/ir/technical-explainer.explainer.json` | Full ExplainerDocument IR + chapters |
-| `packages/whiteboard/examples/` | Single-scene whiteboard samples |
+| File                                                     | Use case                                                             |
+| -------------------------------------------------------- | -------------------------------------------------------------------- |
+| `examples/compositions/seqvio-overview-en.tsx`           | Narrated English product overview                                    |
+| `examples/compositions/seqvio-overview-zh.tsx`           | Narrated Chinese product overview                                    |
+| `examples/compositions/seqvio-audio-demo.tsx`            | Audio and caption metadata                                           |
+| `examples/compositions/seqvio-intro.tsx`                 | Multi-scene framework intro                                          |
+| `examples/compositions/technical-demo.tsx`               | Short technical smoke (whiteboard + code + diagram)                  |
+| `examples/compositions/technical-explainer.tsx`          | ~4.5 min technical reference composition (`lockToAudio`)             |
+| `examples/ir/technical-demo.explainer.json`              | Short ExplainerDocument IR                                           |
+| `examples/ir/technical-explainer.explainer.json`         | Full ExplainerDocument IR + chapters                                 |
+| `examples/compositions/infographic-chart-validation.tsx` | Chart/series/axis/legend reference                                   |
+| `examples/compositions/manim-end-to-end-validation.tsx`  | Real graph/proof Manim playback with narration                       |
+| `examples/compositions/style-playbook-*.tsx`             | Same semantic composition under three visual profiles                |
+| `examples/manim/`                                        | Equation, graph, symbolic proof, and geometric proof Python fixtures |
+| `packages/whiteboard/examples/`                          | Single-scene whiteboard samples                                      |
 
 Narrated technical reference loop:
 
@@ -172,21 +223,22 @@ Local render intermediates belong in `output/` / `.media/` and are gitignored.
 
 ## Repository layout
 
-| Path | Purpose |
-| --- | --- |
-| `packages/whiteboard` | Whiteboard components |
-| `packages/scatterbrain` | Scatterbrain sticky-note / cork-board style components |
-| `packages/technical` | Technical explainer components |
-| `packages/core` | Scene, transition, and IR runtime |
-| `packages/renderer` | Bundler and CLIs |
-| `packages/product-demo` | Product walkthrough components |
-| `packages/capture` | Shared capture manifest and evidence contracts |
-| `packages/terminal-narrator` | Pre-stable terminal capture adapter |
-| `packages/browser-recorder` | Pre-stable browser capture adapter |
-| `examples/compositions/` | Renderable compositions |
-| `examples/ir/` | Storyboard / ExplainerDocument JSON examples |
-| `skills/seqvio/` | Agent skill and references |
-| `docs/` | Human-facing docs |
+| Path                         | Purpose                                                      |
+| ---------------------------- | ------------------------------------------------------------ |
+| `packages/whiteboard`        | Whiteboard components                                        |
+| `packages/scatterbrain`      | Scatterbrain sticky-note / cork-board style components       |
+| `packages/technical`         | Technical explainer components                               |
+| `packages/core`              | Scene, transition, and IR runtime                            |
+| `packages/renderer`          | Bundler and CLIs                                             |
+| `packages/product-demo`      | Product walkthrough components                               |
+| `packages/manim-adapter`     | Optional external Manim execution and media manifest adapter |
+| `packages/capture`           | Shared capture manifest and evidence contracts               |
+| `packages/terminal-narrator` | Pre-stable terminal capture adapter                          |
+| `packages/browser-recorder`  | Pre-stable browser capture adapter                           |
+| `examples/compositions/`     | Renderable compositions                                      |
+| `examples/ir/`               | Storyboard / ExplainerDocument JSON examples                 |
+| `skills/seqvio/`             | Agent skill and references                                   |
+| `docs/`                      | Human-facing docs                                            |
 
 ## Not implemented yet
 
@@ -195,9 +247,9 @@ Do not assume these exist just because they appear in roadmap or proposal docs:
 - visual editor / studio workflow
 - automatic custom SVG illustration generation per topic
 - Seqvio-side AI planning or planner API calls
-- OpenMontage adapter inside Seqvio core
+- Product-specific orchestration adapter inside Seqvio core
 - `@seqvio/education` / full LessonPlan package
-- ChatTranscript, DiffReview, or infographic scene families
+- ChatTranscript or DiffReview scene families
 - automatic screenshot privacy or redaction guarantees
 - formal VISION.md promise for 10-minute videos
 - transitions beyond `fade`, `slide`, and `wipe`

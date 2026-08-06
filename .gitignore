@@ -8,6 +8,7 @@ config.local.json
 # Dependencies
 node_modules/
 .tools/
+.venv-manim/
 
 # Build outputs
 dist/

@@ -1,7 +1,7 @@
 {
   "name": "@seqvio/browser-recorder",
   "version": "0.3.0",
-  "description": "Pre-stable browser capture-to-explanation adapter for Seqvio",
+  "description": "Experimental package with a stable browser capture-to-explanation adapter for Seqvio",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
@@ -11,7 +11,7 @@
   },
   "seqvio": {
     "lifecycle": "experimental",
-    "adapterLifecycle": "pre-stable",
+    "adapterLifecycle": "stable",
     "versionPolicy": "independent",
     "cliContractVersion": "2.0",
     "artifactManifestVersion": "1.0"

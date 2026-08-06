@@ -6,13 +6,13 @@ and `npm run verify:contracts` enforces it after packages are built.
 
 ## Feature And Package Lifecycle
 
-| Lifecycle | Contract |
-| --- | --- |
-| `public` | Documented, compiled, tested, and covered by compatibility notes. Breaking changes require a declared release change. |
-| `experimental` | Reachable and tested, but its API or packaging may change before promotion. |
-| `internal` | Repository implementation detail; not a supported consumer contract. |
-| `deprecated` | Still available during a declared removal window, with a supported replacement. |
-| `removed` | Rejected by current validation and unavailable from new public exports. |
+| Lifecycle      | Contract                                                                                                              |
+| -------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `public`       | Documented, compiled, tested, and covered by compatibility notes. Breaking changes require a declared release change. |
+| `experimental` | Reachable and tested, but its API or packaging may change before promotion.                                           |
+| `internal`     | Repository implementation detail; not a supported consumer contract.                                                  |
+| `deprecated`   | Still available during a declared removal window, with a supported replacement.                                       |
+| `removed`      | Rejected by current validation and unavailable from new public exports.                                               |
 
 Every workspace package must declare `seqvio.lifecycle`. The private root is
 `internal`; the stable rendering/component train is `public`; capture and its
@@ -44,9 +44,11 @@ its matching tag must exist on the remote repository. This tolerates stale npm
 metadata causing a duplicate-publish response, while still rejecting a zero
 exit when any package version or remote tag is missing.
 
-Capture, Browser Recorder, and Terminal Narrator use independent pre-1.0
-versions. Independent versioning does not weaken dependency checks: references
-to another local Seqvio package must still use its exact current version.
+Capture, Browser Recorder, Terminal Narrator, and the Manim adapter use
+independent pre-1.0 versions. Independent versioning does not weaken dependency
+checks: references to another local Seqvio package must still use its exact
+current version. The Manim adapter remains experimental and is not part of the
+stable component/renderer release train.
 
 ## Capture Adapter Compatibility
 
@@ -57,9 +59,10 @@ to another local Seqvio package must still use its exact current version.
 - `stable`: the declared CLI/artifact contract and compatibility notes have
   passed on every supported host.
 
-Terminal and Browser currently remain `experimental` packages with
-`adapterLifecycle: pre-stable`. Promotion requires the Windows/Linux/macOS
-runtime matrix to pass; it is not inferred from a version number.
+Terminal and Browser remain `experimental` packages with
+`adapterLifecycle: stable`. The Windows/Linux/macOS runtime matrix has passed
+for the current contract; package lifecycle promotion remains a separate
+versioning and release decision.
 
 ## CI Enforcement
 
