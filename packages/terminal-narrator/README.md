@@ -4,7 +4,7 @@
 状态回放 → `ExplainerDocument` → ExplanationBeat 音画对齐 → 可选 TTS
 旁白 → QA / MP4。
 
-当前 CLI 属于 pre-stable；生产管线已经使用 manifest → shared capture
+当前 CLI 的 capture contract 已稳定；生产管线已经使用 manifest → shared capture
 dispatcher → IR → TSX，legacy `writeComposition` writer 已移除。
 
 **范围**：机制 1（外壳调教 Claude Code）+ 机制 3（日志回放渲染）。**不含** MCP（机制 2）。

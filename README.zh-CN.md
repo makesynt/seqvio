@@ -127,7 +127,7 @@ node packages/browser-recorder/dist/cli.js serve --port 4175
 node packages/browser-recorder/dist/cli.js record --plan plan.json --jobId demo --json
 ```
 
-打开 `http://127.0.0.1:4175`。内置示例无需 AI provider；只有需要 AI 生成 action plan 时才配置 planner webhook。plan 契约和 pre-stable CLI 边界见 [browser recorder README](./packages/browser-recorder/README.md)。
+打开 `http://127.0.0.1:4175`。内置示例无需 AI provider；只有需要 AI 生成 action plan 时才配置 planner webhook。plan 契约和 stable adapter 边界见 [browser recorder README](./packages/browser-recorder/README.md)。
 
 ### Terminal 捕获适配器
 

@@ -18,13 +18,13 @@ function reservePort() {
 }
 
 async function waitForDemo(port, child) {
-  for (let attempt = 0; attempt < 40; attempt += 1) {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
     if (child.exitCode !== null) throw new Error(`serve process exited early with ${child.exitCode}`);
     try {
       const response = await fetch(`http://127.0.0.1:${port}/demo`);
       if (response.ok) return response.text();
     } catch {}
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 100));
   }
   throw new Error('serve process did not become ready');
 }

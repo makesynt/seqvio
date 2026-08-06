@@ -74,8 +74,8 @@ for (const name of policy.independentPackages) {
 
 for (const name of policy.adapterPackages) {
   const entry = packages.get(name);
-  if (entry?.manifest.seqvio?.adapterLifecycle !== 'pre-stable') {
-    fail(`${entry?.file ?? name}: capture adapters must remain pre-stable until host promotion`);
+  if (entry?.manifest.seqvio?.adapterLifecycle !== 'stable') {
+    fail(`${entry?.file ?? name}: capture adapters must declare the promoted stable lifecycle`);
   }
 }
 

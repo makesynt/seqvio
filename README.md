@@ -131,7 +131,7 @@ node packages/browser-recorder/dist/cli.js serve --port 4175
 node packages/browser-recorder/dist/cli.js record --plan plan.json --jobId demo --json
 ```
 
-Open `http://127.0.0.1:4175`. The built-in sample runs without an AI provider; configure a planner webhook only when AI-generated action plans are required. See the [browser recorder README](./packages/browser-recorder/README.md) for the plan contract and pre-stable CLI boundaries.
+Open `http://127.0.0.1:4175`. The built-in sample runs without an AI provider; configure a planner webhook only when AI-generated action plans are required. See the [browser recorder README](./packages/browser-recorder/README.md) for the plan contract and stable adapter boundaries.
 
 **Requirements:** Node.js `>=18`, Chromium (via Puppeteer), FFmpeg (bundled in `@seqvio/renderer`). Local repo development uses npm workspaces and `package-lock.json`. Verify the complete local toolchain with `seqvio-doctor` or `npm run doctor` in a repository checkout.
 
@@ -331,7 +331,7 @@ Full phase ordering and the reasoning behind it: [`docs/ROADMAP.md`](./docs/ROAD
 1. **Singular capture/IR path** - shared dispatcher routing and legacy writer removal are complete; stabilize adapter CLIs around `CaptureSession -> ExplainerDocument`.
 2. **ExplanationBeat timing** - now implemented across all stable scenes, including capture evidence and post-TTS phrase alignment.
 3. **Release QA** - baseline/capture profiles now cover visual, pacing, audio, media, semantic Beat failures, and deterministic browser privacy masks; OCR is not a security boundary.
-4. **Packaging and promotion** - CLI/artifact contract `2.0` is implemented; verify supported npm/runtime hosts before lifecycle promotion.
+4. **Packaging and promotion** - CLI/artifact contract `2.0` and supported-host lifecycle promotion are complete; npm release publication remains an external release action.
 
 Product positioning and scope:
 

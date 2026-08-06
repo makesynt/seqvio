@@ -1,6 +1,6 @@
 # Seqvio Browser Capture Adapter
 
-A local, pre-stable browser walkthrough adapter that executes a validated action
+A local browser walkthrough adapter with a stable capture contract that executes a validated action
 plan, captures the page, records cursor/focus/click metadata and exact action
 start times, then compiles the capture through `ExplainerDocument`.
 

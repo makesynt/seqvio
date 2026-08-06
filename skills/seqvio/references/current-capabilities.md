@@ -118,7 +118,7 @@ From `@seqvio/renderer`:
 - `npm run director:task -- --mode generate|repair ...` — versioned host-agent
   direction task and receipt generation
 
-Capture adapters are available but pre-stable:
+Capture adapters are available with a stable CLI/artifact contract:
 
 - `@seqvio/terminal-narrator` converts xterm recordings into terminal scenes,
   capture-backed ExplanationBeats, and optional synthesized narration.
@@ -129,9 +129,10 @@ Their shared-dispatcher data path is implemented, legacy writers are removed,
 and release smoke is tested at `1280x720`. CLI contract `2.0` provides direct
 commands, JSON results, stable exit codes, monotonic progress, safe job ids, and
 portable `artifacts.json` paths. Windows package and real runtime verification
-passes locally; the configured Windows/Linux/macOS matrix must pass before
-lifecycle promotion. Browser capture supports deterministic selector/rectangle
-privacy masks before frame capture; OCR is not treated as a security boundary.
+passes locally; the configured Windows/Linux/macOS matrix and lifecycle
+promotion pass for the current contract. Browser capture supports deterministic
+selector/rectangle privacy masks before frame capture; OCR is not treated as a
+security boundary.
 
 ## Narration providers
 

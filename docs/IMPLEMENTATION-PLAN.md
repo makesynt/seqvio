@@ -96,8 +96,8 @@ ports compose.ts timing logic) + `terminalCaptureSession` (CaptureSession impl)
   production pipeline now uses the shared dispatcher and the legacy writer is
   removed. CLI contract `2.0` fixes JSON results, exit codes, progress, safe job
   ids, artifact layout, per-job capture QA, and independent audio/caption options.
-  Windows package/CLI verification passes locally; the three-host CI matrix is
-  configured and must pass before promotion.
+  Windows package/CLI verification passes locally; the three-host CI matrix
+  passes for the current contract.
 
 ### 1.3 browser-recorder - DONE (core)
 
@@ -108,18 +108,18 @@ times instead of evenly distributing steps; older recording manifests keep the
 fallback. The production pipeline now uses the shared dispatcher and the legacy
 writer is removed. CLI contract `2.0` adds direct plan execution, JSON results,
 exit codes, progress, safe job ids, and artifact layout. Per-job capture QA,
-audio parity, and privacy masking are implemented. Windows package/CLI verification passes
-locally; the three-host CI matrix is configured and must pass before promotion.
+  audio parity, and privacy masking are implemented. Windows package/CLI
+  verification passes locally; the three-host CI matrix passes for the current
+  contract.
 
-### 1.5 Promote out of pre-stable (in progress)
+### 1.5 Promote out of pre-stable - DONE (2026-08-06)
 
 README/skill/current-capability docs now describe the working IR path and its
-pre-stable CLI status. Shared dispatcher routing and legacy writer removal are
-complete. CLI contract `2.0`, per-job QA, audio parity, and independent caption
-burn-in are also complete. Windows host verification passes locally; Linux and
-macOS execution remains pending the configured CI matrix. Deterministic
-selector/rectangle privacy masking is implemented; OCR remains an explicitly
-deferred boundary.
+stable adapter contract. Shared dispatcher routing and legacy writer removal are
+complete. CLI contract `2.0`, per-job QA, audio parity, independent caption
+burn-in, and deterministic selector/rectangle privacy masking are complete. The
+Windows/Linux/macOS matrix passes for the current contract; OCR remains an
+explicitly deferred boundary.
 
 ## Phase 2 - Generic QA Checks
 
@@ -543,7 +543,8 @@ Phase 2.1/2.2 -> 3.1 (infographic) -> 3.2 (attention) -> 3.3 (direction)
   pipelines and release smoke use the shared dispatcher, canonical artifact
   tests cover both adapters, and legacy `writeComposition` exports are removed.
 - **Scope.** Capture, joint ExplanationBeat authoring, post-TTS semantic timing,
-  release QA, and CLI/artifact contract `2.0` are implemented. Remaining:
-  CI confirmation on Linux/macOS and lifecycle promotion. Windows host package
-  and CLI verification passes locally. Deterministic privacy masking is
-  implemented; OCR remains explicitly deferred.
+  release QA, and CLI/artifact contract `2.0` are implemented. Remaining: npm
+  release publication. Windows host package and CLI verification passes locally,
+  and the Windows/Linux/macOS matrix plus lifecycle promotion are complete.
+  Deterministic privacy masking is implemented; OCR remains explicitly
+  deferred.

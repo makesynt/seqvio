@@ -1,11 +1,11 @@
 # Capture CLI Contract
 
 > Current contract version: `2.0`
-> Adapter lifecycle: `pre-stable`
+> Adapter lifecycle: `stable`
 
 Terminal and Browser adapters share command, result, exit-code, QA, audio, and
-artifact conventions. The contract is versioned while supported-host
-verification remains pre-stable.
+artifact conventions. The contract is versioned and the supported-host
+verification gate is stable for the current release.
 
 ## Commands
 
@@ -42,7 +42,7 @@ go to stderr. Success includes:
 {
   "ok": true,
   "cliContractVersion": "2.0",
-  "lifecycle": "pre-stable",
+  "lifecycle": "stable",
   "adapter": "terminal",
   "jobId": "demo",
   "jobDir": ".../demo",
@@ -109,6 +109,7 @@ capture. Required selectors fail closed when they never match; automatic OCR is
 not used as a security boundary. Windows package/CLI host
 verification passes locally; a Windows/Linux/macOS CI matrix verifies clean
 installation, build, adapter tests, npm package contents, and CLI contract.
-Adapters remain pre-stable until that matrix passes on the repository host.
+The configured Windows/Linux/macOS matrix has passed for the current contract;
+package lifecycle remains experimental while API/package promotion proceeds.
 Raw Browser captures must still be treated as sensitive input and reviewed
 before publication.

@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 export const CAPTURE_CLI_CONTRACT_VERSION = '2.0' as const;
-export const CAPTURE_ADAPTER_LIFECYCLE = 'pre-stable' as const;
+export const CAPTURE_ADAPTER_LIFECYCLE = 'stable' as const;
 export const CAPTURE_ARTIFACT_MANIFEST_VERSION = '1.0' as const;
 
 export const CaptureCliExitCode = {

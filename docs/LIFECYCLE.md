@@ -57,9 +57,10 @@ to another local Seqvio package must still use its exact current version.
 - `stable`: the declared CLI/artifact contract and compatibility notes have
   passed on every supported host.
 
-Terminal and Browser currently remain `experimental` packages with
-`adapterLifecycle: pre-stable`. Promotion requires the Windows/Linux/macOS
-runtime matrix to pass; it is not inferred from a version number.
+Terminal and Browser remain `experimental` packages with
+`adapterLifecycle: stable`. The Windows/Linux/macOS runtime matrix has passed
+for the current contract; package lifecycle promotion remains a separate
+versioning and release decision.
 
 ## CI Enforcement
 
