@@ -1,6 +1,6 @@
 {
   "name": "@seqvio/capture",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "seqvio": {
     "lifecycle": "experimental",
     "versionPolicy": "independent"
@@ -40,7 +40,7 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@seqvio/core": "0.8.0"
+    "@seqvio/core": "0.8.1"
   },
   "devDependencies": {
     "typescript": "^5.3.0"
