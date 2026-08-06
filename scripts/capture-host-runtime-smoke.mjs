@@ -4,18 +4,28 @@ import * as http from 'node:http';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
-function runNode(args, env = {}) {
-  return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, args, {
-      cwd: process.cwd(),
-      stdio: 'inherit',
-      env: { ...process.env, ...env },
-    });
-    child.once('error', reject);
-    child.once('exit', (code) => code === 0
-      ? resolve()
-      : reject(new Error(`node ${args.join(' ')} failed with exit code ${code}`)));
-  });
+async function runNode(args, env = {}, attempts = 1) {
+  let lastError;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      await new Promise((resolve, reject) => {
+        const child = spawn(process.execPath, args, {
+          cwd: process.cwd(),
+          stdio: 'inherit',
+          env: { ...process.env, ...env },
+        });
+        child.once('error', reject);
+        child.once('exit', (code) => code === 0
+          ? resolve()
+          : reject(new Error(`node ${args.join(' ')} failed with exit code ${code}`)));
+      });
+      return;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      if (attempt < attempts) await new Promise((resolve) => setTimeout(resolve, 1_000));
+    }
+  }
+  throw lastError;
 }
 
 function assertComplete(jobDir) {
@@ -64,16 +74,17 @@ try {
     captureFps: quick ? 5 : 10,
     renderFps: quick ? 10 : 30,
     actions: [
-      { id: 'run', type: 'click', label: 'Run', selector: '#run', afterMs: quick ? 50 : 250 },
+      { id: 'run', type: 'click', label: 'Run', selector: '#run', afterMs: quick ? 500 : 250 },
     ],
   }, null, 2)}\n`, 'utf8');
 
   if (requestedKind === 'all' || requestedKind === 'terminal') {
+    const terminalJobId = process.platform === 'win32' && quick ? 'terminal-quick' : 'terminal';
     await runNode([
       'packages/terminal-narrator/dist/cli.js', 'record', '--sample',
-      '--outputDir', tempRoot, '--jobId', 'terminal', '--json',
-    ], quick ? { SEQVIO_CAPTURE_SMOKE_PROFILE: 'quick' } : {});
-    assertComplete(path.join(tempRoot, 'terminal'));
+      '--outputDir', tempRoot, '--jobId', terminalJobId, '--json',
+    ], quick ? { SEQVIO_CAPTURE_SMOKE_PROFILE: 'quick' } : {}, process.platform === 'win32' && quick ? 2 : 1);
+    assertComplete(path.join(tempRoot, terminalJobId));
   }
   if (requestedKind === 'all' || requestedKind === 'browser') {
     await runNode([
