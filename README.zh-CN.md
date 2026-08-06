@@ -298,8 +298,8 @@ node packages/renderer/dist/cli.js \
 | [`@seqvio/scatterbrain`](./packages/scatterbrain)           | 便签 / cork-board 风格组件                                             |
 | [`@seqvio/product-demo`](./packages/product-demo)           | 浏览器框、光标路径、截图占位、callout 和产品 walkthrough 组件          |
 | [`@seqvio/technical`](./packages/technical)                 | 技术讲解 runtime：代码走读、架构图、终端演示、标注和内置字体           |
-| [`@seqvio/terminal-narrator`](./packages/terminal-narrator) | Pre-stable node-pty/xterm 捕获 → IR/ExplanationBeat → 可选旁白 MP4     |
-| [`@seqvio/browser-recorder`](./packages/browser-recorder)   | Pre-stable Chromium action 捕获，保留真实动作时间 → IR/ExplanationBeat |
+| [`@seqvio/terminal-narrator`](./packages/terminal-narrator) | Stable node-pty/xterm 捕获契约 → IR/ExplanationBeat → 可选旁白 MP4     |
+| [`@seqvio/browser-recorder`](./packages/browser-recorder)   | Stable Chromium action 捕获，保留真实动作时间 → IR/ExplanationBeat |
 | [`@seqvio/capture`](./packages/capture)                     | 实验性的共享 capture session 和 artifact 契约                          |
 | [`@seqvio/renderer`](./packages/renderer)                   | TSX bundler，以及 `seqvio-render` / `seqvio-audio` CLI                 |
 

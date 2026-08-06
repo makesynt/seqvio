@@ -55,7 +55,7 @@ node packages/browser-recorder/dist/cli.js record --plan plan.json --jobId narra
 - `qa-report.json` — capture, visual, pacing, media, and audio diagnostics
 - `artifacts.json` — versioned status and relative artifact paths
 
-CLI contract `1.0` provides structured JSON output, stable exit codes, monotonic
+CLI contract `2.0` provides structured JSON output, stable exit codes, monotonic
 progress, and overwrite protection. See
 [`docs/CAPTURE-CLI-CONTRACT.md`](../../docs/CAPTURE-CLI-CONTRACT.md).
 

@@ -301,8 +301,8 @@ Voiceover is muxed automatically from the manifest. **Do not** add `--burnCaptio
 | [`@seqvio/scatterbrain`](./packages/scatterbrain)           | Sticky-note / cork-board style components                                                                             |
 | [`@seqvio/product-demo`](./packages/product-demo)           | Browser frames, cursor paths, screenshot placeholders, callouts, and product walkthrough components                   |
 | [`@seqvio/technical`](./packages/technical)                 | Technical explainer runtime: code walkthroughs, architecture diagrams, terminal demos, annotations, and bundled fonts |
-| [`@seqvio/terminal-narrator`](./packages/terminal-narrator) | Pre-stable node-pty/xterm capture → IR/ExplanationBeat → optional narrated MP4                                        |
-| [`@seqvio/browser-recorder`](./packages/browser-recorder)   | Pre-stable Chromium action capture with exact action timing → IR/ExplanationBeat                                      |
+| [`@seqvio/terminal-narrator`](./packages/terminal-narrator) | Stable node-pty/xterm capture contract → IR/ExplanationBeat → optional narrated MP4                                  |
+| [`@seqvio/browser-recorder`](./packages/browser-recorder)   | Stable Chromium action capture with exact action timing → IR/ExplanationBeat                                        |
 | [`@seqvio/capture`](./packages/capture)                     | Shared experimental capture session and artifact contracts                                                            |
 | [`@seqvio/renderer`](./packages/renderer)                   | TSX bundler plus `seqvio-render` and `seqvio-audio` CLIs                                                              |
 
