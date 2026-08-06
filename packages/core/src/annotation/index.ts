@@ -11,8 +11,8 @@ export {
   selectAttentionForScene,
   validateAttentionSequence,
 } from './attention';
-export { routeConnector, routeGuidedPath, resolveSafeLabelPlacement } from './routing';
-export type { RoutePoint, SafeLabelPlacement } from './routing';
+export { routeConnector, routeGuidedPath, resolveSafeLabelPlacement, resolveSafeLabelPlacements } from './routing';
+export type { LabelPlacementRequest, PlacedLabel, RoutePoint, SafeLabelPlacement } from './routing';
 export type {
   AttentionKind,
   AttentionSequenceItem,

@@ -22,6 +22,7 @@ import {
   routeConnector,
   routeGuidedPath,
   resolveSafeLabelPlacement,
+  resolveSafeLabelPlacements,
 } from '../dist/index.js';
 
 describe('attention sequence', () => {
@@ -77,6 +78,31 @@ describe('attention routing', () => {
   it('keeps callout labels inside the canvas', () => {
     const placement = resolveSafeLabelPlacement({ x: 0, y: 0, width: 60, height: 30 }, 180, 38, 1280, 720);
     assert.ok(placement.x >= 18 && placement.y >= 18);
+  });
+
+  it('places multiple labels without collisions and reroutes around obstacles', () => {
+    const targetA = { x: 400, y: 240, width: 80, height: 50 };
+    const targetB = { x: 490, y: 245, width: 80, height: 50 };
+    const labels = resolveSafeLabelPlacements([
+      { id: 'a', target: targetA, width: 180, height: 38 },
+      { id: 'b', target: targetB, width: 180, height: 38 },
+      { id: 'c', target: { x: 445, y: 330, width: 80, height: 50 }, width: 180, height: 38 },
+    ], 960, 540, [targetA, targetB], 24);
+    assert.deepStrictEqual(labels, resolveSafeLabelPlacements([
+      { id: 'a', target: targetA, width: 180, height: 38 },
+      { id: 'b', target: targetB, width: 180, height: 38 },
+      { id: 'c', target: { x: 445, y: 330, width: 80, height: 50 }, width: 180, height: 38 },
+    ], 960, 540, [targetA, targetB], 24));
+    const overlap = (a, b) => a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+    assert.ok(labels.every((label, index) => labels.slice(index + 1).every((other) => !overlap(label, other))));
+
+    const from = { x: 80, y: 250, width: 80, height: 50 };
+    const to = { x: 800, y: 250, width: 80, height: 50 };
+    const obstacle = { x: 420, y: 180, width: 120, height: 140 };
+    const unobstructed = routeConnector(from, to, 960, 540, 24);
+    const routed = routeConnector(from, to, 960, 540, 24, [obstacle]);
+    assert.notDeepStrictEqual(routed, unobstructed);
+    assert.ok(routed.some((point) => point.y > obstacle.y + obstacle.height));
   });
 });
 
@@ -393,6 +419,11 @@ describe('compileExplainerDocumentToTsx', () => {
         type: 'infographic', id: 'summary',
         metrics: [{ id: 'total', label: 'Total', value: '42' }],
         comparisons: [{ id: 'delta', label: 'Delta', before: 10, after: 4 }],
+        charts: [{
+          id: 'trend', title: 'Verified trend', kind: 'line', unit: 'ms', sourceLabel: 'fixture',
+          xAxis: { label: 'Run' }, yAxis: { label: 'Latency', min: 0, max: 20, ticks: 4 }, legend: 'top',
+          series: [{ id: 'p95', label: 'p95', points: [{ x: 'A', y: 18 }, { x: 'B', y: 7 }] }],
+        }],
         explanation: {
           cues: [{ id: 'result', text: 'The total improves, then the delta becomes clear.' }],
           beats: [
@@ -407,6 +438,18 @@ describe('compileExplainerDocumentToTsx', () => {
     assert.match(code, /"kind": "spotlight"/);
     assert.match(code, /"handoffTo": "delta"/);
     assert.match(code, /"sourceBeatId": "summary.total-beat"/);
+    assert.match(code, /"sourceLabel": "fixture"/);
+    assert.match(code, /"id": "p95"/);
+  });
+
+  it('rejects malformed infographic chart data and axis domains', () => {
+    const issues = validateExplainerDocument({
+      format: 'seqvio-explainer', schemaVersion: '1.0', id: 'bad-chart',
+      scenes: [{ type: 'infographic', id: 'chart', charts: [{ id: 'trend', title: 'Trend', kind: 'line', yAxis: { min: 10, max: 2 }, series: [{ id: 'series', label: 'Series', points: [] }] }] }],
+    });
+    const codes = issues.map((issue) => issue.code);
+    assert.ok(codes.includes('invalid_infographic_chart_points'));
+    assert.ok(codes.includes('invalid_infographic_axis_domain'));
   });
 
   it('validates and compiles a Manim-backed scene with named markers', () => {

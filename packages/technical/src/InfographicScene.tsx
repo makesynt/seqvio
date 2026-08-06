@@ -51,6 +51,22 @@ export interface InfographicRelationship {
   at?: number;
 }
 
+export interface InfographicChartPoint { x: string; y: number; }
+export interface InfographicChartSeries { id: string; label: string; color?: string; points: InfographicChartPoint[]; }
+export interface InfographicChartAxis { label?: string; min?: number; max?: number; ticks?: number; }
+export interface InfographicChart {
+  id: string;
+  title: string;
+  kind: 'bar' | 'line';
+  series: InfographicChartSeries[];
+  xAxis?: InfographicChartAxis;
+  yAxis?: InfographicChartAxis;
+  legend?: 'none' | 'top' | 'bottom';
+  unit?: string;
+  sourceLabel?: string;
+  at?: number;
+}
+
 export interface InfographicSceneProps {
   id: string;
   title?: string;
@@ -62,6 +78,7 @@ export interface InfographicSceneProps {
   timeline?: InfographicTimelineEvent[];
   relationshipNodes?: InfographicRelationshipNode[];
   relationships?: InfographicRelationship[];
+  charts?: InfographicChart[];
   attention?: AttentionSequenceItem[];
 }
 
@@ -90,6 +107,81 @@ const ItemTarget: React.FC<{
   </AnnotationTarget>
 );
 
+export function resolveChartDomain(chart: InfographicChart): { min: number; max: number } {
+  const values = chart.series.flatMap((series) => series.points.map((point) => point.y));
+  const observedMin = values.length ? Math.min(...values) : 0;
+  const observedMax = values.length ? Math.max(...values) : 1;
+  const min = chart.yAxis?.min ?? Math.min(0, observedMin);
+  const requestedMax = chart.yAxis?.max ?? observedMax;
+  return { min, max: requestedMax > min ? requestedMax : min + 1 };
+}
+
+const CHART_COLORS = ['#4f8cff', '#21a179', '#f0a43c', '#d7658b'];
+
+const ChartView: React.FC<{ chart: InfographicChart; frame: number; index: number }> = ({ chart, frame, index }) => {
+  const progress = infographicProgress(frame, chart.at ?? index * 12, 24);
+  const domain = resolveChartDomain(chart);
+  const categories = [...new Set(chart.series.flatMap((series) => series.points.map((point) => point.x)))];
+  const plot = { left: 58, top: 32, width: 424, height: 224 };
+  const scaleY = (value: number) => plot.top + plot.height - ((value - domain.min) / (domain.max - domain.min)) * plot.height;
+  const ticks = Math.max(2, chart.yAxis?.ticks ?? 4);
+  const legend = chart.legend ?? 'top';
+  return (
+    <ItemTarget id={chart.id} frame={frame} at={chart.at} index={index} style={{ padding: 18, background: technicalPalette.panel, border: `1px solid ${technicalPalette.line}`, borderRadius: 8, minHeight: 448, boxSizing: 'border-box' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 16 }}>
+        <div style={{ fontSize: 18, fontWeight: 700 }}>{chart.title}</div>
+        {chart.unit ? <div style={{ color: technicalPalette.muted, fontSize: 12 }}>Unit: {chart.unit}</div> : null}
+      </div>
+      {legend === 'top' ? <ChartLegend chart={chart} /> : null}
+      <svg viewBox="0 0 520 310" width="100%" height="310" aria-label={chart.title}>
+        {Array.from({ length: ticks + 1 }, (_, tick) => {
+          const ratio = tick / ticks;
+          const y = plot.top + plot.height * ratio;
+          const value = domain.max - (domain.max - domain.min) * ratio;
+          return <g key={tick}><line x1={plot.left} y1={y} x2={plot.left + plot.width} y2={y} stroke={technicalPalette.line} strokeWidth="1" /><text x={plot.left - 10} y={y + 4} textAnchor="end" fill={technicalPalette.muted} fontSize="11">{Number(value.toFixed(1))}</text></g>;
+        })}
+        <line x1={plot.left} y1={plot.top} x2={plot.left} y2={plot.top + plot.height} stroke={technicalPalette.muted} />
+        <line x1={plot.left} y1={plot.top + plot.height} x2={plot.left + plot.width} y2={plot.top + plot.height} stroke={technicalPalette.muted} />
+        {categories.map((category, categoryIndex) => {
+          const x = plot.left + ((categoryIndex + 0.5) / Math.max(1, categories.length)) * plot.width;
+          return <text key={category} x={x} y={plot.top + plot.height + 20} textAnchor="middle" fill={technicalPalette.muted} fontSize="11">{category}</text>;
+        })}
+        {chart.kind === 'bar' ? chart.series.map((series, seriesIndex) => {
+          const color = series.color ?? CHART_COLORS[seriesIndex % CHART_COLORS.length];
+          const categoryWidth = plot.width / Math.max(1, categories.length);
+          const barWidth = Math.min(34, categoryWidth * 0.72 / Math.max(1, chart.series.length));
+          return <AnnotationTarget key={series.id} id={series.id} as="g">{series.points.map((point) => {
+            const categoryIndex = categories.indexOf(point.x);
+            const center = plot.left + (categoryIndex + 0.5) * categoryWidth;
+            const x = center - (chart.series.length * barWidth) / 2 + seriesIndex * barWidth;
+            const top = scaleY(domain.min + (point.y - domain.min) * progress);
+            return <rect key={point.x} x={x + 1} y={top} width={Math.max(2, barWidth - 2)} height={plot.top + plot.height - top} rx="2" fill={color} />;
+          })}</AnnotationTarget>;
+        }) : chart.series.map((series, seriesIndex) => {
+          const color = series.color ?? CHART_COLORS[seriesIndex % CHART_COLORS.length];
+          const path = series.points.map((point, pointIndex) => {
+            const categoryIndex = categories.indexOf(point.x);
+            const x = plot.left + ((categoryIndex + 0.5) / Math.max(1, categories.length)) * plot.width;
+            const y = scaleY(point.y);
+            return `${pointIndex === 0 ? 'M' : 'L'} ${x} ${y}`;
+          }).join(' ');
+          return <AnnotationTarget key={series.id} id={series.id} as="g" style={{ opacity: progress }}><path d={path} fill="none" stroke={color} strokeWidth="3" pathLength={1} strokeDasharray={1} strokeDashoffset={1 - progress} />{series.points.map((point) => { const categoryIndex = categories.indexOf(point.x); const x = plot.left + ((categoryIndex + 0.5) / Math.max(1, categories.length)) * plot.width; return <circle key={point.x} cx={x} cy={scaleY(point.y)} r="4" fill={technicalPalette.panel} stroke={color} strokeWidth="2" />; })}</AnnotationTarget>;
+        })}
+        {chart.xAxis?.label ? <text x={plot.left + plot.width / 2} y="304" textAnchor="middle" fill={technicalPalette.muted} fontSize="12">{chart.xAxis.label}</text> : null}
+        {chart.yAxis?.label ? <text x="13" y={plot.top + plot.height / 2} textAnchor="middle" fill={technicalPalette.muted} fontSize="12" transform={`rotate(-90 13 ${plot.top + plot.height / 2})`}>{chart.yAxis.label}</text> : null}
+      </svg>
+      {legend === 'bottom' ? <ChartLegend chart={chart} /> : null}
+      {chart.sourceLabel ? <div style={{ color: technicalPalette.muted, fontSize: 11, marginTop: 6 }}>Source: {chart.sourceLabel}</div> : null}
+    </ItemTarget>
+  );
+};
+
+const ChartLegend: React.FC<{ chart: InfographicChart }> = ({ chart }) => (
+  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginTop: 12, minHeight: 18 }}>
+    {chart.series.map((series, index) => <div key={series.id} style={{ display: 'flex', alignItems: 'center', gap: 6, color: technicalPalette.muted, fontSize: 12 }}><span style={{ width: 12, height: 3, background: series.color ?? CHART_COLORS[index % CHART_COLORS.length] }} />{series.label}</div>)}
+  </div>
+);
+
 export const InfographicScene: React.FC<InfographicSceneProps> = ({
   id,
   title = 'Explanation',
@@ -101,6 +193,7 @@ export const InfographicScene: React.FC<InfographicSceneProps> = ({
   timeline = [],
   relationshipNodes = [],
   relationships = [],
+  charts = [],
   attention = [],
 }) => {
   const frame = useCurrentFrame();
@@ -110,6 +203,7 @@ export const InfographicScene: React.FC<InfographicSceneProps> = ({
     <AnnotationTarget id={id} style={{ position: 'relative', width, height }}>
       <div style={{ position: 'relative', width, height, overflow: 'hidden', background: technicalPalette.canvas, color: technicalPalette.ink, fontFamily: technicalFonts.sans, padding: 40, boxSizing: 'border-box' }}>
         <div style={{ fontSize: 30, fontWeight: 700, marginBottom: 28 }}>{title}</div>
+        {charts.length > 0 ? <div style={{ display: 'grid', gridTemplateColumns: charts.length > 1 ? 'repeat(2, minmax(0, 1fr))' : 'minmax(0, 1fr)', gap: 20 }}>{charts.map((chart, index) => <ChartView key={chart.id} chart={chart} frame={frame} index={index} />)}</div> : null}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 18 }}>
           {metrics.map((metric, index) => (
             <ItemTarget key={metric.id} id={metric.id} frame={frame} at={metric.at} index={index} style={{ background: technicalPalette.panel, border: `1px solid ${technicalPalette.line}`, borderRadius: 10, padding: 20, minHeight: 112, boxSizing: 'border-box' }}>

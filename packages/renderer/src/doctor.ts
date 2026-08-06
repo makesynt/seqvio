@@ -39,6 +39,14 @@ export interface DoctorOptions {
   launchBrowser?: boolean;
 }
 
+export function resolveManimPythonCommand(cwd: string, configured?: string): string {
+  if (configured) return configured;
+  const local = process.platform === 'win32'
+    ? path.join(cwd, '.venv-manim', 'Scripts', 'python.exe')
+    : path.join(cwd, '.venv-manim', 'bin', 'python');
+  return fs.existsSync(local) ? local : 'python';
+}
+
 export function supportsNodeVersion(version: string): boolean {
   const match = /^v?(\d+)/.exec(version.trim());
   return match !== null && Number(match[1]) >= 18;
@@ -165,6 +173,29 @@ function checkFontAssets(requireFromProject: NodeRequire): DoctorCheck {
   );
 }
 
+function checkManim(requireFromProject: NodeRequire, cwd: string): DoctorCheck {
+  try {
+    let resolved: string;
+    try {
+      resolved = requireFromProject.resolve('@seqvio/manim-adapter');
+    } catch {
+      const workspaceEntry = path.join(cwd, 'packages', 'manim-adapter', 'dist', 'index.js');
+      if (!fs.existsSync(workspaceEntry)) throw new Error('Cannot resolve @seqvio/manim-adapter or its workspace build.');
+      resolved = workspaceEntry;
+    }
+    const adapter = requireFromProject(resolved) as {
+      preflightManim?: (pythonCommand?: string) => { available: boolean; pythonVersion?: string; manimVersion?: string; diagnostics: string[] };
+    };
+    if (typeof adapter.preflightManim !== 'function') throw new Error('Adapter does not export preflightManim().');
+    const pythonCommand = resolveManimPythonCommand(cwd, process.env.SEQVIO_MANIM_PYTHON);
+    const result = adapter.preflightManim(pythonCommand);
+    if (result.available) return check('manim', 'Manim adapter', 'pass', `${result.pythonVersion}; ${result.manimVersion}; ${resolved}`);
+    return check('manim', 'Manim adapter', 'warn', result.diagnostics.join(', ') || `Unavailable through ${pythonCommand}`, 'Install Manim in .venv-manim or set SEQVIO_MANIM_PYTHON to its Python executable.');
+  } catch (error) {
+    return check('manim', 'Manim adapter', 'warn', error instanceof Error ? error.message : String(error), 'Install @seqvio/manim-adapter only when mathematical animation is required.');
+  }
+}
+
 export async function runDoctor(options: DoctorOptions = {}): Promise<DoctorReport> {
   const cwd = path.resolve(options.cwd ?? process.cwd());
   const checks: DoctorCheck[] = [];
@@ -175,6 +206,7 @@ export async function runDoctor(options: DoctorOptions = {}): Promise<DoctorRepo
   const requireFromProject = projectRequire(cwd);
   checks.push(checkNodePty(requireFromProject));
   checks.push(checkFontAssets(requireFromProject));
+  checks.push(checkManim(requireFromProject, cwd));
   checks.push(await checkFfmpeg());
   checks.push(await checkChromium(options.launchBrowser !== false));
   checks.push(await checkWritableDirectory(cwd, 'temp'));

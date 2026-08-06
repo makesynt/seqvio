@@ -8,13 +8,17 @@ import React, {
   useState,
 } from 'react';
 import { useCurrentFrame } from '../frame';
-import { resolveSafeLabelPlacement, routeConnector, routeGuidedPath } from './routing';
+import { resolveSafeLabelPlacement, resolveSafeLabelPlacements, routeConnector, routeGuidedPath, type SafeLabelPlacement } from './routing';
 
 export interface TargetRect {
   x: number;
   y: number;
   width: number;
   height: number;
+}
+
+function sameRect(left: TargetRect, right: TargetRect): boolean {
+  return left.x === right.x && left.y === right.y && left.width === right.width && left.height === right.height;
 }
 
 interface AnnotationTargetRegistry {
@@ -263,6 +267,25 @@ export const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ annotations })
 
   if (!registry) return null;
 
+  const measuredTargets = [...rects.entries()]
+    .filter(([id]) => !id.includes(':to') && !id.includes(':path:'))
+    .map(([, rect]) => rect)
+    .filter((rect, index, all) => all.findIndex((candidate) => candidate.x === rect.x && candidate.y === rect.y && candidate.width === rect.width && candidate.height === rect.height) === index);
+  const labelPlacements = resolveSafeLabelPlacements(
+    annotations.filter((annotation) => annotation.kind === 'callout' && annotation.label && rects.has(annotation.id)).map((annotation) => ({
+      id: annotation.id,
+      target: rects.get(annotation.id)!,
+      width: 180,
+      height: 38,
+    })),
+    canvasSize.width,
+    canvasSize.height,
+    measuredTargets,
+    72,
+  );
+  const labelPlacementMap = new Map(labelPlacements.map((placement) => [placement.id, placement]));
+  const routeObstacles: TargetRect[] = [...measuredTargets, ...labelPlacements];
+
   return (
     <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 20 }}>
       {annotations.map((annotation) => {
@@ -287,6 +310,8 @@ export const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ annotations })
               canvasWidth={canvasSize.width}
               canvasHeight={canvasSize.height}
               opacity={opacity}
+              labelPlacement={labelPlacementMap.get(annotation.id)}
+              routeObstacles={routeObstacles}
             />
           </div>
         );
@@ -303,7 +328,9 @@ const AnnotationOverlay: React.FC<{
   canvasWidth: number;
   canvasHeight: number;
   opacity: number;
-}> = ({ annotation, rect, toRect, pathRects, canvasWidth, canvasHeight, opacity }) => {
+  labelPlacement?: SafeLabelPlacement;
+  routeObstacles: TargetRect[];
+}> = ({ annotation, rect, toRect, pathRects, canvasWidth, canvasHeight, opacity, labelPlacement, routeObstacles }) => {
   const pad = 8;
   const common: React.CSSProperties = {
     position: 'absolute',
@@ -370,14 +397,15 @@ const AnnotationOverlay: React.FC<{
   }
 
   if (annotation.kind === 'callout') {
-    const label = resolveSafeLabelPlacement(rect, 180, 38, canvasWidth, canvasHeight, [rect], 72);
+    const label = labelPlacement ?? resolveSafeLabelPlacement(rect, 180, 38, canvasWidth, canvasHeight, [rect], 72);
+    const route = routeConnector(rect, label, canvasWidth, canvasHeight, 24, routeObstacles.filter((obstacle) => !sameRect(obstacle, rect) && !sameRect(obstacle, label)));
     return (
-      <><svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity }}><line x1={rect.x + rect.width / 2} y1={rect.y + rect.height / 2} x2={label.x + label.width / 2} y2={label.y + label.height / 2} stroke="#7dd3fc" strokeWidth="2" /></svg><div style={{ position: 'absolute', left: label.x, top: label.y, width: label.width, minHeight: label.height, padding: '8px 10px', boxSizing: 'border-box', borderRadius: 7, background: '#e2e8f0', color: '#0f172a', fontSize: 13, fontWeight: 650, textAlign: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.28)', opacity }}>{annotation.label ?? 'Note'}</div></>
+      <><svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity }}><polyline points={route.map((point) => `${point.x},${point.y}`).join(' ')} fill="none" stroke="#7dd3fc" strokeWidth="2" strokeLinejoin="round" /></svg><div style={{ position: 'absolute', left: label.x, top: label.y, width: label.width, minHeight: label.height, padding: '8px 10px', boxSizing: 'border-box', borderRadius: 7, background: '#e2e8f0', color: '#0f172a', fontSize: 13, fontWeight: 650, textAlign: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.28)', opacity }}>{annotation.label ?? 'Note'}</div></>
     );
   }
 
   if (annotation.kind === 'connector' && toRect) {
-    const points = routeConnector(rect, toRect, canvasWidth, canvasHeight);
+    const points = routeConnector(rect, toRect, canvasWidth, canvasHeight, 24, routeObstacles.filter((obstacle) => !sameRect(obstacle, rect) && !sameRect(obstacle, toRect)));
     const middle = points[Math.floor(points.length / 2)];
     return (
       <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity, overflow: 'visible' }}>
@@ -389,7 +417,7 @@ const AnnotationOverlay: React.FC<{
   }
 
   if (annotation.kind === 'guided-path' && pathRects.length >= 2) {
-    const points = routeGuidedPath(pathRects, canvasWidth, canvasHeight);
+    const points = routeGuidedPath(pathRects, canvasWidth, canvasHeight, 24, routeObstacles.filter((obstacle) => !pathRects.includes(obstacle)));
     return <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity, overflow: 'visible' }}><polyline points={points.map((point) => `${point.x},${point.y}`).join(' ')} fill="none" stroke="#fbbf24" strokeWidth="3" strokeDasharray="8 7" strokeLinecap="round" strokeLinejoin="round" />{points.map((point, index) => <circle key={index} cx={point.x} cy={point.y} r={index === points.length - 1 ? 6 : 3} fill="#fbbf24" />)}</svg>;
   }
 

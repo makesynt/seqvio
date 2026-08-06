@@ -62,6 +62,14 @@ From `@seqvio/technical`:
 - `AnnotationProvider` / `AnnotationTarget` / `AnnotationLayer` (also exported from `@seqvio/core` for cross-style use)
 - `CodeWalkthrough` — Shiki sync highlighter, stable line ids, focus / type / insert / replace / delete / annotate
 - `ArchitectureDiagram` — dagre layout with reveal / connect / trace / emphasize / collapse / expand
+- `InfographicScene` — metrics, comparisons, process, timeline, relationships,
+  bar/line charts, series targets, axes, legends, units, and source labels
+- `ManimClip` — seekable externally rendered mathematical animation with named,
+  narration-reflowable markers
+
+Shared attention includes spotlight, focus ring, callout, bracket, connector,
+region shade, and guided path primitives. Simultaneous callouts use deterministic
+collision-aware placement; connectors choose safe-area routes around occupied targets.
 
 Whiteboard drawables and product-demo chrome accept `annotationId` / element `id` so annotations can target them under a shared `AnnotationProvider`.
 
@@ -94,6 +102,7 @@ From `@seqvio/renderer`:
 - `seqvio-audio extract` — narration manifest extraction
 - `seqvio-audio synthesize` — TTS synthesis and resolved manifest generation
 - `seqvio-qa` — visual, pacing, media, capture, and resolved timing checks
+- `seqvio-doctor` — environment checks including optional local Manim discovery
 
 Capture adapters are available but pre-stable:
 
@@ -154,6 +163,9 @@ Preferred starting points:
 | `examples/compositions/technical-explainer.tsx` | ~4.5 min technical reference composition (`lockToAudio`) |
 | `examples/ir/technical-demo.explainer.json` | Short ExplainerDocument IR |
 | `examples/ir/technical-explainer.explainer.json` | Full ExplainerDocument IR + chapters |
+| `examples/compositions/infographic-chart-validation.tsx` | Chart/series/axis/legend reference |
+| `examples/compositions/manim-end-to-end-validation.tsx` | Real graph/proof Manim playback with narration |
+| `examples/manim/` | Equation, graph, and proof Python fixtures |
 | `packages/whiteboard/examples/` | Single-scene whiteboard samples |
 
 Narrated technical reference loop:
@@ -180,6 +192,7 @@ Local render intermediates belong in `output/` / `.media/` and are gitignored.
 | `packages/core` | Scene, transition, and IR runtime |
 | `packages/renderer` | Bundler and CLIs |
 | `packages/product-demo` | Product walkthrough components |
+| `packages/manim-adapter` | Optional external Manim execution and media manifest adapter |
 | `packages/capture` | Shared capture manifest and evidence contracts |
 | `packages/terminal-narrator` | Pre-stable terminal capture adapter |
 | `packages/browser-recorder` | Pre-stable browser capture adapter |
@@ -197,7 +210,7 @@ Do not assume these exist just because they appear in roadmap or proposal docs:
 - Seqvio-side AI planning or planner API calls
 - Product-specific orchestration adapter inside Seqvio core
 - `@seqvio/education` / full LessonPlan package
-- ChatTranscript, DiffReview, or infographic scene families
+- ChatTranscript or DiffReview scene families
 - automatic screenshot privacy or redaction guarantees
 - formal VISION.md promise for 10-minute videos
 - transitions beyond `fade`, `slide`, and `wipe`

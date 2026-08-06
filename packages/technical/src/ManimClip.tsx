@@ -45,6 +45,7 @@ export function ManimClip({
       <div
         data-seqvio-manim-clip={id}
         data-seqvio-manim-marker={marker?.id ?? ''}
+        data-seqvio-manim-marker-count={resolvedMarkers.length}
         data-seqvio-manim-frame={frame}
         style={{ position: 'relative', width, height, overflow: 'hidden', background }}
       >

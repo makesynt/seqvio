@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { classifyQaRuntimeError, diagnosePacing, expectedNarrationTrackDurationMs, promoteQaWarnings } from '../dist/qa-diagnostics.js';
+import { classifyQaRuntimeError, diagnoseManimFrame, diagnosePacing, diagnoseProductFrame, expectedNarrationTrackDurationMs, promoteQaWarnings } from '../dist/qa-diagnostics.js';
 import { reflowSynthesizedTimeline, resolveSynthesizedCueTiming, validateAudioManifest } from '../dist/audio/manifest.js';
 
 test('audio validation emits stable codes for invalid narration and captions', () => {
@@ -204,6 +204,27 @@ test('warning promotion is selective and preserves other diagnostics', () => {
   ], new Set(['text_overflow']));
   assert.equal(issues[0].severity, 'error');
   assert.equal(issues[1].severity, 'warning');
+});
+
+test('product-frame diagnostics expose stable production-contract codes', () => {
+  const issues = diagnoseProductFrame({
+    fullSentenceOverlayIds: ['sentence'], primaryTextCount: 3, primaryTextBudget: 1,
+    repeatedTemplateIds: ['header-rail'], titleGraphicOverlaps: ['title:graphic'], hasFocalTarget: false,
+  }, 42);
+  assert.deepEqual(issues.map((issue) => issue.code), [
+    'full_sentence_overlay', 'concurrent_primary_text', 'repeated_scene_template',
+    'title_graphic_overlap', 'missing_focal_target',
+  ]);
+  assert.ok(issues.every((issue) => issue.frame === 42 && issue.repair));
+});
+
+test('Manim diagnostics report seek and marker alignment failures', () => {
+  const issues = diagnoseManimFrame({ id: 'proof', frame: 60, fps: 30, currentTime: 0.5, markerCount: 2 }, 60);
+  assert.deepEqual(issues.map((issue) => issue.code), ['manim_seek_misaligned', 'manim_marker_unresolved']);
+});
+
+test('Manim seek diagnostics accept a clip held on its final media frame', () => {
+  assert.deepEqual(diagnoseManimFrame({ id: 'graph', frame: 180, fps: 30, currentTime: 4.1, duration: 4.1, marker: 'result', markerCount: 2 }, 180), []);
 });
 
 test('pacing diagnostics report fast speech and short highlights', () => {

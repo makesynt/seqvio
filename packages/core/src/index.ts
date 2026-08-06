@@ -25,6 +25,7 @@ export {
   routeConnector,
   routeGuidedPath,
   resolveSafeLabelPlacement,
+  resolveSafeLabelPlacements,
   useAnnotationTargetRegistry,
 } from './annotation';
 export type {
@@ -39,6 +40,8 @@ export type {
   AttentionSequenceIssue,
   RoutePoint,
   SafeLabelPlacement,
+  LabelPlacementRequest,
+  PlacedLabel,
 } from './annotation';
 export * from './storyboard';
 export * from './authoring';

@@ -1,7 +1,7 @@
 export { TechnicalScene } from './TechnicalScene';
 export type { TechnicalSceneProps } from './TechnicalScene';
 
-export { InfographicScene, infographicProgress } from './InfographicScene';
+export { InfographicScene, infographicProgress, resolveChartDomain } from './InfographicScene';
 export type {
   InfographicSceneProps,
   InfographicMetric,
@@ -10,6 +10,10 @@ export type {
   InfographicTimelineEvent,
   InfographicRelationshipNode,
   InfographicRelationship,
+  InfographicChart,
+  InfographicChartPoint,
+  InfographicChartSeries,
+  InfographicChartAxis,
 } from './InfographicScene';
 
 export { ManimClip, markerAtFrame, resolveManimMarkerFrames } from './ManimClip';

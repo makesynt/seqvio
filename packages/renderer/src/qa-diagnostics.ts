@@ -12,6 +12,64 @@ export interface QaDiagnostic {
   repair?: string;
 }
 
+export interface ProductFrameObservation {
+  fullSentenceOverlayIds: string[];
+  primaryTextCount: number;
+  primaryTextBudget: number;
+  repeatedTemplateIds: string[];
+  titleGraphicOverlaps: string[];
+  hasFocalTarget: boolean;
+}
+
+export interface ManimFrameObservation {
+  id: string;
+  frame: number;
+  fps: number;
+  currentTime: number;
+  duration?: number;
+  marker?: string;
+  markerCount: number;
+}
+
+export function diagnoseManimFrame(observation: ManimFrameObservation, frame: number): QaDiagnostic[] {
+  const issues: QaDiagnostic[] = [];
+  const rawExpectedTime = observation.frame / Math.max(1, observation.fps);
+  const expectedTime = observation.duration && Number.isFinite(observation.duration)
+    ? Math.min(rawExpectedTime, observation.duration)
+    : rawExpectedTime;
+  if (Math.abs(observation.currentTime - expectedTime) > Math.max(0.08, 2 / Math.max(1, observation.fps))) {
+    issues.push({ severity: 'warning', code: 'manim_seek_misaligned', path: `manim.${observation.id}`, frame, message: `Manim clip "${observation.id}" is at ${observation.currentTime.toFixed(3)}s; expected ${expectedTime.toFixed(3)}s.`, repair: 'Verify the clip fps metadata and retain a seekable MP4 output from the adapter.' });
+  }
+  if (observation.markerCount > 0 && observation.frame > 0 && !observation.marker) {
+    issues.push({ severity: 'warning', code: 'manim_marker_unresolved', path: `manim.${observation.id}.marker`, frame, message: `Manim clip "${observation.id}" has named markers but none resolves at this frame.`, repair: 'Add a frame-zero marker or align the first marker to the narration beat that introduces the clip.' });
+  }
+  return issues;
+}
+
+export function diagnoseProductFrame(
+  observation: ProductFrameObservation | undefined,
+  frame: number,
+): QaDiagnostic[] {
+  if (!observation) return [];
+  const issues: QaDiagnostic[] = [];
+  for (const id of observation.fullSentenceOverlayIds) {
+    issues.push({ severity: 'warning', code: 'full_sentence_overlay', path: `productText.${id}`, frame, message: `Primary overlay "${id}" reads like narration rather than concise screen text.`, repair: 'Keep the sentence in narration and reduce the overlay to a label, keyword, command, filename, or short conclusion.' });
+  }
+  if (observation.primaryTextCount > observation.primaryTextBudget) {
+    issues.push({ severity: 'warning', code: 'concurrent_primary_text', path: 'productText.primary', frame, message: `${observation.primaryTextCount} primary text elements exceed the frame budget of ${observation.primaryTextBudget}.`, repair: 'Choose one primary message and demote or sequence the remaining text.' });
+  }
+  for (const id of observation.repeatedTemplateIds) {
+    issues.push({ severity: 'warning', code: 'repeated_scene_template', path: `productTemplate.${id}`, frame, message: `Template "${id}" is repeated concurrently.`, repair: 'Vary the composition around the visual role instead of duplicating the same header or rail.' });
+  }
+  for (const pair of observation.titleGraphicOverlaps) {
+    issues.push({ severity: 'warning', code: 'title_graphic_overlap', path: `productLayout.${pair}`, frame, message: `Primary title and graphic "${pair}" overlap.`, repair: 'Reserve separate title and graphic regions or reduce the text footprint.' });
+  }
+  if (!observation.hasFocalTarget) {
+    issues.push({ severity: 'warning', code: 'missing_focal_target', path: 'productLayout.focalTarget', frame, message: 'The product-explainer frame has no visible declared focal target.', repair: 'Mark the single element carrying this beat with data-seqvio-focal-target.' });
+  }
+  return issues;
+}
+
 export function promoteQaWarnings(issues: QaDiagnostic[], codes: ReadonlySet<string>): QaDiagnostic[] {
   return issues.map((issue) =>
     issue.severity === 'warning' && (codes.has('*') || codes.has(issue.code))

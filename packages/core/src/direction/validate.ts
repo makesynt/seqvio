@@ -24,7 +24,7 @@ function sceneTargets(scene: SceneSpec): Set<string> {
   if (scene.type === 'diagram') { scene.nodes.forEach((n) => add(n.id)); scene.edges.forEach((e) => add(e.id)); scene.steps.forEach((s) => add(s.id)); }
   if (scene.type === 'whiteboard') scene.elements.forEach((e) => add(e.id));
   if (scene.type === 'code') scene.steps.forEach((s) => add(s.id));
-  if (scene.type === 'infographic') [...(scene.metrics ?? []), ...(scene.comparisons ?? []), ...(scene.process ?? []), ...(scene.timeline ?? []), ...(scene.relationshipNodes ?? []), ...(scene.relationships ?? [])].forEach((item) => add(item.id));
+  if (scene.type === 'infographic') [...(scene.metrics ?? []), ...(scene.comparisons ?? []), ...(scene.process ?? []), ...(scene.timeline ?? []), ...(scene.relationshipNodes ?? []), ...(scene.relationships ?? []), ...(scene.charts ?? [])].forEach((item) => add(item.id));
   if (scene.type === 'terminal' || scene.type === 'browser') (scene.steps ?? []).forEach((s) => add(s.id));
   if (scene.type === 'manim') (scene.markers ?? []).forEach((marker) => { add(marker.id); add(marker.targetId); });
   return ids;

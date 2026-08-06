@@ -6,6 +6,10 @@ The repository-local validation environment is `.venv-manim`.
 python -m venv .venv-manim
 .venv-manim\Scripts\python.exe -m pip install manim==0.20.1
 .venv-manim\Scripts\python.exe -m manim -ql examples\manim\equation.py EquationDerivation --media_dir output\manim-media
+.venv-manim\Scripts\python.exe -m manim -ql --fps 30 examples\manim\graph.py GraphExplanation --media_dir output\manim-media
+.venv-manim\Scripts\python.exe -m manim -ql --fps 30 examples\manim\proof.py AlgebraProof --media_dir output\manim-media
 ```
 
 The adapter can use the same executable through its `pythonCommand` option.
+The graph and proof fixtures cover coordinate animation and symbolic transformation,
+respectively. Their rendered MP4 files are consumed as seekable media by `ManimClip`.

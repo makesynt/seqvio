@@ -178,6 +178,11 @@ work.
 
 ### 2.2 Product explainer production contract
 
+**Status: complete for the v1 production contract.** Editorial and visual
+artifacts now carry the optional planning fields, and product-explainer DOM
+markers activate focused text-density, template, overlap, and focal-target QA.
+The retained contract validation composition passes reference-frame review.
+
 The first refined product video exposed recurring production risks that should
 be executable rather than left as author preference:
 
@@ -218,11 +223,13 @@ Exit criteria:
 
 ### 3.1 `InfographicScene` semantic graphics
 
-**Status: in progress - IR and renderer shipped.** The technical package now
+**Status: complete for v1 semantic graphics.** The technical package now
 exposes the shared metric, comparison, process, timeline, and relationship item
 contracts with stable annotation targets and seek-safe reveal timing.
 ExplainerDocument schema, capability registration, validation, and compiler
-registration are now wired; richer layout and attention integration remain.
+registration are wired. Bar and line charts now include addressable series,
+axes, ticks, legends, units, source labels, deterministic domains, and shared
+attention targets. The retained chart reference passes render QA.
 
 Every completed implementation increment must produce a retained verification
 video under `output/`, together with its source composition, manifest, and at
@@ -254,7 +261,7 @@ Exit criteria:
 
 ### 3.2 Cross-scene attention primitives
 
-**Status: in progress - shared sequence layer and geometry QA shipped.** The core package now
+**Status: complete for v1 attention layout and routing.** The core package now
 provides `AttentionSequenceItem`, minimum-hold and handoff metadata, a
 deterministic resolver, and a renderer layer that reuses stable annotation
 targets. ExplanationBeat `focus`, `highlight`, and `annotate` actions now
@@ -267,10 +274,11 @@ and validation for invalid clears or unknown destinations. Broader primitive
 kinds now include focus ring, callout, bracket, region shade, and a two-target
 connector with stable endpoint validation. Guided path routing, safe-area
 placement, orthogonal connector corridors, deterministic label candidates, and
-title-safe callout placement are now available. Renderer QA now reports missing
+title-safe callout placement are now available. Multi-label placement shares a
+single deterministic layout pass, while connectors and guided paths score
+occlusion-aware candidate routes. Renderer QA now reports missing
 targets, offscreen labels, label collisions, and target occlusion with stable
-annotation ids and frame numbers. General multi-label collision optimization
-and occlusion-aware route planning remain.
+annotation ids and frame numbers. Retained 16:9, 1:1, and 9:16 references pass QA.
 
 - Extend `AnnotationProvider` and `AnnotationLayer` with highlight, focus ring,
   spotlight, callout, arrow, bracket, connector, region shade, and guided focus
@@ -332,7 +340,7 @@ Exit criteria:
 
 ### 3.4 External `@seqvio/manim-adapter`
 
-**Status: in progress - contract, preflight, and execution layer shipped.** The
+**Status: complete for the v1 external adapter.** The
 package exposes `ManimSceneSpec`, `ManimRenderManifest`, deterministic command
 construction, validation, and machine-readable Python/Manim capability checks.
 Execution now supports structured progress, cancellation, timeout, retained
@@ -344,8 +352,10 @@ validated, and compiled into `ManimClip`. Named markers can reference a local
 ExplanationBeat and reflow from authored `sourceFrame` to resolved TTS
 `outputFrame`. The first real Manim equation fixture now renders through the
 adapter and the ExplainerDocument pipeline, with a valid cached second run and
-machine-readable media probe; broader equation, graph, and geometric-proof
-fixtures remain.
+machine-readable media probe. Real equation, graph, and proof fixtures are
+retained, `seqvio-doctor` detects the optional local environment, and QA checks
+seek and named-marker alignment. A CosyVoice-narrated graph/proof composition
+passes the end-to-end render and QA loop.
 
 - Create `@seqvio/manim-adapter` with versioned `ManimSceneSpec` and
   `ManimRenderManifest` schemas.

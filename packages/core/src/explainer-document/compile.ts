@@ -159,6 +159,7 @@ function compileInfographicScene(scene: InfographicSceneSpec, componentName: str
         timeline={${JSON.stringify(scene.timeline ?? [], null, 2)}}
         relationshipNodes={${JSON.stringify(scene.relationshipNodes ?? [], null, 2)}}
         relationships={${JSON.stringify(scene.relationships ?? [], null, 2)}}
+        charts={${JSON.stringify(scene.charts ?? [], null, 2)}}
         attention={${JSON.stringify(scene.attention ?? [], null, 2)}}
         width={W}
         height={H}

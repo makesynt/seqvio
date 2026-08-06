@@ -215,6 +215,36 @@ export interface InfographicRelationshipSpec extends AddressableElement {
   at?: number;
 }
 
+export interface InfographicChartPointSpec {
+  x: string;
+  y: number;
+}
+
+export interface InfographicChartSeriesSpec extends AddressableElement {
+  label: string;
+  color?: string;
+  points: InfographicChartPointSpec[];
+}
+
+export interface InfographicChartAxisSpec {
+  label?: string;
+  min?: number;
+  max?: number;
+  ticks?: number;
+}
+
+export interface InfographicChartSpec extends AddressableElement {
+  title: string;
+  kind: 'bar' | 'line';
+  series: InfographicChartSeriesSpec[];
+  xAxis?: InfographicChartAxisSpec;
+  yAxis?: InfographicChartAxisSpec;
+  legend?: 'none' | 'top' | 'bottom';
+  unit?: string;
+  sourceLabel?: string;
+  at?: number;
+}
+
 export interface AttentionSequenceSpec extends AddressableElement {
   sceneId?: string;
   targetId: string;
@@ -242,6 +272,7 @@ export interface InfographicSceneSpec {
   timeline?: InfographicTimelineEventSpec[];
   relationshipNodes?: InfographicRelationshipNodeSpec[];
   relationships?: InfographicRelationshipSpec[];
+  charts?: InfographicChartSpec[];
   attention?: AttentionSequenceSpec[];
   narration?: string;
   explanation?: SceneExplanationSpec;

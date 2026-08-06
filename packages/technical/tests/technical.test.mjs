@@ -11,7 +11,7 @@ import {
   collapsedGroupsAt,
   layoutDiagram,
 } from '../dist/diagram-layout.js';
-import { infographicProgress } from '../dist/InfographicScene.js';
+import { infographicProgress, resolveChartDomain } from '../dist/InfographicScene.js';
 
 describe('highlightLine / highlightSource (Shiki)', () => {
   it('colors keywords, types, and strings via Shiki', () => {
@@ -150,5 +150,11 @@ describe('InfographicScene timing', () => {
     assert.ok(infographicProgress(19, 10) > 0);
     assert.strictEqual(infographicProgress(40, 10), 1);
     assert.strictEqual(infographicProgress(19, 10), infographicProgress(19, 10));
+  });
+
+  it('resolves explicit and data-derived chart domains deterministically', () => {
+    const chart = { id: 'trend', title: 'Trend', kind: 'line', series: [{ id: 'a', label: 'A', points: [{ x: 'one', y: 4 }, { x: 'two', y: 9 }] }] };
+    assert.deepStrictEqual(resolveChartDomain(chart), { min: 0, max: 9 });
+    assert.deepStrictEqual(resolveChartDomain({ ...chart, yAxis: { min: 2, max: 12 } }), { min: 2, max: 12 });
   });
 });

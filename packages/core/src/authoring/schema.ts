@@ -41,6 +41,15 @@ export type EditorialSectionPurpose =
   | 'correct-misconception'
   | 'summarize';
 
+export type EvidenceSource =
+  | 'authored'
+  | 'terminal-capture'
+  | 'browser-capture'
+  | 'recorded-media';
+
+export type VisualRole = 'hook' | 'model' | 'mechanism' | 'evidence' | 'result';
+export type TransitionIntent = 'cut' | 'crossfade' | 'focus-transfer' | 'match-object';
+
 export interface EditorialPlan {
   format: typeof EDITORIAL_PLAN_FORMAT;
   id: string;
@@ -52,6 +61,8 @@ export interface EditorialPlan {
     likelyMisconceptions?: string[];
   };
   thesis: string;
+  /** Opening promise or tension; narration-sized, not a required title card. */
+  hook?: string;
   durationBudgetSec: number;
   /** Optional, composable structural guidance. It does not constrain executable IR. */
   explanationStrategy?: EditorialExplanationStrategy;
@@ -70,6 +81,7 @@ export interface EditorialPlan {
     purpose: EditorialSectionPurpose;
     conceptIds: string[];
     expectedOutcome: string;
+    evidenceSource?: EvidenceSource;
     targetSeconds?: number;
   }>;
 }
@@ -101,7 +113,13 @@ export interface VisualDesignBrief {
   sceneTreatments?: Array<{
     sectionId: string;
     sceneIds: string[];
-    visualForm: 'whiteboard' | 'code' | 'diagram' | 'terminal' | 'browser';
+    visualForm: 'whiteboard' | 'code' | 'diagram' | 'infographic' | 'terminal' | 'browser' | 'manim';
+    visualRole?: VisualRole;
+    focalTarget?: string;
+    evidenceSource?: EvidenceSource;
+    /** Maximum words visible as primary explanatory text at once. */
+    onScreenTextBudget?: number;
+    transitionIntent?: TransitionIntent;
     composition: string;
     emphasis: string;
   }>;

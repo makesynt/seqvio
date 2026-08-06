@@ -155,6 +155,31 @@ describe('human-readable authoring artifacts', () => {
     assert.match(formatVisualDesignBriefMarkdown(design), /# Visual Design Brief:/);
   });
 
+  it('formats and validates the product-explainer production contract', () => {
+    const productPlan = {
+      ...plan,
+      hook: 'The command succeeded, so why is the module still missing?',
+      sections: [{ ...plan.sections[0], evidenceSource: 'terminal-capture' }],
+    };
+    const productDesign = {
+      ...design,
+      sceneTreatments: [{
+        ...design.sceneTreatments[0], visualRole: 'evidence', focalTarget: 'blocked-script',
+        evidenceSource: 'terminal-capture', onScreenTextBudget: 6, transitionIntent: 'focus-transfer',
+      }],
+    };
+    assert.deepEqual(validateEditorialPlan(productPlan), []);
+    assert.deepEqual(validateVisualDesignBrief(productDesign, productPlan), []);
+    assert.match(formatEditorialPlanMarkdown(productPlan), /## Hook/);
+    assert.match(formatVisualDesignBriefMarkdown(productDesign), /On-screen text budget: 6 words/);
+    const issues = validateVisualDesignBrief({
+      ...productDesign,
+      sceneTreatments: [{ ...productDesign.sceneTreatments[0], focalTarget: undefined, onScreenTextBudget: 0 }],
+    }, productPlan);
+    assert.ok(issues.some((issue) => issue.code === 'invalid_text_budget'));
+    assert.ok(issues.some((issue) => issue.code === 'missing_focal_target'));
+  });
+
   it('rejects visual treatments for unknown sections', () => {
     const issues = validateVisualDesignBrief({
       ...design,

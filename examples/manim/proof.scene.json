@@ -1,0 +1,11 @@
+{
+  "format": "seqvio-manim-scene",
+  "version": "1.0",
+  "id": "proof",
+  "pythonFile": "examples/manim/proof.py",
+  "className": "AlgebraProof",
+  "width": 1280,
+  "height": 720,
+  "fps": 30,
+  "quality": "low"
+}

@@ -306,6 +306,7 @@ function validateInfographicScene(
     ['timeline', scene.timeline],
     ['relationshipNodes', scene.relationshipNodes],
     ['relationships', scene.relationships],
+    ['charts', scene.charts],
   ] as const;
   const ids = new Set<string>();
   for (const [name, items] of collections) {
@@ -317,8 +318,11 @@ function validateInfographicScene(
       } else if (ids.has(item.id)) {
         issue(issues, { severity: 'error', path: `${itemPath}.id`, code: 'duplicate_infographic_item_id', message: `Duplicate infographic item id "${item.id}"`, repairable: true });
       } else ids.add(item.id);
-      if (name !== 'relationships' && (typeof item.label !== 'string' || item.label.length === 0)) {
+      if (name !== 'relationships' && name !== 'charts' && (!('label' in item) || typeof item.label !== 'string' || item.label.length === 0)) {
         issue(issues, { severity: 'error', path: `${itemPath}.label`, code: 'missing_infographic_item_label', message: `${itemPath}.label must be a non-empty string`, repairable: true });
+      }
+      if (name === 'charts' && (!('title' in item) || typeof item.title !== 'string' || item.title.length === 0)) {
+        issue(issues, { severity: 'error', path: `${itemPath}.title`, code: 'missing_infographic_chart_title', message: `${itemPath}.title must be a non-empty string`, repairable: true });
       }
       if ('at' in item && item.at !== undefined && (typeof item.at !== 'number' || item.at < 0)) {
         issue(issues, { severity: 'error', path: `${itemPath}.at`, code: 'invalid_infographic_item_time', message: `${itemPath}.at must be a non-negative number`, repairable: true });
@@ -329,6 +333,26 @@ function validateInfographicScene(
   (scene.relationships ?? []).forEach((relationship, index) => {
     if (!nodeIds.has(relationship.from)) issue(issues, { severity: 'error', path: `${scenePath}.relationships[${index}].from`, code: 'invalid_infographic_relationship_from', message: 'Relationship source must reference a relationship node', repairable: true });
     if (!nodeIds.has(relationship.to)) issue(issues, { severity: 'error', path: `${scenePath}.relationships[${index}].to`, code: 'invalid_infographic_relationship_to', message: 'Relationship target must reference a relationship node', repairable: true });
+  });
+  (scene.charts ?? []).forEach((chart, chartIndex) => {
+    const chartPath = `${scenePath}.charts[${chartIndex}]`;
+    if (chart.kind !== 'bar' && chart.kind !== 'line') issue(issues, { severity: 'error', path: `${chartPath}.kind`, code: 'invalid_infographic_chart_kind', message: 'Chart kind must be bar or line', repairable: true });
+    if (!Array.isArray(chart.series) || chart.series.length === 0) {
+      issue(issues, { severity: 'error', path: `${chartPath}.series`, code: 'missing_infographic_chart_series', message: 'Chart must contain at least one data series', repairable: true });
+    }
+    const seriesIds = new Set<string>();
+    (chart.series ?? []).forEach((series, seriesIndex) => {
+      const seriesPath = `${chartPath}.series[${seriesIndex}]`;
+      if (!series.id || seriesIds.has(series.id)) issue(issues, { severity: 'error', path: `${seriesPath}.id`, code: series.id ? 'duplicate_infographic_series_id' : 'missing_infographic_series_id', message: 'Chart series ids must be non-empty and unique within the chart', repairable: true });
+      else seriesIds.add(series.id);
+      if (!series.label) issue(issues, { severity: 'error', path: `${seriesPath}.label`, code: 'missing_infographic_series_label', message: 'Chart series label is required', repairable: true });
+      if (!Array.isArray(series.points) || series.points.length === 0 || series.points.some((point) => typeof point.x !== 'string' || !Number.isFinite(point.y))) {
+        issue(issues, { severity: 'error', path: `${seriesPath}.points`, code: 'invalid_infographic_chart_points', message: 'Chart points require a string x value and finite numeric y value', repairable: true });
+      }
+    });
+    if (chart.yAxis?.min !== undefined && chart.yAxis?.max !== undefined && chart.yAxis.min >= chart.yAxis.max) {
+      issue(issues, { severity: 'error', path: `${chartPath}.yAxis`, code: 'invalid_infographic_axis_domain', message: 'yAxis min must be less than max', repairable: true });
+    }
   });
 }
 
@@ -590,7 +614,9 @@ function collectAddressableIds(scene: SceneSpec): string[] {
       ...(scene.timeline ?? []),
       ...(scene.relationshipNodes ?? []),
       ...(scene.relationships ?? []),
+      ...(scene.charts ?? []),
     ]) ids.push(item.id);
+    for (const chart of scene.charts ?? []) for (const series of chart.series ?? []) ids.push(series.id);
   } else if (scene.type === 'terminal' || scene.type === 'browser') {
     for (const step of scene.steps ?? []) ids.push(step.id);
     if (scene.type === 'browser') {
