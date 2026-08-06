@@ -1,5 +1,23 @@
 # @seqvio/browser-recorder
 
+## 0.4.0
+
+### Minor Changes
+
+- 8dd96cf: Add fail-closed selector and rectangle privacy masks for browser capture plans,
+  retain non-sensitive mask evidence in recording manifests, and keep the `serve`
+  CLI process alive until it is terminated. Promote the versioned Terminal and
+  Browser CLI/artifact contract to stable after the Windows/Linux/macOS runtime
+  matrix passed.
+
+### Patch Changes
+
+- Updated dependencies [8dd96cf]
+  - @seqvio/capture@0.3.1
+  - @seqvio/renderer@0.8.1
+  - @seqvio/core@0.8.1
+  - @seqvio/product-demo@0.8.1
+
 ## 0.3.0
 
 ### Minor Changes

@@ -1,5 +1,15 @@
 # @seqvio/renderer
 
+## 0.8.1
+
+### Patch Changes
+
+- Updated dependencies [8dd96cf]
+  - @seqvio/capture@0.3.1
+  - @seqvio/core@0.8.1
+  - @seqvio/whiteboard@0.8.1
+  - @seqvio/technical@0.8.1
+
 ## 0.8.0
 
 ### Minor Changes
