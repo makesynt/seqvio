@@ -16,7 +16,8 @@ and `npm run verify:contracts` enforces it after packages are built.
 
 Every workspace package must declare `seqvio.lifecycle`. The private root is
 `internal`; the stable rendering/component train is `public`; capture and its
-adapters remain `experimental` while host verification is incomplete.
+adapters remain `experimental` while API/package promotion and release
+publication remain separate decisions.
 
 Scene lifecycle is defined by the core scene capability registry and published
 as [`scene-capabilities.json`](./scene-capabilities.json). A public scene must

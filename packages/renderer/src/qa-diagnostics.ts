@@ -31,6 +31,55 @@ export interface ManimFrameObservation {
   markerCount: number;
 }
 
+export interface DesignStageObservation {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  designWidth: number;
+  designHeight: number;
+  fit: 'contain' | 'cover' | 'stretch' | 'native';
+  align: 'center' | 'top-left';
+}
+
+export function diagnoseDesignStage(
+  design: NonNullable<RenderableMeta['design']> | undefined,
+  observation: DesignStageObservation | undefined,
+  viewport: { width: number; height: number },
+  frame: number,
+): QaDiagnostic[] {
+  if (!design) return [];
+  if (!observation) {
+    return [{
+      severity: 'error',
+      code: 'design_stage_missing',
+      path: 'design',
+      frame,
+      message: 'The composition declares a design coordinate system but the active scene has no DesignStage.',
+      repair: 'Wrap scene content in <DesignStage> or remove the design metadata if the scene is authored directly at output size.',
+    }];
+  }
+  const fit = design.fit ?? 'contain';
+  const ratioX = viewport.width / design.width;
+  const ratioY = viewport.height / design.height;
+  const scale = fit === 'cover' ? Math.max(ratioX, ratioY) : Math.min(ratioX, ratioY);
+  const expectedWidth = design.width * (fit === 'stretch' ? ratioX : fit === 'native' ? 1 : scale);
+  const expectedHeight = design.height * (fit === 'stretch' ? ratioY : fit === 'native' ? 1 : scale);
+  const expectedLeft = (design.align ?? 'center') === 'top-left' ? 0 : (viewport.width - expectedWidth) / 2;
+  const expectedTop = (design.align ?? 'center') === 'top-left' ? 0 : (viewport.height - expectedHeight) / 2;
+  const tolerance = 3;
+  const differs = (actual: number, expected: number) => Math.abs(actual - expected) > tolerance;
+  if (!differs(observation.left, expectedLeft) && !differs(observation.top, expectedTop) && !differs(observation.width, expectedWidth) && !differs(observation.height, expectedHeight)) return [];
+  return [{
+    severity: 'error',
+    code: 'design_stage_mismatch',
+    path: 'design',
+    frame,
+    message: `DesignStage bounds ${Math.round(observation.width)}x${Math.round(observation.height)} at (${Math.round(observation.left)},${Math.round(observation.top)}) do not match the ${fit} layout expected for ${design.width}x${design.height} in ${viewport.width}x${viewport.height}.`,
+    repair: 'Use the core DesignStage component and let it compute the fit from the composition output size.',
+  }];
+}
+
 export function diagnoseManimFrame(observation: ManimFrameObservation, frame: number): QaDiagnostic[] {
   const issues: QaDiagnostic[] = [];
   const rawExpectedTime = observation.frame / Math.max(1, observation.fps);

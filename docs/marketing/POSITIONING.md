@@ -2,7 +2,7 @@
 
 ## One sentence
 
-Seqvio turns technical ideas and real terminal/browser evidence into narration-locked explainer videos for coding agents.
+Seqvio turns real agent work and authored ideas into narration-locked explainer videos.
 
 ## What it is
 
@@ -50,6 +50,7 @@ not constrain the executable IR.
 ## Audience
 
 The primary audience is developers, developer advocates, technical writers,
-educators, and agents producing technical explainers inside a versioned code
-repository. Product walkthroughs and broader educational videos are supported,
-but the strongest differentiation is fidelity to real system activity.
+educators, and agents producing explainers inside a versioned code repository.
+Coding agents are the strongest initial fit, but Seqvio's authoring and evidence
+contracts do not require the host agent to write code. The strongest
+differentiation is fidelity to real system activity.

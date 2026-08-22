@@ -6,19 +6,23 @@
 
 [English](./README.md) | 简体中文
 
-**让 coding agent 把真实技术工作变成有证据的讲解视频。**
+**让 agent 把真实工作变成有证据的讲解视频。**
 
-Seqvio 为 coding agent 提供从真实系统捕获到讲解视频的完整路径。人类可读的 `EDITORIAL.md` 与 `VISUAL-DESIGN.md` 先让内容取舍和视觉方向可审阅，再由正式 `ExplainerDocument` IR 通过 `ExplanationBeat` 绑定旁白短语与视觉动作。
+Seqvio 为 agent 提供从真实系统捕获到讲解视频的完整路径。人类可读的 `EDITORIAL.md` 与 `VISUAL-DESIGN.md` 先让内容取舍和视觉方向可审阅，再由正式 `ExplainerDocument` IR 通过 `ExplanationBeat` 绑定旁白短语与视觉动作。
 
 > **当前状态：** 仓库支持显式 React/TSX composition，以及拥有 public `whiteboard`、`code`、`diagram`、`terminal`、`browser` 编译路径和实验性 `infographic`、外部 Python `manim` 编译路径的 `ExplainerDocument`。短语锚定的 ExplanationBeat 驱动逻辑视觉时间、TTS 后语义 timeMap、语速/高亮 QA 和确定性本地渲染。Capture CLI contract `2.0` 将正式 IR 产物统一命名为 `explainer.json`。
 
 ## Demo
 
-当前 720p 产品演示以 native-module CI 故障诊断为例，展示可审阅策划、
-正式 `ExplainerDocument`、短语级 `ExplanationBeat`、QA 和本地渲染路径。
+当前 72 秒 Product Hunt 演示从一个真实 skill 评测出发，呈现 agent 任务如何变成
+终端和浏览器证据，以及可审阅的策划与视觉设计、短语锚定时间、确定性 QA 和多种
+讲解场景。
 
 **[观看当前带旁白演示](./docs/assets/videos/seqvio-product-hunt-en.mp4)**
-— 源码：[`seqvio-product-hunt-en.tsx`](./examples/compositions/seqvio-product-hunt-en.tsx)
+— 源码：[`seqvio-product-hunt-premium.tsx`](./examples/compositions/seqvio-product-hunt-premium.tsx)
+
+该生产 composition 使用 `output/` 下的本地浏览器和会话捕获素材；从干净 checkout
+开始时请使用下文列出的可移植示例。
 
 中英文 overview composition 仍保留在
 [`examples/compositions/`](./examples/compositions/)；此前发布的视频早于
@@ -28,20 +32,29 @@ Seqvio 为 coding agent 提供从真实系统捕获到讲解视频的完整路�
 
 Seqvio 分两部分，需要分别安装：
 
-| 组件             | 作用                                                     | 安装方式                                        |
-| ---------------- | -------------------------------------------------------- | ----------------------------------------------- |
-| **Agent skill**  | 教 Cursor 等 agent 如何编写 TSX composition 并走渲染流程 | `npx skills add ...`                            |
-| **Renderer CLI** | 执行 `seqvio-render`、`seqvio-audio`、`seqvio-qa`        | `npm install @seqvio/renderer` 或本地仓库 build |
+| 组件             | 作用                                                     | 安装方式                                 |
+| ---------------- | -------------------------------------------------------- | ---------------------------------------- |
+| **Agent skill**  | 教 Cursor 等 agent 如何编写 TSX composition 并走渲染流程 | `npx skills add ...`                     |
+| **Renderer CLI** | 执行 `seqvio-render`、`seqvio-audio`、`seqvio-qa`        | `npm install -g @seqvio/renderer@latest` |
 
 **只执行 `npx skills add` 不够**，还需要安装 CLI（或 clone 本仓库并 build）才能真正渲染视频。
 
 ### 1. 安装 agent skill
 
 ```bash
-npx skills add makesynt/seqvio --skill seqvio -a cursor -y
+npx skills add makesynt/seqvio
 ```
 
-如使用其他 agent，把 `cursor` 换成对应名称（如 `claude-code`、`codex`）。可先查看 skill 列表：
+这会交互选择 skill、目标 agent 和安装范围。在项目目录中明确指定 Cursor 并进行无交互安装：
+
+```bash
+npx skills add makesynt/seqvio --skill seqvio --agent cursor --yes
+```
+
+`--skill seqvio` 跳过 skill 选择，`--agent cursor` 指定 Cursor，`--yes` 跳过
+确认提示并自动判断安装范围；交互安装时三者都不是必需参数。在项目目录中运行时默认
+安装到当前项目，只有需要跨项目使用时才添加 `--global`。也可把 `cursor` 换成
+`claude-code`、`codex` 等。查看仓库中的 skill 列表：
 
 ```bash
 npx skills add makesynt/seqvio --list
@@ -53,36 +66,39 @@ npx skills add makesynt/seqvio --list
 
 二选一：
 
-**方案 A — npm 包（大多数用户推荐）**
+**方案 A — 已发布的 `0.8` CLI（多数用户推荐）**
 
 ```bash
-npm install -g @seqvio/renderer
+npm install -g @seqvio/renderer@latest
 seqvio-render --help
+seqvio-doctor --json
 ```
 
-Public 包：`@seqvio/core`、`@seqvio/whiteboard`、`@seqvio/scatterbrain`、
-`@seqvio/product-demo`、`@seqvio/technical`、`@seqvio/renderer`。实验性捕获包：
-`@seqvio/capture`、`@seqvio/browser-recorder`、`@seqvio/terminal-narrator`。
-可选的实验性 `@seqvio/manim-adapter` workspace 会调用 Python 包 `manim`，
-用于在外部渲染数学动画。
-
-当 composition 直接 import 可选视觉包时，可额外安装：
+composition 项目直接 import 可选视觉包时，应安装同一 `0.8` release line：
 
 ```bash
-npm install @seqvio/product-demo @seqvio/scatterbrain
+npm install @seqvio/product-demo@^0.8 @seqvio/scatterbrain@^0.8
 ```
 
-**方案 B — 本地仓库（贡献者与示例开发推荐）**
+这些依赖应安装在 TSX composition 所在项目中，而不是作为无关的全局 package。
+
+**方案 B — 仓库 checkout（贡献者和内置示例）**
 
 ```bash
 git clone https://github.com/makesynt/seqvio.git
 cd seqvio
 npm ci
 npm run build
+npm run doctor
 node packages/renderer/dist/cli.js --help
 ```
 
-需要直接使用 [`examples/compositions/`](./examples/compositions/) 或 monorepo smoke 脚本时，选此方案。
+内置 [`examples/compositions/`](./examples/compositions/) 和 monorepo smoke
+script 请使用 workspace CLI。Public 包包括 `@seqvio/core`、`@seqvio/whiteboard`、`@seqvio/scatterbrain`、
+`@seqvio/product-demo`、`@seqvio/technical`、`@seqvio/renderer`。实验性捕获包：
+`@seqvio/capture`、`@seqvio/browser-recorder`、`@seqvio/terminal-narrator`。
+可选的实验性 `@seqvio/manim-adapter` workspace 会调用 Python 包 `manim`，
+用于在外部渲染数学动画。
 
 ### 3. 可选：旁白凭据
 
@@ -90,6 +106,12 @@ node packages/renderer/dist/cli.js --help
 
 ```bash
 export ELEVENLABS_API_KEY=your_key
+```
+
+PowerShell：
+
+```powershell
+$env:ELEVENLABS_API_KEY="your_key"
 ```
 
 参考 [`.env.example`](./.env.example)。CLI 从进程环境变量读取凭据，不会自动加载 `.env`。
@@ -106,6 +128,37 @@ export ELEVENLABS_API_KEY=your_key
 可以向同一个 IR 提供真实观察场景，但不是创作型讲解的必需依赖。
 
 支持 Cursor、Claude Code、Codex、Gemini CLI 等支持 skills 的 coding agent。
+
+底层 CLI 顺序为：
+
+```text
+plan-editorial -> 审阅 EDITORIAL.md
+plan-visual -> 审阅 VISUAL-DESIGN.md
+plan-agent -> host agent 返回 explainer.json
+validate -> compile -> audio extract/synthesize -> QA -> render
+```
+
+手动使用 IR 工作流时，按顺序生成 host-agent task，并在继续前审阅每一步产物：
+
+```bash
+seqvio-generate plan-editorial --input brief.md --write-prompt editorial-task.md
+# 在 host agent 中执行 editorial-task.md，审阅后保存为 EDITORIAL.md
+
+seqvio-generate plan-visual --input brief.md --editorial EDITORIAL.md \
+  --write-prompt visual-task.md
+# 执行 visual-task.md，审阅后保存为 VISUAL-DESIGN.md
+
+seqvio-generate plan-agent --input brief.md --editorial EDITORIAL.md \
+  --visual-design VISUAL-DESIGN.md --write-prompt agent-task.md
+# 执行 agent-task.md，将返回的 IR 保存为 explainer.json
+
+seqvio-generate validate --ir explainer.json --json
+seqvio-generate compile --ir explainer.json \
+  --out examples/compositions/generated/explainer.tsx --force
+```
+
+完整参数见 [`planning-workflow.md`](./skills/seqvio/references/planning-workflow.md)
+和 [`audio-workflow.md`](./skills/seqvio/references/audio-workflow.md)。
 
 ### 不用 agent，手动渲染
 
@@ -147,7 +200,10 @@ node packages/browser-recorder/dist/cli.js record --plan plan.json --jobId demo 
 安装方法、adapter 命令、缓存规则和 IR/TSX 接入方式见
 [Manim 集成指南](./docs/MANIM-INTEGRATION.md)。
 
-**环境要求：** Node.js `>=18`、Chromium（Puppeteer）、FFmpeg（`@seqvio/renderer` 已内置）。本地仓库开发使用 npm workspaces 和 `package-lock.json`。可运行 `seqvio-doctor`，或在仓库中运行 `npm run doctor`，一次校验完整本地工具链。
+**环境要求：** Node.js `>=18`、Chromium（Puppeteer）和 FFmpeg。Renderer
+使用内置 FFmpeg；手动执行 `ffmpeg`/`ffprobe` 诊断和媒体预处理时仍需把这些命令加入
+`PATH`。本地仓库开发使用 npm workspaces 和 `package-lock.json`。可运行
+`seqvio-doctor --json`，或在仓库中运行 `npm run doctor` 校验完整工具链。
 
 ## 可以做什么
 
@@ -213,14 +269,14 @@ Skill 主文件：[`skills/seqvio/SKILL.md`](./skills/seqvio/SKILL.md)，参考�
 安装 skill（见 [快速开始](#快速开始)）：
 
 ```bash
-npx skills add makesynt/seqvio --skill seqvio -a cursor -y
+npx skills add makesynt/seqvio
 ```
 
 Skill 负责教流程和命令；要输出 MP4 还需单独安装 `@seqvio/renderer`。
 
 ## 为什么是 Seqvio
 
-Seqvio 是 coding agent 用来解释想法的视觉语言，而不只是一个动画工具。它不是通用视频编辑器，也不是通用 code-to-video 引擎；它的价值在渲染循环之上的讲解词汇和工作流。完整定位见 [`docs/VISION.md`](./docs/VISION.md)。
+Seqvio 是 agent 用来解释想法的视觉语言，而不只是一个动画工具。它不是通用视频编辑器，也不是通用 code-to-video 引擎；它的价值在渲染循环之上的讲解词汇和工作流。完整定位见 [`docs/VISION.md`](./docs/VISION.md)。
 
 - **面向 Agent 的视觉词汇**：用具体组件决定观众接下来应该看到、听到并理解什么
 - **讲解视频优先**：场景、旁白、字幕、视觉步骤放在同一 composition 中
@@ -258,10 +314,11 @@ Seqvio 是 coding agent 用来解释想法的视觉语言，而不只是一个�
 ### 从 npm 安装
 
 ```bash
-npm install -g @seqvio/renderer
+npm install -g @seqvio/renderer@latest
+seqvio-doctor --json
 ```
 
-会全局安装 `seqvio-render`、`seqvio-audio`、`seqvio-generate`、`seqvio-preview`、`seqvio-add`、`seqvio-qa` 和 `seqvio-doctor`，并自动拉取 `@seqvio/core`、`@seqvio/whiteboard`。如果 composition 在 monorepo 外直接 import `@seqvio/product-demo`、`@seqvio/scatterbrain` 或 `@seqvio/technical`，需要额外安装对应包。
+本文档对应 `0.8` release line。需要内置示例、尚未发布的源码改动或贡献者工具时，使用本地仓库 checkout。
 
 ### Clone 并 build 仓库
 
@@ -295,11 +352,17 @@ node packages/renderer/dist/audio-cli.js synthesize \
   --manifest output/seqvio-overview-zh.manifest.json \
   --outDir output/seqvio-overview-zh-audio
 
+node packages/renderer/dist/qa-cli.js \
+  --component examples/compositions/seqvio-overview-zh.tsx \
+  --outDir output/seqvio-overview-zh-qa \
+  --audioManifest output/seqvio-overview-zh-audio/audio-manifest.resolved.json \
+  --ci
+
 node packages/renderer/dist/cli.js \
   --component examples/compositions/seqvio-overview-zh.tsx \
   --output output/seqvio-overview-zh.mp4 \
   --width 1280 --height 720 --fps 30 --quality medium \
---audioManifest output/seqvio-overview-zh-audio/audio-manifest.resolved.json
+  --audioManifest output/seqvio-overview-zh-audio/audio-manifest.resolved.json
 ```
 
 旁白会自动从 manifest 混入音轨。**默认不要**加 `--burnCaptions`；它会把字幕硬编码进画面（长旁白会遮挡下半屏）。YouTube/B 站请单独上传 SRT。详见 [`skills/seqvio/references/audio-workflow.md`](./skills/seqvio/references/audio-workflow.md#caption-burn-in-optional)。
@@ -308,18 +371,18 @@ node packages/renderer/dist/cli.js \
 
 ## Packages
 
-| Package                                                     | 说明                                                               |
-| ----------------------------------------------------------- | ------------------------------------------------------------------ |
-| [`@seqvio/whiteboard`](./packages/whiteboard)               | 白板绘制组件和 timing helpers                                      |
-| [`@seqvio/core`](./packages/core)                           | Composition 容器、场景、转场和 timeline runtime                    |
-| [`@seqvio/scatterbrain`](./packages/scatterbrain)           | 便签 / cork-board 风格组件                                         |
-| [`@seqvio/product-demo`](./packages/product-demo)           | 浏览器框、光标路径、截图占位、callout 和产品 walkthrough 组件      |
-| [`@seqvio/technical`](./packages/technical)                 | 技术讲解 runtime：代码走读、架构图、终端演示、标注和内置字体       |
-| [`@seqvio/terminal-narrator`](./packages/terminal-narrator) | Stable node-pty/xterm 捕获契约 → IR/ExplanationBeat → 可选旁白 MP4 |
-| [`@seqvio/browser-recorder`](./packages/browser-recorder)   | Stable Chromium action 捕获，保留真实动作时间 → IR/ExplanationBeat |
-| [`@seqvio/capture`](./packages/capture)                     | 实验性的共享 capture session 和 artifact 契约                      |
-| [`@seqvio/manim-adapter`](./packages/manim-adapter)         | 调用 Python Manim，并校验、缓存渲染媒体 manifest 的实验性适配层    |
-| [`@seqvio/renderer`](./packages/renderer)                   | TSX bundler，以及 `seqvio-render` / `seqvio-audio` CLI             |
+| Package                                                     | 说明                                                                                        |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| [`@seqvio/whiteboard`](./packages/whiteboard)               | 白板绘制组件和 timing helpers                                                               |
+| [`@seqvio/core`](./packages/core)                           | Composition 容器、场景、转场和 timeline runtime                                             |
+| [`@seqvio/scatterbrain`](./packages/scatterbrain)           | 便签 / cork-board 风格组件                                                                  |
+| [`@seqvio/product-demo`](./packages/product-demo)           | 浏览器框、光标路径、截图占位、callout 和产品 walkthrough 组件                               |
+| [`@seqvio/technical`](./packages/technical)                 | 技术讲解 runtime：代码走读、架构图、终端演示、标注和内置字体                                |
+| [`@seqvio/terminal-narrator`](./packages/terminal-narrator) | 实验性 package，提供 stable node-pty/xterm 捕获契约 → IR/ExplanationBeat → 可选旁白 MP4     |
+| [`@seqvio/browser-recorder`](./packages/browser-recorder)   | 实验性 package，提供 stable Chromium action 捕获契约，保留真实动作时间 → IR/ExplanationBeat |
+| [`@seqvio/capture`](./packages/capture)                     | 实验性的共享 capture session 和 artifact 契约                                               |
+| [`@seqvio/manim-adapter`](./packages/manim-adapter)         | 调用 Python Manim，并校验、缓存渲染媒体 manifest 的实验性适配层                             |
+| [`@seqvio/renderer`](./packages/renderer)                   | TSX bundler，以及 `seqvio-render` / `seqvio-audio` CLI                                      |
 
 ## 文档
 

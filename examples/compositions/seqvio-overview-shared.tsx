@@ -304,7 +304,7 @@ function PromiseScene({ copy, duration, enhanced }: { copy: OverviewCopy; durati
         <div style={{ position: 'relative', height: 322, background: '#F5F7F9', color: C.ink }}>
           <img src={seqvioMark} alt="" style={{ position: 'absolute', left: 168, top: 58, width: 104, height: 104, objectFit: 'contain' }} />
           <div style={{ position: 'absolute', left: 66, right: 66, top: 196, display: 'flex', justifyContent: 'space-between', color: C.muted, fontFamily: MONO_STACK, fontSize: 12, fontWeight: 800 }}>
-            <span>INTENT</span><span>EVIDENCE</span><span>CLARITY</span>
+            {copy.vocabulary.map((label) => <span key={label}>{label}</span>)}
           </div>
           <div style={{ position: 'absolute', left: 66, right: 66, top: 226, height: 3, background: '#DCE3EA' }}><span style={{ display: 'block', width: `${Math.min(100, Math.max(0, (frame - 88) * 2.5))}%`, height: '100%', background: C.green }} /></div>
         </div>
@@ -379,8 +379,8 @@ function RagExplanationScene({ copy, duration, enhanced }: { copy: OverviewCopy;
   const boardY = (H - boardH) / 2;
   const clipNow = Math.min(9, Math.floor(Math.min(1, frame / drawDuration) * 9));
   const actionLabels = copy.lang === 'zh'
-    ? ['观察', '追踪', '诊断', '验证']
-    : ['OBSERVE', 'TRACE', 'DIAGNOSE', 'VERIFY'];
+    ? ['规划', '锚定', '聚焦', '验证']
+    : ['PLAN', 'ANCHOR', 'FOCUS', 'VERIFY'];
   const icons = ['lightbulb', 'plus', 'document', 'check'];
   const visualLink = copy.lang === 'zh' ? '旁白 ↔ 视觉动作' : 'VOICE ↔ VISUAL ACTION';
   return (
@@ -695,6 +695,30 @@ function MiniScatter({ copy }: { copy: OverviewCopy }) {
   );
 }
 
+function MiniGraphics() {
+  return (
+    <div style={{ position: 'relative', width: 344, height: 330, padding: 22, color: '#E7F0FF', background: '#111A27', fontFamily: MONO_STACK, overflow: 'hidden' }}>
+      <div style={{ color: C.cyan, fontSize: 13, fontWeight: 900, letterSpacing: 1.2 }}>INFOGRAPHIC / MANIM</div>
+      <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
+        {['4.8x', '120ms', '0.7%'].map((value, index) => (
+          <div key={value} style={{ flex: 1, padding: '10px 8px', border: `1px solid ${DARK_BORDER}`, background: '#1B2738' }}>
+            <div style={{ color: [C.blue, C.green, C.amber][index], fontSize: 18, fontWeight: 900 }}>{value}</div>
+            <div style={{ marginTop: 4, color: '#91A4C4', fontSize: 9 }}>{['THROUGHPUT', 'LATENCY', 'ERRORS'][index]}</div>
+          </div>
+        ))}
+      </div>
+      <svg width="300" height="142" viewBox="0 0 300 142" style={{ display: 'block', marginTop: 22 }} aria-hidden="true">
+        <path d="M8 118 C58 112 74 94 110 94 S166 77 192 52 S246 38 292 14" fill="none" stroke={C.cyan} strokeWidth="4" />
+        <path d="M8 122 H292 M8 122 V12" fill="none" stroke="#536A86" strokeWidth="1" />
+        <circle cx="192" cy="52" r="6" fill={C.green} />
+      </svg>
+      <div style={{ position: 'absolute', left: 22, right: 22, bottom: 22, display: 'flex', justifyContent: 'space-between', color: '#91A4C4', fontSize: 11 }}>
+        <span>EXPLANATORY GRAPHICS</span><span style={{ color: C.green }}>EQUATION → RESULT</span>
+      </div>
+    </div>
+  );
+}
+
 function MiniProductDemo() {
   return (
     <ProductDemoScene width={344} height={330} background="#EEF2F6">
@@ -749,7 +773,7 @@ function StylesScene({ copy, duration, enhanced }: { copy: OverviewCopy; duratio
   const frame = useCurrentFrame() * 258 / Math.max(1, duration);
   const views = [
     { label: copy.styleLabels[0], short: 'MODEL', child: <MiniWhiteboard copy={copy} />, color: C.blue, start: 16 },
-    { label: copy.styleLabels[1], short: 'PLAN', child: <MiniScatter copy={copy} />, color: C.amber, start: 88 },
+    { label: copy.styleLabels[1], short: 'GRAPHICS', child: <MiniGraphics />, color: C.amber, start: 88 },
     { label: copy.styleLabels[2], short: 'EVIDENCE', child: <MiniProductDemo />, color: C.green, start: 160 },
   ];
   return (

@@ -110,6 +110,7 @@ export async function recordPlan(
   const actionTimings: Array<{ id: string; timeMs: number }> = [];
   let cursor = { x: 48, y: 48 };
   let frameCount = 0;
+  let captureEndedAt = 0;
   let stopCapture = false;
   let captureError: Error | undefined;
 
@@ -264,6 +265,7 @@ export async function recordPlan(
   } finally {
     stopCapture = true;
     await captureLoop;
+    captureEndedAt = now();
     await browser.close();
   }
   if (captureError) throw captureError;
@@ -285,15 +287,19 @@ export async function recordPlan(
     message: `Encoding ${frameCount} captured frames`,
   });
   const rawVideoPath = path.join(jobDir, "raw.mp4");
-  await encodeFrames(framesDir, captureFps, rawVideoPath);
-  const durationMs = Math.round((frameCount / captureFps) * 1000);
+  // Puppeteer screenshots may be slower than the requested cadence. Encode
+  // the captured states over their real wall-clock duration so action, cursor,
+  // focus, and click timestamps remain inside the media timeline.
+  const durationMs = Math.max(1, captureEndedAt);
+  const effectiveCaptureFps = Math.max(0.1, frameCount / (durationMs / 1000));
+  await encodeFrames(framesDir, effectiveCaptureFps, rawVideoPath);
   const manifest: RecordingManifest = {
     version: "1.0",
     name: plan.name,
     sourceVideo: rawVideoPath,
     recordingWidth: plan.viewport.width,
     recordingHeight: plan.viewport.height,
-    captureFps,
+    captureFps: effectiveCaptureFps,
     renderFps,
     durationMs,
     frameCount,

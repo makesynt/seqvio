@@ -20,6 +20,7 @@ import { resolveCompositionDurationFrames } from './time';
 import { getTransitionProgress, getTransitionStyle } from './transitions';
 import { FpsProvider, SceneLocalFrameProvider } from './frame';
 import { useStyleProfile } from './style-profile-runtime';
+import type { DesignStageConfig } from './design-stage';
 
 export interface CompositionConfig {
   id: string;
@@ -30,6 +31,7 @@ export interface CompositionConfig {
   theme?: string;
   backgroundColor?: string;
   audio?: CompositionAudioManifest;
+  design?: DesignStageConfig;
 }
 
 export interface SceneProps {
@@ -104,6 +106,7 @@ export const VideoComposition: React.FC<VideoCompositionProps> = ({
   theme,
   backgroundColor = '#000000',
   audio,
+  design,
   children,
 }) => {
   const resolvedAudio = useMemo(
@@ -132,6 +135,7 @@ export const VideoComposition: React.FC<VideoCompositionProps> = ({
       duration: effectiveDuration,
       fps,
       audio: resolvedAudio,
+      design,
     };
   }
 
@@ -143,7 +147,8 @@ export const VideoComposition: React.FC<VideoCompositionProps> = ({
     duration: effectiveDuration,
     theme,
       backgroundColor,
-      audio: resolvedAudio,
+    audio: resolvedAudio,
+    design,
   };
 
   const frame = timeline.getCurrentFrame();

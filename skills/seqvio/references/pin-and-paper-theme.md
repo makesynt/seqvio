@@ -2,7 +2,7 @@
 
 Field-notebook editorial style for Seqvio videos. Yellow legal-pad surface,
 cobalt-blue hand-drawn ink, cream card panels, single red accent.
-Inspired by the [beautiful-html-templates `pin-and-paper`](d:/beautiful-html-templates/templates/pin-and-paper/) design system.
+Inspired by the Pin & Paper editorial design system.
 
 ## Quick Start
 
@@ -14,7 +14,7 @@ import {
   Hand,
   pinAndPaperTheme,
   pinPalette,
-} from '@seqvio/whiteboard';
+} from "@seqvio/whiteboard";
 
 // Always use texture="none" and background prop for the yellow paper surface
 <WhiteboardScene
@@ -25,31 +25,31 @@ import {
   theme={pinAndPaperTheme}
 >
   ...
-</WhiteboardScene>
+</WhiteboardScene>;
 ```
 
 ## Color Palette
 
-| Token | Hex | Use |
-|---|---|---|
-| `pinPalette.paper` | `#EFE56A` | Background — every scene, always |
-| `pinPalette.cream` | `#F8F1D6` | Card fill — use for panels/cards |
-| `pinPalette.ink` | `#1F3A8A` | All text, borders, shapes |
-| `pinPalette.inkSoft` | `#2D4FB8` | Subdued text, secondary labels |
-| `pinPalette.red` | `#C2342B` | Single accent — one per scene max |
-| `pinPalette.olive` | `#6B7A2E` | Positive/growth signal (optional) |
-| `pinPalette.cta` | `#D8702A` | Warm orange for CTA elements |
+| Token                | Hex       | Use                               |
+| -------------------- | --------- | --------------------------------- |
+| `pinPalette.paper`   | `#EFE56A` | Background — every scene, always  |
+| `pinPalette.cream`   | `#F8F1D6` | Card fill — use for panels/cards  |
+| `pinPalette.ink`     | `#1F3A8A` | All text, borders, shapes         |
+| `pinPalette.inkSoft` | `#2D4FB8` | Subdued text, secondary labels    |
+| `pinPalette.red`     | `#C2342B` | Single accent — one per scene max |
+| `pinPalette.olive`   | `#6B7A2E` | Positive/growth signal (optional) |
+| `pinPalette.cta`     | `#D8702A` | Warm orange for CTA elements      |
 
 **Rule:** never more than 2 accent colors per scene. Ink is the default; red is the emphasis.
 
 ## Typography Scale (DrawText `fontSize` at 1280×720)
 
-| Scale | Size | Use |
-|---|---|---|
-| display | 82 px | Hero title — one per scene |
-| h1 | 56 px | Section heading |
-| h2 | 38 px | Card heading |
-| body | 26 px | Body / explanation text |
+| Scale   | Size  | Use                                |
+| ------- | ----- | ---------------------------------- |
+| display | 82 px | Hero title — one per scene         |
+| h1      | 56 px | Section heading                    |
+| h2      | 38 px | Card heading                       |
+| body    | 26 px | Body / explanation text            |
 | caption | 20 px | Marginal annotation, label, footer |
 
 Always use `fontWeight="bold"` for display and h1. Cards use h2 bold + body regular.
@@ -94,7 +94,7 @@ with two overlapping `DrawShape` rectangles:
 />
 ```
 
-The Card helper component in `seqvio-pin-and-paper.tsx` wraps this pattern.
+A local `Card` helper can wrap this pattern when a composition repeats it.
 
 ## Dark Card Variant
 
@@ -145,6 +145,7 @@ rule from the original design system):
 ## Layout Patterns
 
 ### Cover scene
+
 1. Display title (82 px, center, INK)
 2. Red underline rule below title (single line, `strokeWidth=4`)
 3. Subtitle h1 (38 px, center, INK)
@@ -152,12 +153,14 @@ rule from the original design system):
 5. Version / date caption (20 px, bottom-right, `inkSoft`)
 
 ### Multi-card scene
+
 1. h1 section heading + hairline rule
 2. 2–4 cream cards with hard offset shadow, staggered draw timing
 3. Arrow connectors between cards (DrawShape arrow)
 4. Bottom-center marginal annotation (20 px, `inkSoft`)
 
 ### Two-column scene
+
 1. h1 heading + hairline rule
 2. Left column: dark ink card (headings in CREAM)
 3. Right column: cream card (headings in INK)
@@ -167,6 +170,7 @@ rule from the original design system):
 ## Do / Don't
 
 ### Do
+
 - Set `texture="none"` and `background={pinPalette.paper}` — the yellow surface is non-negotiable.
 - Keep to the 5-level type scale. Pick one size per semantic level per scene.
 - Use the Card helper pattern for every content panel.
@@ -175,29 +179,33 @@ rule from the original design system):
 - Let the Hand animate — `Hand action="write" follow={true} visible={true}`.
 
 ### Don't
+
 - Don't use a white or grey background. The yellow paper is the identity.
 - Don't use more than one red element per scene.
 - Don't skip the hard offset shadow on cards — a card without shadow reads as floating, not pinned.
 - Don't pack more than 4 cards per scene at 1280×720.
 - Don't mix ink body text with cream body text in the same column — choose one surface per panel.
 
-## Example File
+## Shipped Theme
 
-See [`examples/compositions/seqvio-pin-and-paper.tsx`](../../../examples/compositions/seqvio-pin-and-paper.tsx) for a full 4-scene composition using this theme.
+The theme implementation lives in
+[`packages/whiteboard/src/theme/pinAndPaperTheme.ts`](../../../packages/whiteboard/src/theme/pinAndPaperTheme.ts).
+Compose it with a local TSX file using the whiteboard components shown above.
 
 ## Render Command
 
 ```bash
-seqvio-render examples/compositions/seqvio-pin-and-paper.tsx --output output/pin-and-paper.mp4
+seqvio-render --component path/to/pin-and-paper.tsx --output output/pin-and-paper.mp4
 ```
 
 With narration:
 
 ```bash
-seqvio-audio extract examples/compositions/seqvio-pin-and-paper.tsx
-seqvio-audio synthesize examples/compositions/seqvio-pin-and-paper.tsx
-seqvio-render examples/compositions/seqvio-pin-and-paper.tsx \
-  --audioManifest output/audio-manifest.resolved.json \
-  --burnCaptions \
+seqvio-audio extract --component path/to/pin-and-paper.tsx \
+  --out output/pin-and-paper.manifest.json
+seqvio-audio synthesize --manifest output/pin-and-paper.manifest.json \
+  --outDir output/pin-and-paper-audio
+seqvio-render --component path/to/pin-and-paper.tsx \
+  --audioManifest output/pin-and-paper-audio/audio-manifest.resolved.json \
   --output output/pin-and-paper.mp4
 ```

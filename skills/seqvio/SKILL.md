@@ -1,18 +1,25 @@
 ---
 name: seqvio
-description: Create or edit Seqvio explainer video compositions in TSX and render them to MP4 with optional narration and captions. Use when working in this repository on editorial planning, visual design briefs, ExplainerDocument IR, whiteboard animations, technical explainers, storyboard planning, chapter render/resume, scene timing, transitions, seqvio-render, or seqvio-audio workflows.
+description: Create, edit, validate, and render Seqvio evidence-backed explainer videos from real agent work, captured terminal/browser evidence, authored ideas, ExplainerDocument IR, or TSX. Use for editorial planning, visual design briefs, whiteboard or product-demo animation, technical explainers, storyboard compatibility, chapter render/resume, narration timing, transitions, seqvio-generate, seqvio-audio, seqvio-qa, and seqvio-render workflows in this repository.
 ---
 
 # Seqvio
 
-Seqvio turns structured content into narrated explainer videos. Preferred production loop for **new topics**:
+Seqvio turns real agent work, captured terminal/browser evidence, and authored
+ideas into narrated explainer videos. Use this production loop for **new topics**:
 
-1. write a host-agent task with `seqvio-generate plan-agent`
-2. review human-readable editorial and visual design artifacts, then let the host agent produce ExplainerDocument with narration cues and ExplanationBeats authored together
-3. validate + compile the IR to TSX with logical source timing
-4. for long technical videos, optionally `seqvio-generate render-plan` then chapter-render with `--resume`
-5. extract and synthesize with `seqvio-audio`, which resolves phrase anchors and semantic scene time maps
-6. run `seqvio-qa` with the resolved audio manifest, then render with `seqvio-render`
+1. create and review `EDITORIAL.md` with `seqvio-generate plan-editorial`
+2. create and review `VISUAL-DESIGN.md` with `seqvio-generate plan-visual`
+3. use both approved artifacts with `seqvio-generate plan-agent`, then let the
+   host agent produce ExplainerDocument with narration cues and ExplanationBeats
+   authored together
+4. validate and compile the IR to TSX with logical source timing
+5. for long explainers, optionally run `seqvio-generate render-plan` and render
+   chapters with `--resume`
+6. extract and synthesize with `seqvio-audio`, which resolves phrase anchors and
+   semantic scene time maps
+7. run `seqvio-qa` with the resolved audio manifest, then render with
+   `seqvio-render`
 
 Storyboard v1 remains supported for whiteboard-only input. It is not the default
 contract for new captured or technical explainers.
@@ -22,7 +29,8 @@ Seqvio itself does not call AI or planner APIs. Creative planning happens in the
 Manual TSX authoring is still valid for polish:
 
 1. author or edit a composition in TSX
-2. use `@seqvio/whiteboard` and/or `@seqvio/technical`
+2. select `@seqvio/whiteboard`, `@seqvio/scatterbrain`,
+   `@seqvio/product-demo`, and/or `@seqvio/technical` per scene
 3. optionally wrap multiple scenes with `@seqvio/core`
 4. extract and synthesize narration with `seqvio-audio` when needed
 5. render with `seqvio-render`
@@ -67,27 +75,36 @@ Seqvio has two separate pieces:
 Install the skill:
 
 ```bash
-npx skills add makesynt/seqvio --skill seqvio -y
+npx skills add makesynt/seqvio
 ```
 
-Install the renderer separately. Either:
+Use `--skill seqvio` to skip skill selection, `--agent <name>` to target one
+agent, and `--yes` to skip prompts and auto-detect scope. These flags are
+optional for an interactive install. Run inside the target project for the
+default project scope; add `--global` only for a cross-project installation.
+
+For most users, install the published `0.8` CLI and run its environment check:
 
 ```bash
-npm install -g @seqvio/renderer
+npm install -g @seqvio/renderer@latest
+seqvio-doctor --json
 ```
 
-Or work from a local repository checkout:
+Use a repository checkout for bundled examples or contributor work:
 
 ```bash
 git clone https://github.com/makesynt/seqvio.git
-cd seqvio && npm ci && npm run build
+cd seqvio
+npm ci
+npm run build
+npm run doctor
 ```
 
 The skill alone does not install npm packages or render MP4 output.
 
 ## Example Prompts
 
-- "Using `/seqvio`, write a plan-agent task for a Chinese history explainer, then validate and compile the returned IR."
+- "Using `/seqvio`, create and review the editorial and visual design artifacts for a Chinese history explainer, then write the plan-agent task, validate the returned IR, and compile it."
 - "Using `/seqvio`, create and review an editorial plan and visual design brief, then produce an ExplainerDocument programming explainer about HTTP caching."
 - "Using `/seqvio`, create a 4-scene Chinese product overview with whiteboard visuals and ElevenLabs narration."
 - "Edit `examples/compositions/technical-demo.tsx` then render with chapter resume for only the code scene."
@@ -110,6 +127,7 @@ Pick style packages per scene — do not mix unrelated component families carele
 
 - **Whiteboard** (`@seqvio/whiteboard`) — SVG hand-drawn animation; `WhiteboardScene` / `DrawText` / `DrawShape` / `DrawImage` / `DrawIcon` / `Hand`. Themes select the look (default, pin-and-paper, studio, field-note, …). For the Pin & Paper theme, read [references/pin-and-paper-theme.md](references/pin-and-paper-theme.md).
 - **Scatterbrain** (`@seqvio/scatterbrain`) — div/CSS sticky-note / cork-board look; `ScatterScene` / `StickyNote` / `Scrawl` / `PinnedList` / `Doodle` / `Polaroid`. Read [references/scatterbrain-style.md](references/scatterbrain-style.md).
+- **Product demo** (`@seqvio/product-demo`) — browser frames, recorded browser playback, camera focus, cursor paths, click markers, titles, and callouts for product and workflow demonstrations.
 - **Technical** (`@seqvio/technical`) — code walkthrough, architecture diagrams, semantic annotations; usually compiled from ExplainerDocument.
 
 ## Working Model
@@ -172,6 +190,8 @@ Each scene usually wraps its own `WhiteboardScene`. Scene-local draw timings sta
   - `@seqvio/whiteboard`
   - `@seqvio/scatterbrain`
   - `@seqvio/core`
+  - `@seqvio/technical`
+  - `@seqvio/product-demo`
 - Do not reintroduce removed or imaginary workflows such as:
   - Seqvio-side AI planning
   - template auto-layout
@@ -187,7 +207,11 @@ Each scene usually wraps its own `WhiteboardScene`. Scene-local draw timings sta
    Prefer `examples/compositions/seqvio-overview-en.tsx`,
    `examples/compositions/seqvio-overview-zh.tsx`,
    `examples/compositions/seqvio-audio-demo.tsx`,
+   `examples/compositions/seqvio-product-demo-preview.tsx`,
    or `packages/whiteboard/examples/`.
+   Use `examples/compositions/seqvio-product-hunt-premium.tsx` as the current
+   product-level motion and pacing reference only when its local captured assets
+   exist; it is not a portable clean-checkout starter.
 
 3. Implement with local accuracy.
    Match actual prop names and supported transition values from source.

@@ -6,7 +6,7 @@
     "releaseTrain": "0.8"
   },
   "private": true,
-  "description": "A visual language for coding agents to explain ideas with narrated video",
+  "description": "A visual language for agents to explain ideas with narrated video",
   "keywords": [
     "explainer-video",
     "video",

@@ -4,7 +4,7 @@ README demo videos now live in [`../videos/`](../videos/):
 
 - `seqvio-overview-en.mp4` + `seqvio-overview-en.preview.gif`
 - `seqvio-overview-zh.mp4` + `seqvio-overview-zh.preview.gif`
-- `seqvio-product-hunt-en.mp4` (current explanation-contract demo)
+- `seqvio-product-hunt-en.mp4` (current 72-second Product Hunt demo)
 
 GitHub README cannot inline-play repo-hosted MP4 with `<video>`; README uses the GIF previews (click through to MP4 for narration).
 
@@ -19,7 +19,7 @@ Source compositions:
 
 - `examples/compositions/seqvio-overview-en.tsx`
 - `examples/compositions/seqvio-overview-zh.tsx`
-- `examples/compositions/seqvio-product-hunt-en.tsx`
+- `examples/compositions/seqvio-product-hunt-premium.tsx`
 
 The overview and Product Hunt sources must follow the current product path in
 [`../../marketing/POSITIONING.md`](../../marketing/POSITIONING.md). Do not use

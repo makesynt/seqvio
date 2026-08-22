@@ -393,7 +393,7 @@ export function compileExplainerDocumentToTsx(
   const sceneTree = pacedDoc.scenes
     .map((scene, index) => {
       const durationAttr = ` duration={${sceneDurations[index]}}`;
-      const tag = `      <Scene id=${JSON.stringify(scene.id)}${durationAttr}>\n        <${sceneNames[index]} />\n      </Scene>`;
+      const tag = `      <Scene id=${JSON.stringify(scene.id)}${durationAttr}>\n        <DesignStage>\n          <${sceneNames[index]} />\n        </DesignStage>\n      </Scene>`;
       const needsTransition = index < doc.scenes.length - 1 && r.transitionDuration > 0;
       const transition = needsTransition
         ? `\n      <Transition type="fade" duration={${r.transitionDuration}} />`
@@ -445,7 +445,7 @@ const STYLE = getSeqvioStylePreset(STYLE_ID) ?? {
   const code = `// AUTO-GENERATED from a Seqvio ExplainerDocument. Safe to edit by hand.
 import React from 'react';
 import type { RenderableMeta } from '@seqvio/core';
-import { StyleProfileProvider, VideoComposition, Scene, Transition } from '@seqvio/core';
+import { DesignStage, StyleProfileProvider, VideoComposition, Scene, Transition } from '@seqvio/core';
 ${whiteboardImports}
 ${technicalImports}
 ${productDemoImports}
@@ -466,6 +466,7 @@ export default function ${pascalId(r.id)}() {
       width={W}
       height={H}
       fps={FPS}
+      design={{ width: W, height: H, fit: "contain", align: "center" }}
       backgroundColor=${JSON.stringify(pacedDoc.styleProfile?.paletteRoles.background ?? r.backgroundColor)}${hasNarration ? '\n      audio={meta.audio}' : ''}
     >
 ${sceneTree}
@@ -481,6 +482,7 @@ ${
   duration: ${totalDuration},
   width: W,
   height: H,
+  design: { width: W, height: H, fit: 'contain', align: 'center' },
   pacing: { profile: ${JSON.stringify(pacingProfile.id)}, highlights: ${JSON.stringify(pacingHighlights, null, 2)} },
   direction: ${JSON.stringify(compiledDirection, null, 2)},
   audio: {
@@ -497,6 +499,7 @@ ${
   duration: ${totalDuration},
   width: W,
   height: H,
+  design: { width: W, height: H, fit: 'contain', align: 'center' },
   pacing: { profile: ${JSON.stringify(pacingProfile.id)}, highlights: ${JSON.stringify(pacingHighlights, null, 2)} },
   direction: ${JSON.stringify(compiledDirection, null, 2)},
 };`

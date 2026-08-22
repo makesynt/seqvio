@@ -295,8 +295,8 @@ Restating, because roadmap pressure is where scope erodes:
 ## Long-Lived Assets
 
 1. **Versioned contracts.** IR schema and the frame contract need explicit
-   versions and explicit breaking-change notes. Pre-stable ExplainerDocument
-   migrations are intentionally outside the current plan.
+   versions and explicit breaking-change notes. Any compatible
+   `ExplainerDocument` migration must be documented as part of that contract.
 
 ## If Only One Thing Ships
 

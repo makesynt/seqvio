@@ -6,20 +6,24 @@
 
 English | [简体中文](./README.zh-CN.md)
 
-**Evidence-backed explainer videos for coding agents.**
+**Evidence-backed explainer videos for agents.**
 
-Seqvio gives coding agents a capture-to-explanation path for turning real terminal/browser activity and technical ideas into clear narrated videos. Human-readable `EDITORIAL.md` and `VISUAL-DESIGN.md` artifacts make content choices and visual direction reviewable before the executable `ExplainerDocument` IR binds spoken cues to visual actions with `ExplanationBeat`s.
+Seqvio gives agents a capture-to-explanation path for turning real terminal/browser activity and authored ideas into narrated videos. Human-readable `EDITORIAL.md` and `VISUAL-DESIGN.md` artifacts make content choices and visual direction reviewable before the executable `ExplainerDocument` IR binds spoken cues to visual actions with `ExplanationBeat`s.
 
 > **Current status:** The repository supports explicit React/TSX compositions and `ExplainerDocument` with public `whiteboard`, `code`, `diagram`, `terminal`, and `browser` compiler paths, plus experimental `infographic` and externally rendered Python `manim` paths. Phrase-anchored ExplanationBeats drive logical visual timing, post-TTS semantic time maps, speech/highlight QA, and deterministic local rendering. Terminal and browser pipelines compile real recorded steps through the same IR. Capture CLI contract `2.0` names the canonical IR artifact `explainer.json`.
 
 ## Demo
 
-The current 720p product demo shows the reviewable plan, executable
-`ExplainerDocument`, phrase-level `ExplanationBeat`, QA, and local rendering
-path through a native-module CI diagnosis.
+The current 64-second Product Hunt demo follows a real skill evaluation from
+an agent task to terminal and browser evidence, then shows reviewable editorial
+and visual direction, phrase-anchored timing, deterministic QA, and several
+explanation formats.
 
 **[Watch the current narrated demo](./docs/assets/videos/seqvio-product-hunt-en.mp4)**
-— source: [`seqvio-product-hunt-en.tsx`](./examples/compositions/seqvio-product-hunt-en.tsx)
+— source: [`seqvio-product-hunt-premium.tsx`](./examples/compositions/seqvio-product-hunt-premium.tsx)
+
+The production composition uses locally captured browser/session assets under
+`output/`; use the portable examples below when starting from a clean checkout.
 
 Localized overview compositions remain available under
 [`examples/compositions/`](./examples/compositions/), but their previously
@@ -30,20 +34,33 @@ primary product demo.
 
 Seqvio has two separate pieces:
 
-| Piece            | What it is                                                                                 | Install with                                         |
-| ---------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
-| **Agent skill**  | Teaches Cursor and other agents how to author TSX compositions and run the render workflow | `npx skills add ...`                                 |
-| **Renderer CLI** | Runs `seqvio-render`, `seqvio-audio`, and `seqvio-qa`                                      | `npm install @seqvio/renderer` or a local repo build |
+| Piece            | What it is                                                                                 | Install with                             |
+| ---------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------- |
+| **Agent skill**  | Teaches Cursor and other agents how to author TSX compositions and run the render workflow | `npx skills add ...`                     |
+| **Renderer CLI** | Runs `seqvio-render`, `seqvio-audio`, and `seqvio-qa`                                      | `npm install -g @seqvio/renderer@latest` |
 
 Installing the skill alone is **not** enough to render videos. You also need the CLI (or a local checkout of this repository).
 
 ### 1. Install the agent skill
 
 ```bash
-npx skills add makesynt/seqvio --skill seqvio -a cursor -y
+npx skills add makesynt/seqvio
 ```
 
-Replace `cursor` with your agent if needed (`claude-code`, `codex`, etc.). To preview available skills first:
+This opens interactive selection for the skill, target agent, and install scope.
+From inside a project directory, use this explicit non-interactive Cursor
+install:
+
+```bash
+npx skills add makesynt/seqvio --skill seqvio --agent cursor --yes
+```
+
+`--skill seqvio` selects this skill without a picker, `--agent cursor` targets
+Cursor, and `--yes` skips confirmation prompts and auto-detects scope. None is
+required for an interactive install. By default the CLI installs into the
+current project when run inside one; add `--global` when the skill should be
+available across projects. Replace `cursor` with `claude-code`, `codex`, or
+another supported agent. To inspect the repository first:
 
 ```bash
 npx skills add makesynt/seqvio --list
@@ -55,37 +72,43 @@ This step copies the Seqvio skill into your agent. It does **not** install npm p
 
 Pick one path:
 
-**Option A — npm package (simplest for most users)**
+**Option A — published `0.8` CLI (recommended for most users)**
 
 ```bash
-npm install -g @seqvio/renderer
+npm install -g @seqvio/renderer@latest
 seqvio-render --help
+seqvio-doctor --json
 ```
 
-Public packages: `@seqvio/core`, `@seqvio/whiteboard`, `@seqvio/scatterbrain`,
-`@seqvio/product-demo`, `@seqvio/technical`, and `@seqvio/renderer`.
-Experimental capture packages: `@seqvio/capture`, `@seqvio/browser-recorder`,
-and `@seqvio/terminal-narrator`.
-The optional experimental `@seqvio/manim-adapter` workspace invokes the Python
-package `manim` for externally rendered mathematical animation.
-
-Install optional style/component packages when a composition imports them directly:
+Use packages from the same `0.8` release line when a composition project imports
+optional visual packages directly:
 
 ```bash
-npm install @seqvio/product-demo @seqvio/scatterbrain
+npm install @seqvio/product-demo@^0.8 @seqvio/scatterbrain@^0.8
 ```
 
-**Option B — local repository (best for contributors and example compositions)**
+Install these dependencies in the project containing the TSX composition, not
+as unrelated global packages.
+
+**Option B — repository checkout (contributors and bundled examples)**
 
 ```bash
 git clone https://github.com/makesynt/seqvio.git
 cd seqvio
 npm ci
 npm run build
+npm run doctor
 node packages/renderer/dist/cli.js --help
 ```
 
-Use the workspace CLI when you want the bundled [`examples/compositions/`](./examples/compositions/) and monorepo smoke scripts.
+Use the workspace CLI for bundled [`examples/compositions/`](./examples/compositions/)
+and monorepo smoke scripts. Public packages include `@seqvio/core`,
+`@seqvio/whiteboard`, `@seqvio/scatterbrain`, `@seqvio/product-demo`,
+`@seqvio/technical`, and `@seqvio/renderer`.
+Experimental capture packages: `@seqvio/capture`, `@seqvio/browser-recorder`,
+and `@seqvio/terminal-narrator`.
+The optional experimental `@seqvio/manim-adapter` workspace invokes the Python
+package `manim` for externally rendered mathematical animation.
 
 ### 3. Optional: narration credentials
 
@@ -93,6 +116,12 @@ For ElevenLabs or other TTS providers, export credentials before synthesis:
 
 ```bash
 export ELEVENLABS_API_KEY=your_key
+```
+
+PowerShell:
+
+```powershell
+$env:ELEVENLABS_API_KEY="your_key"
 ```
 
 See [`.env.example`](./.env.example). The CLI reads process environment variables and does not auto-load `.env`.
@@ -110,6 +139,39 @@ control. Experimental terminal/browser adapters can supply observed scenes to
 the same IR; they are not required for authored explainers.
 
 Supported agents include Cursor, Claude Code, Codex, Gemini CLI, and other coding agents that support skills.
+
+The underlying CLI sequence is:
+
+```text
+plan-editorial -> review EDITORIAL.md
+plan-visual -> review VISUAL-DESIGN.md
+plan-agent -> host agent returns explainer.json
+validate -> compile -> audio extract/synthesize -> QA -> render
+```
+
+For a manual IR workflow, generate each host-agent task in order and review its
+output before continuing:
+
+```bash
+seqvio-generate plan-editorial --input brief.md --write-prompt editorial-task.md
+# Run editorial-task.md in the host agent and save the approved EDITORIAL.md
+
+seqvio-generate plan-visual --input brief.md --editorial EDITORIAL.md \
+  --write-prompt visual-task.md
+# Run visual-task.md and save the approved VISUAL-DESIGN.md
+
+seqvio-generate plan-agent --input brief.md --editorial EDITORIAL.md \
+  --visual-design VISUAL-DESIGN.md --write-prompt agent-task.md
+# Run agent-task.md and save the returned IR as explainer.json
+
+seqvio-generate validate --ir explainer.json --json
+seqvio-generate compile --ir explainer.json \
+  --out examples/compositions/generated/explainer.tsx --force
+```
+
+Exact commands and required arguments are in the
+[`planning-workflow.md`](./skills/seqvio/references/planning-workflow.md) and
+[`audio-workflow.md`](./skills/seqvio/references/audio-workflow.md) references.
 
 ### Render manually without an agent
 
@@ -135,7 +197,11 @@ node packages/browser-recorder/dist/cli.js record --plan plan.json --jobId demo 
 
 Open `http://127.0.0.1:4175`. The built-in sample runs without an AI provider; configure a planner webhook only when AI-generated action plans are required. See the [browser recorder README](./packages/browser-recorder/README.md) for the plan contract and stable adapter boundaries.
 
-**Requirements:** Node.js `>=18`, Chromium (via Puppeteer), FFmpeg (bundled in `@seqvio/renderer`). Local repo development uses npm workspaces and `package-lock.json`. Verify the complete local toolchain with `seqvio-doctor` or `npm run doctor` in a repository checkout.
+**Requirements:** Node.js `>=18`, Chromium (via Puppeteer), and FFmpeg. The
+renderer uses its bundled FFmpeg binary; manual `ffmpeg`/`ffprobe` diagnostics
+and media preparation require those commands on `PATH`. Local repo development
+uses npm workspaces and `package-lock.json`. Verify the complete toolchain with
+`seqvio-doctor --json` or `npm run doctor` in a repository checkout.
 
 ### Terminal capture adapter
 
@@ -218,14 +284,14 @@ The skill lives in [`skills/seqvio/SKILL.md`](./skills/seqvio/SKILL.md) with sup
 Install the skill (see [Quick Start](#quick-start)):
 
 ```bash
-npx skills add makesynt/seqvio --skill seqvio -a cursor -y
+npx skills add makesynt/seqvio
 ```
 
 The skill teaches workflow and commands. Install `@seqvio/renderer` separately when you need to render MP4 output.
 
 ## Why Seqvio
 
-Seqvio is the visual language for coding agents that need to explain, not merely animate. It is not trying to be a general-purpose video editor or generic code-to-video engine; its value is the explainer vocabulary and workflow above the render loop. See [`docs/VISION.md`](./docs/VISION.md) for the full positioning.
+Seqvio is a visual language for agents that need to explain, not merely animate. It is not trying to be a general-purpose video editor or generic code-to-video engine; its value is the explainer vocabulary and workflow above the render loop. See [`docs/VISION.md`](./docs/VISION.md) for the full positioning.
 
 - **Agent-facing visual vocabulary** — concrete primitives for deciding what viewers should see, hear, and understand next
 - **Explainer-first workflow** — scenes, narration, captions, and visual steps in one composition
@@ -264,10 +330,12 @@ Use this section when working from a local repository checkout or when you need 
 ### Install from npm
 
 ```bash
-npm install -g @seqvio/renderer
+npm install -g @seqvio/renderer@latest
+seqvio-doctor --json
 ```
 
-This installs `seqvio-render`, `seqvio-audio`, `seqvio-generate`, `seqvio-preview`, `seqvio-add`, `seqvio-qa`, and `seqvio-doctor` globally. Dependencies `@seqvio/core` and `@seqvio/whiteboard` are pulled in automatically. Install `@seqvio/product-demo`, `@seqvio/scatterbrain`, or `@seqvio/technical` separately when your composition imports those packages outside the monorepo.
+This README documents the `0.8` release line. Use a repository checkout when
+you need bundled examples, unreleased source changes, or contributor tooling.
 
 ### Clone and build the repository
 
@@ -301,11 +369,17 @@ node packages/renderer/dist/audio-cli.js synthesize \
   --manifest output/seqvio-overview-en.manifest.json \
   --outDir output/seqvio-overview-en-audio
 
+node packages/renderer/dist/qa-cli.js \
+  --component examples/compositions/seqvio-overview-en.tsx \
+  --outDir output/seqvio-overview-en-qa \
+  --audioManifest output/seqvio-overview-en-audio/audio-manifest.resolved.json \
+  --ci
+
 node packages/renderer/dist/cli.js \
   --component examples/compositions/seqvio-overview-en.tsx \
   --output output/seqvio-overview-en.mp4 \
   --width 1280 --height 720 --fps 30 --quality medium \
---audioManifest output/seqvio-overview-en-audio/audio-manifest.resolved.json
+  --audioManifest output/seqvio-overview-en-audio/audio-manifest.resolved.json
 ```
 
 Voiceover is muxed automatically from the manifest. **Do not** add `--burnCaptions` unless you intentionally want hard-coded subtitles in the frames (short lines + bottom safe area). For YouTube/Bilibili, upload SRT separately instead. See [`skills/seqvio/references/audio-workflow.md`](./skills/seqvio/references/audio-workflow.md#caption-burn-in-optional).
@@ -319,8 +393,8 @@ Voiceover is muxed automatically from the manifest. **Do not** add `--burnCaptio
 | [`@seqvio/scatterbrain`](./packages/scatterbrain)           | Sticky-note / cork-board style components                                                                             |
 | [`@seqvio/product-demo`](./packages/product-demo)           | Browser frames, cursor paths, screenshot placeholders, callouts, and product walkthrough components                   |
 | [`@seqvio/technical`](./packages/technical)                 | Technical explainer runtime: code walkthroughs, architecture diagrams, terminal demos, annotations, and bundled fonts |
-| [`@seqvio/terminal-narrator`](./packages/terminal-narrator) | Stable node-pty/xterm capture contract → IR/ExplanationBeat → optional narrated MP4                                   |
-| [`@seqvio/browser-recorder`](./packages/browser-recorder)   | Stable Chromium action capture with exact action timing → IR/ExplanationBeat                                          |
+| [`@seqvio/terminal-narrator`](./packages/terminal-narrator) | Experimental package with a stable node-pty/xterm capture contract → IR/ExplanationBeat → optional narrated MP4       |
+| [`@seqvio/browser-recorder`](./packages/browser-recorder)   | Experimental package with a stable Chromium action capture contract with exact action timing → IR/ExplanationBeat     |
 | [`@seqvio/capture`](./packages/capture)                     | Shared experimental capture session and artifact contracts                                                            |
 | [`@seqvio/manim-adapter`](./packages/manim-adapter)         | Experimental adapter that invokes Python Manim and validates/caches the rendered media manifest                       |
 | [`@seqvio/renderer`](./packages/renderer)                   | TSX bundler plus `seqvio-render` and `seqvio-audio` CLIs                                                              |

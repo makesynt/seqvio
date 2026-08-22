@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { classifyQaRuntimeError, diagnoseManimFrame, diagnosePacing, diagnoseProductFrame, expectedNarrationTrackDurationMs, promoteQaWarnings } from '../dist/qa-diagnostics.js';
+import { classifyQaRuntimeError, diagnoseDesignStage, diagnoseManimFrame, diagnosePacing, diagnoseProductFrame, expectedNarrationTrackDurationMs, promoteQaWarnings } from '../dist/qa-diagnostics.js';
 import { reflowSynthesizedTimeline, resolveSynthesizedCueTiming, validateAudioManifest } from '../dist/audio/manifest.js';
 
 test('audio validation emits stable codes for invalid narration and captions', () => {
@@ -221,6 +221,19 @@ test('product-frame diagnostics expose stable production-contract codes', () => 
 test('Manim diagnostics report seek and marker alignment failures', () => {
   const issues = diagnoseManimFrame({ id: 'proof', frame: 60, fps: 30, currentTime: 0.5, markerCount: 2 }, 60);
   assert.deepEqual(issues.map((issue) => issue.code), ['manim_seek_misaligned', 'manim_marker_unresolved']);
+});
+
+test('design stage diagnostics catch missing and mismatched output bounds', () => {
+  const design = { width: 1280, height: 720, fit: 'contain', align: 'center' };
+  assert.equal(diagnoseDesignStage(design, undefined, { width: 1920, height: 1080 }, 0)[0].code, 'design_stage_missing');
+  assert.equal(diagnoseDesignStage(design, {
+    left: 0, top: 0, width: 1280, height: 720,
+    designWidth: 1280, designHeight: 720, fit: 'contain', align: 'center',
+  }, { width: 1920, height: 1080 }, 0)[0].code, 'design_stage_mismatch');
+  assert.deepEqual(diagnoseDesignStage(design, {
+    left: 0, top: 0, width: 1920, height: 1080,
+    designWidth: 1280, designHeight: 720, fit: 'contain', align: 'center',
+  }, { width: 1920, height: 1080 }, 0), []);
 });
 
 test('Manim seek diagnostics accept a clip held on its final media frame', () => {
