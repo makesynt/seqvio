@@ -101,6 +101,8 @@ export interface RenderableMeta {
   fps?: number;
   width?: number;
   height?: number;
+  /** Authored coordinate system and its output fitting policy. */
+  design?: import('./design-stage').DesignStageConfig;
   audio?: CompositionAudioManifest;
   captions?: CaptionCue[];
   pacing?: {

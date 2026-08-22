@@ -34,6 +34,7 @@ Seqvio does not call AI or planner APIs. The host agent creates the IR; Seqvio v
 - Timing is in frames, not seconds
 - Single-scene whiteboard compositions via `@seqvio/whiteboard`
 - Multi-scene compositions via `@seqvio/core`
+- Product and browser walkthrough scenes via `@seqvio/product-demo`
 - Technical scenes via `@seqvio/technical` (hand-authored TSX or compiled from ExplainerDocument)
 
 ## Whiteboard components
@@ -53,6 +54,21 @@ Frame hooks (from `@seqvio/whiteboard`, re-exported from `@seqvio/core`):
 
 - `useCurrentFrame()` — the current frame for the calling component (scene-local inside a `<Scene>`, otherwise the global frame).
 - `useFrameValue(selector, isEqual?)` — subscribe through a selector and re-render only when the selected value changes. Pass memoized `selector`/`isEqual` (e.g. via `useCallback`) to keep the subscription stable.
+
+## Product demo components
+
+From `@seqvio/product-demo`:
+
+- `ProductDemoScene`
+- `BrowserFrame`
+- `RecordedBrowserDemo`
+- `CursorPath` and `MotionFly`
+- `Callout` and `ProductTitle`
+- `ScreenshotPlaceholder`
+
+Use `RecordedBrowserDemo` for real browser evidence and the authored frame,
+cursor, focus, and callout components for explanatory presentation. Do not make
+an authored placeholder look like observed capture evidence.
 
 ## Technical components
 
@@ -196,6 +212,7 @@ Preferred starting points:
 | `examples/compositions/seqvio-overview-en.tsx`           | Narrated English product overview                                    |
 | `examples/compositions/seqvio-overview-zh.tsx`           | Narrated Chinese product overview                                    |
 | `examples/compositions/seqvio-audio-demo.tsx`            | Audio and caption metadata                                           |
+| `examples/compositions/seqvio-product-demo-preview.tsx`  | Product walkthrough component reference                              |
 | `examples/compositions/seqvio-intro.tsx`                 | Multi-scene framework intro                                          |
 | `examples/compositions/technical-demo.tsx`               | Short technical smoke (whiteboard + code + diagram)                  |
 | `examples/compositions/technical-explainer.tsx`          | ~4.5 min technical reference composition (`lockToAudio`)             |
@@ -216,6 +233,7 @@ npm run audio:technical-explainer                     # full extract + TTS + pre
 
 Tracked README demo videos:
 
+- `docs/assets/videos/seqvio-product-hunt-en.mp4`
 - `docs/assets/videos/seqvio-overview-en.mp4`
 - `docs/assets/videos/seqvio-overview-zh.mp4`
 
@@ -233,8 +251,8 @@ Local render intermediates belong in `output/` / `.media/` and are gitignored.
 | `packages/product-demo`      | Product walkthrough components                               |
 | `packages/manim-adapter`     | Optional external Manim execution and media manifest adapter |
 | `packages/capture`           | Shared capture manifest and evidence contracts               |
-| `packages/terminal-narrator` | Pre-stable terminal capture adapter                          |
-| `packages/browser-recorder`  | Pre-stable browser capture adapter                           |
+| `packages/terminal-narrator` | Experimental package; stable terminal CLI/artifact contract  |
+| `packages/browser-recorder`  | Experimental package; stable browser CLI/artifact contract   |
 | `examples/compositions/`     | Renderable compositions                                      |
 | `examples/ir/`               | Storyboard / ExplainerDocument JSON examples                 |
 | `skills/seqvio/`             | Agent skill and references                                   |

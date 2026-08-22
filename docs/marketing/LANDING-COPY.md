@@ -4,40 +4,82 @@
 
 ### Seqvio
 
-### Turn real technical work into explainable video.
+### An explainer video toolkit for agents
 
-Seqvio gives coding agents a visual language for turning technical ideas and
-real terminal/browser activity into narration-locked explainer videos.
+Turn real terminal sessions, browser runs, and authored ideas into reviewable
+videos where narration, visuals, and evidence move together.
 
-**Primary CTA:** Watch the workflow demo
-**Secondary CTA:** Install the agent skill
+**Primary CTA:** Watch the product demo
+**Secondary CTA:** Install the skill
 
-Open source. Local rendering. Reviewable plans. Deterministic QA.
+Real evidence. Phrase-anchored timing. Deterministic QA.
 
-## How it works
+## One connected workflow
 
-1. Plan the explanation in readable `EDITORIAL.md` and `VISUAL-DESIGN.md` files.
-2. Compile authored content or observed capture into `ExplainerDocument`.
-3. Bind spoken phrases, visual actions, and evidence with `ExplanationBeat`.
-4. Resolve TTS timing, run QA, and render a local MP4.
+### From real agent work to an explanation
 
-## Why it is different
+Seqvio keeps the source activity, editorial decisions, spoken phrases, and final
+frames connected instead of reconstructing the story after the fact.
 
-Most generated videos animate an idea from a prompt. Seqvio can preserve what
-actually happened in a terminal or browser session, then explain that evidence
-with the same timing contract used for authored scenes.
+1. **Capture real evidence.** Preserve terminal and browser activity in the order
+   it happened.
+2. **Review the story.** Make the claim, evidence order, and visual direction
+   inspectable.
+3. **Align voice and visuals.** Bind exact spoken phrases to actions, targets, and
+   evidence.
+4. **Validate and render.** Catch blank frames, overflow, pacing, and broken
+   references.
 
-## Current scope
+## Joint explanation timing
 
-Use the public authoring path for whiteboard, code, and diagram explainers.
-Terminal and browser capture are available as experimental adapters and require
-their host runtimes. See the repository's feature status before adopting them
-in CI.
+### The voice sets the clock
 
-## What you get
+Seqvio resolves synthesized speech first, then maps each visual action to the
+phrase it explains. Authored and captured order stays intact without hand-tuned
+padding.
 
-- Human-readable editorial and visual decisions.
-- A formal, inspectable `ExplainerDocument`.
-- Phrase-level narration and visual alignment.
-- Deterministic local rendering and machine-readable QA.
-- Reusable TSX compositions for technical content pipelines.
+- Exact anchors use spoken phrases rather than guessed timestamps.
+- Semantic time maps preserve the intended visual sequence.
+- `ExplanationBeat` keeps narration, targets, actions, and evidence in one
+  contract.
+
+## Product demo
+
+### See the complete system in motion
+
+Follow a real skill evaluation from an agent session to browser evidence, story
+review, phrase-level timing, QA, and reusable explanation formats.
+
+## Applications
+
+### Use cases for Seqvio
+
+- PR video review
+- Tool comparison
+- Tutorial verification
+- Concept explanation
+- Product review
+- Skill evaluation
+
+The workflow stays consistent while the evidence and visual structure change for
+each explanation job.
+
+## Explainer-native contract
+
+### A production contract agents can inspect
+
+- `ExplainerDocument` is the structured source for captured and agent-authored
+  explanations and compiles to editable TSX.
+- The scene vocabulary includes whiteboards, diagrams, product walkthroughs,
+  terminal sessions, browser evidence, and annotations.
+- `ExplanationBeat` binds spoken phrases, visual actions, attention targets,
+  media, and observed facts.
+- Deterministic frame and timing checks produce diagnostics an agent can act on.
+
+## Install
+
+### Give your agent an explainer toolkit
+
+Install the current `0.8` renderer from npm, add the Seqvio skill to your agent,
+and keep every explanation reviewable in the same repository as the work. Use a
+repository checkout when you need bundled examples or contributor tooling.

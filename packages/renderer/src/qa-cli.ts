@@ -26,6 +26,7 @@ import {
   classifyQaRuntimeError,
   diagnoseProductFrame,
   diagnoseManimFrame,
+  diagnoseDesignStage,
   diagnosePacing,
   expectedNarrationTrackDurationMs,
   promoteQaWarnings,
@@ -221,9 +222,10 @@ function validateMediaForQa(
   diagnostics.push(...validateAudioManifest(manifest, { baseDir: componentDir }));
 
   const durationMs = (duration / Math.max(1, fps)) * 1000;
+  const frameToleranceMs = 1000 / Math.max(1, fps) + 1;
   for (const [index, cue] of (manifest.narration ?? []).entries()) {
     const times = resolveNarrationCueTimes(cue, fps);
-    if (times.endMs > durationMs + 1) {
+    if (times.endMs > durationMs + frameToleranceMs) {
       diagnostics.push({
         severity: 'error',
         code: 'narration_after_duration',
@@ -234,7 +236,7 @@ function validateMediaForQa(
     }
   }
   for (const [index, cue] of (manifest.captions ?? []).entries()) {
-    if (cue.endMs > durationMs + 1) {
+    if (cue.endMs > durationMs + frameToleranceMs) {
       diagnostics.push({
         severity: 'error',
         code: 'caption_after_duration',
@@ -347,6 +349,7 @@ async function inspectDom(page: import('puppeteer').Page): Promise<{
   attentionTargetOcclusions: string[];
   productFrame?: import('./qa-diagnostics').ProductFrameObservation;
   manimFrames: import('./qa-diagnostics').ManimFrameObservation[];
+  designStage?: import('./qa-diagnostics').DesignStageObservation;
 }> {
   return page.evaluate(() => {
     const elements = Array.from(document.querySelectorAll('#root *'));
@@ -516,6 +519,21 @@ async function inspectDom(page: import('puppeteer').Page): Promise<{
         markerCount: Number(clip.dataset.seqvioManimMarkerCount ?? 0),
       };
     });
+    const stage = Array.from(document.querySelectorAll<HTMLElement>('[data-seqvio-design-stage="true"]'))
+      .map((element) => {
+        const rect = element.getBoundingClientRect();
+        return {
+          left: rect.left,
+          top: rect.top,
+          width: rect.width,
+          height: rect.height,
+          designWidth: Number(element.dataset.seqvioDesignWidth ?? 0),
+          designHeight: Number(element.dataset.seqvioDesignHeight ?? 0),
+          fit: (element.dataset.seqvioDesignFit ?? 'contain') as 'contain' | 'cover' | 'stretch' | 'native',
+          align: (element.dataset.seqvioDesignAlign ?? 'center') as 'center' | 'top-left',
+        };
+      })
+      .find((item) => item.width > 0 && item.height > 0);
     return {
       elementCount: elements.length,
       bodyTextLength: document.body.innerText.trim().length,
@@ -530,6 +548,7 @@ async function inspectDom(page: import('puppeteer').Page): Promise<{
       attentionTargetOcclusions: [...new Set(attentionTargetOcclusions)],
       productFrame,
       manimFrames,
+      designStage: stage,
     };
   });
 }
@@ -701,6 +720,7 @@ async function main(): Promise<void> {
     for (const pair of dom.attentionTargetOcclusions) issues.push({ severity: 'warning', code: 'attention_target_occluded', path: `attention.${pair}`, frame: sourceFrame, message: `Attention label "${pair.split(':')[0]}" occludes target "${pair.split(':')[1]}".`, repair: 'Move the label to another safe candidate or reroute its leader.' });
     issues.push(...diagnoseProductFrame(dom.productFrame, sourceFrame));
     for (const manimFrame of dom.manimFrames) issues.push(...diagnoseManimFrame(manimFrame, sourceFrame));
+    issues.push(...diagnoseDesignStage(meta.design, dom.designStage, { width, height }, sourceFrame));
 
     // narration/visual agreement: the current cue's keywords should overlap
     // with the visible text. Catches the common AI-video failure where the

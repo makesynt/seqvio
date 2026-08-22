@@ -68,10 +68,10 @@ export function writeRenderShell(
   height: number,
 ): string {
   // Try to inline xterm.css if available (copied by copyBundledAssets).
-  let xtermCss = '';
-  const xtermCssPath = path.join(outDir, 'xterm.css');
+  let xtermCss = "";
+  const xtermCssPath = path.join(outDir, "xterm.css");
   if (fs.existsSync(xtermCssPath)) {
-    xtermCss = fs.readFileSync(xtermCssPath, 'utf-8');
+    xtermCss = fs.readFileSync(xtermCssPath, "utf-8");
   }
 
   const shellPath = path.join(outDir, "render-shell.html");
@@ -99,6 +99,27 @@ export function writeRenderShell(
       font-family: 'Cascadia Mono';
       src: url('./CascadiaMono-Symbols2-Regular.woff2') format('woff2');
       font-weight: 400;
+      font-style: normal;
+      font-display: block;
+    }
+    @font-face {
+      font-family: 'Inter';
+      src: url('./Inter-Regular.woff2') format('woff2');
+      font-weight: 400;
+      font-style: normal;
+      font-display: block;
+    }
+    @font-face {
+      font-family: 'Inter';
+      src: url('./Inter-Medium.woff2') format('woff2');
+      font-weight: 500;
+      font-style: normal;
+      font-display: block;
+    }
+    @font-face {
+      font-family: 'Inter';
+      src: url('./Inter-Bold.woff2') format('woff2');
+      font-weight: 700 900;
       font-style: normal;
       font-display: block;
     }
@@ -253,12 +274,31 @@ function copyBundledAssets(outDir: string): void {
   }
 
   const cascadiaFiles = [
-    ['cascadia-mono-latin-400-normal.woff2', 'CascadiaMono-Latin-Regular.woff2'],
-    ['cascadia-mono-symbols2-400-normal.woff2', 'CascadiaMono-Symbols2-Regular.woff2'],
+    [
+      "cascadia-mono-latin-400-normal.woff2",
+      "CascadiaMono-Latin-Regular.woff2",
+    ],
+    [
+      "cascadia-mono-symbols2-400-normal.woff2",
+      "CascadiaMono-Symbols2-Regular.woff2",
+    ],
   ] as const;
   for (const [sourceName, outputName] of cascadiaFiles) {
     const candidates = roots.map((root) =>
-      path.join(root, '@fontsource', 'cascadia-mono', 'files', sourceName)
+      path.join(root, "@fontsource", "cascadia-mono", "files", sourceName),
+    );
+    const source = findFirstExisting(candidates);
+    if (source) fs.copyFileSync(source, path.join(outDir, outputName));
+  }
+
+  const interFiles = [
+    ["inter-latin-400-normal.woff2", "Inter-Regular.woff2"],
+    ["inter-latin-500-normal.woff2", "Inter-Medium.woff2"],
+    ["inter-latin-700-normal.woff2", "Inter-Bold.woff2"],
+  ] as const;
+  for (const [sourceName, outputName] of interFiles) {
+    const candidates = roots.map((root) =>
+      path.join(root, "@fontsource", "inter", "files", sourceName),
     );
     const source = findFirstExisting(candidates);
     if (source) fs.copyFileSync(source, path.join(outDir, outputName));
@@ -268,19 +308,19 @@ function copyBundledAssets(outDir: string): void {
   // Loaded via <script> in the shell so window.Terminal is ready before
   // the composition bundle mounts.
   const xtermJsCandidates = roots.map((root) =>
-    path.join(root, 'xterm', 'lib', 'xterm.js'),
+    path.join(root, "xterm", "lib", "xterm.js"),
   );
   const xtermJs = findFirstExisting(xtermJsCandidates);
   if (xtermJs) {
-    fs.copyFileSync(xtermJs, path.join(outDir, 'xterm.js'));
+    fs.copyFileSync(xtermJs, path.join(outDir, "xterm.js"));
   }
 
   const xtermCssCandidates = roots.map((root) =>
-    path.join(root, 'xterm', 'css', 'xterm.css'),
+    path.join(root, "xterm", "css", "xterm.css"),
   );
   const xtermCss = findFirstExisting(xtermCssCandidates);
   if (xtermCss) {
-    fs.copyFileSync(xtermCss, path.join(outDir, 'xterm.css'));
+    fs.copyFileSync(xtermCss, path.join(outDir, "xterm.css"));
   }
 }
 
@@ -349,7 +389,13 @@ export async function bundleScene(
       loader: {
         ".tsx": "tsx",
         ".ts": "ts",
+        ".json": "json",
         ".svg": "file",
+        ".png": "file",
+        ".jpg": "file",
+        ".jpeg": "file",
+        ".webp": "file",
+        ".mp4": "file",
         ".woff": "file",
         ".woff2": "file",
         ".ttf": "file",

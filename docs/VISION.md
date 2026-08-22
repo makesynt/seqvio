@@ -1,6 +1,6 @@
 # Seqvio Vision
 
-**Seqvio is a visual language for coding agents to explain ideas.**
+**Seqvio is a visual language for agents to explain ideas.**
 
 This document states what Seqvio is, who it is for, and what it deliberately does
 not do. It changes slowly. For the ordered bet on what to build next, see
@@ -25,7 +25,7 @@ workflow.
 
 ### Core Promise
 
-A visual language for coding agents to explain ideas.
+A visual language for agents to explain ideas.
 
 - Education: lessons, concept explainers, step-by-step tutorials.
 - Product: feature intros, onboarding flows, release notes, workflow explainers.
@@ -83,15 +83,15 @@ user's machine:
 
 - **AI-driven capture with temporal fidelity.** A real terminal session replayed
   from a cast, a real browser walkthrough, a real CI failure
-  - turned into a composition as *what actually happened, in the order it
-  happened*, not a reconstruction from a prompt. Capture is not passive
-  recording: an agent controls the session (it runs the commands, clicks the UI)
-  and explains it (it generates narration from what it actually did and saw).
-  This needs permissions, format adapters, redaction, and domain semantics that
-  run on the user's side. A stronger model and a cloud renderer both stop at the
-  composition boundary; capture starts there. This is the moat - the one thing a
-  closed engine is positioned worst to copy, because none of it runs on their
-  side.
+  - turned into a composition as _what actually happened, in the order it
+    happened_, not a reconstruction from a prompt. Capture is not passive
+    recording: an agent controls the session (it runs the commands, clicks the UI)
+    and explains it (it generates narration from what it actually did and saw).
+    This needs permissions, format adapters, redaction, and domain semantics that
+    run on the user's side. A stronger model and a cloud renderer both stop at the
+    composition boundary; capture starts there. This is the moat - the one thing a
+    closed engine is positioned worst to copy, because none of it runs on their
+    side.
 
 The renderer is a means, not the identity. If commodity render engines keep
 improving, capture is the part of Seqvio that must remain worth existing - and

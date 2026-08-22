@@ -1,3 +1,4 @@
-display_name: Seqvio
-short_description: Author and render TSX-based narrated explainer videos with Seqvio.
-default_prompt: Use Seqvio to create or fix a TSX explainer video composition, follow the extract-synthesize-render workflow when narration is needed, and validate with the documented render commands.
+interface:
+  display_name: "Seqvio"
+  short_description: "Build evidence-backed explainer videos with Seqvio"
+  default_prompt: "Use $seqvio to create or revise an evidence-backed explainer video, validate its timing and assets, and render the final MP4."

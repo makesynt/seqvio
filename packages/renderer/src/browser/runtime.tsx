@@ -521,6 +521,7 @@ export function mountBrowserRuntime(
       fps: compositionMeta.fps ?? sceneMeta.fps,
       width: compositionMeta.width ?? meta?.width,
       height: compositionMeta.height ?? meta?.height,
+      design: compositionMeta.design ?? meta?.design,
       audio: compositionMeta.audio ?? sceneMeta.audio,
       captions: compositionMeta.captions ?? sceneMeta.captions,
       pacing: resolveRuntimePacing(sceneMeta.audio, compositionMeta.pacing ?? meta?.pacing),

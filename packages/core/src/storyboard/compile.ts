@@ -96,7 +96,7 @@ export function compileStoryboardToTsx(
   const sceneTree = board.scenes
     .map((scene, index) => {
       const durationAttr = ` duration={${sceneDurations[index]}}`;
-      const tag = `      <Scene id=${JSON.stringify(scene.id)}${durationAttr}>\n        <${sceneNames[index]} />\n      </Scene>`;
+      const tag = `      <Scene id=${JSON.stringify(scene.id)}${durationAttr}>\n        <DesignStage>\n          <${sceneNames[index]} />\n        </DesignStage>\n      </Scene>`;
       const needsTransition = index < board.scenes.length - 1 && r.transitionDuration > 0;
       const transition = needsTransition
         ? `\n      <Transition type="fade" duration={${r.transitionDuration}} />`
@@ -115,7 +115,7 @@ export function compileStoryboardToTsx(
   const code = `// AUTO-GENERATED from a Seqvio storyboard. Safe to edit by hand.
 import React from 'react';
 import type { RenderableMeta } from '@seqvio/core';
-import { VideoComposition, Scene, Transition } from '@seqvio/core';
+import { DesignStage, VideoComposition, Scene, Transition } from '@seqvio/core';
 import {
   DrawShape,
   DrawText,
@@ -146,6 +146,7 @@ export default function ${pascalId(r.id)}() {
       width={W}
       height={H}
       fps={FPS}
+      design={{ width: W, height: H, fit: "contain", align: "center" }}
       backgroundColor=${JSON.stringify(r.backgroundColor)}${hasNarration ? '\n      audio={meta.audio}' : ''}
     >
 ${sceneTree}
@@ -160,6 +161,7 @@ ${
   duration: ${totalDuration},
   width: W,
   height: H,
+  design: { width: W, height: H, fit: 'contain', align: 'center' },
   audio: {
     fps: FPS,
     lockToAudio: ${r.lockToAudio},
@@ -173,6 +175,7 @@ ${narrationCues}
   duration: ${totalDuration},
   width: W,
   height: H,
+  design: { width: W, height: H, fit: 'contain', align: 'center' },
 };`
 }
 `;
