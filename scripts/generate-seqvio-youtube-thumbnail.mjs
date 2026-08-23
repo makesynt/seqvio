@@ -34,53 +34,53 @@ body {
 .eyebrow { position:absolute; left: 74px; top: 58px; color:#73d8f5; font-size: 20px; font-weight: 700; letter-spacing: 3px; }
 .title { position:absolute; left: 70px; top: 156px; width: 520px; font-size: 74px; line-height: 1.02; letter-spacing: -2px; font-weight: 800; }
 .title .accent { color: #72d8f5; }
-.agent-row { position:absolute; left: 74px; top: 370px; display:flex; gap:12px; }
-.agent-badge { display:flex; align-items:center; gap:9px; height:42px; padding:0 13px 0 9px; border:1px solid rgba(159,190,214,.30); border-radius:14px; background:rgba(14,31,51,.78); color:#d9e7f2; font-size:14px; font-weight:700; }
-.agent-icon { display:block; width:25px; height:25px; object-fit:contain; border-radius:8px; background:#f4f7fa; }
+.agent-row { position:absolute; left: 74px; top: 360px; display:flex; gap:24px; }
+.agent-badge { display:flex; align-items:center; justify-content:center; width:64px; height:64px; padding:7px; border:0; border-radius:0; background:transparent; box-shadow:none; }
+.agent-icon { display:block; width:48px; height:48px; object-fit:contain; border-radius:10px; background:#f4f7fa; }
 .claude-icon { object-fit:cover; object-position:left center; background:#0e0e0e; }
-.hermes-icon { width:32px; object-fit:cover; object-position:left center; background:#151515; }
+.hermes-icon { width:50px; height:44px; object-fit:cover; object-position:left center; background:#151515; }
 .subtitle { position:absolute; left: 75px; top: 540px; color:#b9c9d8; font-size: 20px; letter-spacing: .2px; }
-.logo { position:absolute; left: 74px; bottom: 53px; width: 50px; height: 50px; }
-.brand { position:absolute; left: 137px; bottom: 58px; font-size: 28px; font-weight: 700; letter-spacing: -.5px; }
+.logo { position:absolute; left: 74px; bottom: 43px; width: 68px; height: 68px; }
+.brand { position:absolute; left: 158px; bottom: 56px; font-size: 32px; font-weight: 700; letter-spacing: -.5px; }
 .pill { position:absolute; right: 68px; top: 54px; border: 1px solid rgba(114,216,245,.42); color:#9ee7f7; padding: 10px 16px; border-radius: 99px; font-size: 14px; font-weight: 700; letter-spacing: 2px; }
-.stage { position:absolute; right: 54px; top: 152px; width: 590px; height: 430px; }
-.path { position:absolute; left: 55px; right: 52px; top: 213px; height: 4px; background: linear-gradient(90deg, #72d8f5, #5b7cf1, #55d6a6); border-radius:4px; box-shadow: 0 0 18px rgba(114,216,245,.5); }
-.node { position:absolute; width: 150px; height: 132px; border: 2px solid; border-radius: 22px; background: rgba(12, 28, 48, .94); box-shadow: 0 18px 32px rgba(0,0,0,.22); }
+.stage { position:absolute; right: 30px; top: 136px; width: 638px; height: 454px; }
+.path { position:absolute; left: 38px; right: 42px; top: 228px; height: 5px; background: linear-gradient(90deg, #72d8f5, #5b7cf1, #55d6a6); border-radius:4px; box-shadow: 0 0 18px rgba(114,216,245,.5); }
+.node { position:absolute; width: 174px; height: 150px; border: 2px solid; border-radius: 22px; background: rgba(12, 28, 48, .94); box-shadow: 0 18px 32px rgba(0,0,0,.22); }
 .node:after { display:none; }
-.node .dot { position:absolute; left:18px; top:18px; width:10px; height:10px; border-radius:50%; }
-.node .label { position:absolute; left:18px; top:42px; font-size:16px; font-weight:700; }
-.command { position:absolute; left:18px; top:73px; color:#9ee7f7; font: 11px Consolas, monospace; white-space:nowrap; }
+.node .dot { position:absolute; left:20px; top:20px; width:12px; height:12px; border-radius:50%; }
+.node .label { position:absolute; left:20px; top:47px; font-size:18px; font-weight:700; }
+.command { position:absolute; left:20px; top:82px; color:#9ee7f7; font: 13px Consolas, monospace; white-space:nowrap; }
 .prompt { color:#55d6a6; }
-.file { position:absolute; left:18px; top:72px; color:#c9c3ff; font: 11px Consolas, monospace; }
-.file:after { content:"story beats  ·  timing"; display:block; margin-top:7px; color:#8193a6; }
-.browser-bar { position:absolute; left:14px; right:14px; top:67px; height:23px; border-radius:7px; background:#10263d; }
-.browser-bar:before { content:"skillbench.dev"; position:absolute; left:9px; top:6px; color:#9fb3c5; font: 9px Consolas, monospace; }
-.check { position:absolute; left:18px; top:99px; width:13px; height:13px; border:2px solid #55d6a6; border-radius:50%; }
+.file { position:absolute; left:20px; top:81px; color:#c9c3ff; font: 13px Consolas, monospace; }
+.file:after { content:"story beats  ·  timing"; display:block; margin-top:8px; color:#8193a6; }
+.browser-bar { position:absolute; left:16px; right:16px; top:78px; height:27px; border-radius:7px; background:#10263d; }
+.browser-bar:before { content:"skillbench.dev"; position:absolute; left:10px; top:7px; color:#9fb3c5; font: 11px Consolas, monospace; }
+.check { position:absolute; left:20px; top:118px; width:15px; height:15px; border:2px solid #55d6a6; border-radius:50%; }
 .check:after { content:""; position:absolute; left:3px; top:0px; width:4px; height:7px; border-right:2px solid #55d6a6; border-bottom:2px solid #55d6a6; transform:rotate(40deg); }
-.result { position:absolute; left:39px; top:100px; color:#9ee7c9; font-size:11px; font-weight:700; }
-.terminal { left: 0; top: 133px; border-color:#72d8f5; }
+.result { position:absolute; left:43px; top:119px; color:#9ee7c9; font-size:13px; font-weight:700; }
+.terminal { left: 0; top: 144px; border-color:#72d8f5; }
 .terminal .dot { background:#72d8f5; }
-.page { left: 146px; top: 38px; border-color:#8b86f4; }
+.page { left: 160px; top: 24px; border-color:#8b86f4; }
 .page .dot { background:#8b86f4; }
-.evidence { left: 292px; top: 187px; border-color:#55d6a6; }
+.evidence { left: 320px; top: 202px; border-color:#55d6a6; }
 .evidence .dot { background:#55d6a6; }
-.evidence .label { left:14px; font-size:12px; white-space:nowrap; }
-.play { left: 438px; top: 72px; width: 128px; height: 128px; border-color:#f2bb63; border-radius: 36px; }
+.evidence .label { left:20px; font-size:15px; white-space:nowrap; }
+.play { left: 488px; top: 60px; width: 146px; height: 146px; border-color:#f2bb63; border-radius: 36px; }
 .play .dot { background:#f2bb63; }
-.play:before { content:""; position:absolute; left:52px; top:42px; border-left: 32px solid #f2bb63; border-top: 21px solid transparent; border-bottom: 21px solid transparent; }
+.play:before { content:""; position:absolute; left:59px; top:48px; border-left: 38px solid #f2bb63; border-top: 25px solid transparent; border-bottom: 25px solid transparent; }
 .play:after { display:none; }
-.caption { position:absolute; font-size:13px; color:#9fb3c5; letter-spacing: 1px; text-transform:uppercase; }
-.c1 { left: 17px; top: 284px; } .c2 { left: 175px; top: 190px; } .c3 { left: 310px; top: 339px; } .c4 { right: 2px; top: 220px; }
+.caption { position:absolute; font-size:15px; color:#9fb3c5; letter-spacing: 1px; text-transform:uppercase; }
+.c1 { left: 17px; top: 315px; } .c2 { left: 190px; top: 194px; } .c3 { left: 338px; top: 372px; } .c4 { right: 0; top: 258px; }
 .spark { position:absolute; width:9px; height:9px; border-radius:50%; background:#72d8f5; box-shadow: 0 0 18px currentColor; }
 .s1 { left: 154px; top: 104px; color:#72d8f5; } .s2 { left: 394px; top: 106px; color:#55d6a6; } .s3 { left: 502px; top: 336px; color:#f2bb63; }
 </style></head><body><div class="frame">
 <div class="grid"></div><div class="wash"></div>
 <div class="title"><span class="accent">Make agent</span><br>work visible</div>
 <div class="agent-row">
-  <div class="agent-badge"><img class="agent-icon" src="${cursorLogo}">Cursor</div>
-  <div class="agent-badge"><img class="agent-icon claude-icon" src="${claudeLogo}">Claude Code</div>
-  <div class="agent-badge"><img class="agent-icon" src="${chatgptLogo}">ChatGPT</div>
-  <div class="agent-badge"><img class="agent-icon hermes-icon" src="${hermesLogo}">Hermes</div>
+  <div class="agent-badge"><img class="agent-icon" src="${cursorLogo}" alt=""></div>
+  <div class="agent-badge"><img class="agent-icon claude-icon" src="${claudeLogo}" alt=""></div>
+  <div class="agent-badge"><img class="agent-icon" src="${chatgptLogo}" alt=""></div>
+  <div class="agent-badge"><img class="agent-icon hermes-icon" src="${hermesLogo}" alt=""></div>
 </div>
 <div class="stage"><div class="path"></div>
   <div class="node terminal"><div class="dot"></div><div class="label">Terminal</div><div class="command"><span class="prompt">$</span> seqvio capture</div></div>

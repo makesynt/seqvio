@@ -1,4 +1,8 @@
-# Seqvio
+<p align="center">
+  <img src="./docs/assets/brand/seqvio-mark.svg" alt="Seqvio" width="96" />
+</p>
+
+<h1 align="center">Seqvio</h1>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-green.svg)](https://nodejs.org/)
@@ -19,7 +23,7 @@ an agent task to terminal and browser evidence, then shows reviewable editorial
 and visual direction, phrase-anchored timing, deterministic QA, and several
 explanation formats.
 
-**[Watch the current narrated demo](./docs/assets/videos/seqvio-product-hunt-en.mp4)**
+**[Watch the current narrated demo on YouTube](https://www.youtube.com/watch?v=VX6tKv2mwwk)**
 — source: [`seqvio-product-hunt-premium.tsx`](./examples/compositions/seqvio-product-hunt-premium.tsx)
 
 The production composition uses locally captured browser/session assets under

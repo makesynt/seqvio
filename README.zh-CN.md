@@ -1,4 +1,8 @@
-# Seqvio
+<p align="center">
+  <img src="./docs/assets/brand/seqvio-mark.svg" alt="Seqvio" width="96" />
+</p>
+
+<h1 align="center">Seqvio</h1>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-green.svg)](https://nodejs.org/)
@@ -18,7 +22,7 @@ Seqvio 为 agent 提供从真实系统捕获到讲解视频的完整路径。人
 终端和浏览器证据，以及可审阅的策划与视觉设计、短语锚定时间、确定性 QA 和多种
 讲解场景。
 
-**[观看当前带旁白演示](./docs/assets/videos/seqvio-product-hunt-en.mp4)**
+**[在 YouTube 观看当前带旁白演示](https://www.youtube.com/watch?v=VX6tKv2mwwk)**
 — 源码：[`seqvio-product-hunt-premium.tsx`](./examples/compositions/seqvio-product-hunt-premium.tsx)
 
 该生产 composition 使用 `output/` 下的本地浏览器和会话捕获素材；从干净 checkout
