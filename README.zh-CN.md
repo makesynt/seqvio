@@ -18,15 +18,12 @@ Seqvio 为 agent 提供从真实系统捕获到讲解视频的完整路径。人
 
 ## Demo
 
-当前 72 秒 Product Hunt 演示从一个真实 skill 评测出发，呈现 agent 任务如何变成
-终端和浏览器证据，以及可审阅的策划与视觉设计、短语锚定时间、确定性 QA 和多种
-讲解场景。
+带旁白演示展示了从终端和浏览器证据，到可审阅方向、短语锚定时间、确定性 QA
+以及多种讲解场景的完整流程。
 
-**[在 YouTube 观看当前带旁白演示](https://www.youtube.com/watch?v=VX6tKv2mwwk)**
-— 源码：[`seqvio-product-hunt-premium.tsx`](./examples/compositions/seqvio-product-hunt-premium.tsx)
+<a href="./docs/assets/videos/seqvio-overview-zh.mp4"><img src="./docs/assets/videos/seqvio-overview-zh.preview.gif" alt="Seqvio 带旁白演示预览" width="720" /></a>
 
-该生产 composition 使用 `output/` 下的本地浏览器和会话捕获素材；从干净 checkout
-开始时请使用下文列出的可移植示例。
+点击上方预览即可打开仓库内的 MP4。从干净 checkout 开始时请使用下文列出的可移植示例。
 
 中英文 overview composition 仍保留在
 [`examples/compositions/`](./examples/compositions/)；此前发布的视频早于

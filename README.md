@@ -18,16 +18,14 @@ Seqvio gives agents a capture-to-explanation path for turning real terminal/brow
 
 ## Demo
 
-The current 64-second Product Hunt demo follows a real skill evaluation from
-an agent task to terminal and browser evidence, then shows reviewable editorial
-and visual direction, phrase-anchored timing, deterministic QA, and several
-explanation formats.
+The narrated demo shows a real skill evaluation moving from terminal and browser
+evidence through reviewable direction, phrase-anchored timing, deterministic QA,
+and multiple explanation formats.
 
-**[Watch the current narrated demo on YouTube](https://www.youtube.com/watch?v=VX6tKv2mwwk)**
-— source: [`seqvio-product-hunt-premium.tsx`](./examples/compositions/seqvio-product-hunt-premium.tsx)
+<a href="./docs/assets/videos/seqvio-overview-en.mp4"><img src="./docs/assets/videos/seqvio-overview-en.preview.gif" alt="Seqvio narrated demo preview" width="720" /></a>
 
-The production composition uses locally captured browser/session assets under
-`output/`; use the portable examples below when starting from a clean checkout.
+Open the preview above to watch the tracked MP4. The portable examples below
+are the recommended starting point when working from a clean checkout.
 
 Localized overview compositions remain available under
 [`examples/compositions/`](./examples/compositions/), but their previously
