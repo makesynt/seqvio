@@ -839,6 +839,10 @@ async function main(): Promise<void> {
   console.log(`Wrote QA report to ${reportPath}`);
   if (!ok) {
     console.error(`seqvio-qa found ${allIssues.length} issue(s).`);
+    for (const issue of allIssues) {
+      const frame = issue.frame === undefined ? '' : ` frame=${issue.frame}`;
+      console.error(`- ${issue.code}${frame}: ${issue.message}`);
+    }
     process.exit(1);
   }
   console.log(`seqvio-qa passed (${reports.length} snapshot(s)).`);
