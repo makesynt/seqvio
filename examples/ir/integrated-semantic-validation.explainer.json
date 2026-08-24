@@ -17,7 +17,7 @@
     "transitionPolicy": "focus-transfer",
     "attentionPersistence": "until-handoff",
     "spacing": "comfortable",
-    "paletteRoles": { "background": "#0f172a", "ink": "#f8fafc", "accent": "#38bdf8", "muted": "#94a3b8" }
+    "paletteRoles": { "background": "#0f172a", "ink": "#f8fafc", "accent": "#38bdf8", "muted": "#cbd5e1" }
   },
   "scenes": [
     {

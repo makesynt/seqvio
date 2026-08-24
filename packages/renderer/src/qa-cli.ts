@@ -405,15 +405,17 @@ async function inspectDom(page: import('puppeteer').Page): Promise<{
       ) {
         outOfBoundsCount += 1;
       }
-      // text overflow: content overflows the element's box
-      if (
-        element.scrollHeight > element.clientHeight + 1 ||
-        element.scrollWidth > element.clientWidth + 1
-      ) {
-        textOverflowCount += 1;
-      }
       const style = window.getComputedStyle(element);
       const text = (element.textContent || '').trim();
+      // Only text-bearing elements can produce a text overflow diagnostic.
+      // SVG/media and transformed layout wrappers often have larger scroll
+      // bounds by design and should not be classified as overflowing text.
+      if (text && (
+        element.scrollHeight > element.clientHeight + 1 ||
+        element.scrollWidth > element.clientWidth + 1
+      )) {
+        textOverflowCount += 1;
+      }
       // font size floor (only for elements with text)
       const fontSize = parseFloat(style.fontSize);
       if (fontSize > 0 && fontSize < MIN_FONT_PX && text.length > 0) {
@@ -530,7 +532,7 @@ async function inspectDom(page: import('puppeteer').Page): Promise<{
           markerCount: Number(clip.dataset.seqvioManimMarkerCount ?? 0),
         };
       });
-    const stage = Array.from(document.querySelectorAll<HTMLElement>('[data-seqvio-design-stage="true"]'))
+    const stages = Array.from(document.querySelectorAll<HTMLElement>('[data-seqvio-design-stage="true"]'))
       .map((element) => {
         const rect = element.getBoundingClientRect();
         return {
@@ -544,7 +546,12 @@ async function inspectDom(page: import('puppeteer').Page): Promise<{
           align: (element.dataset.seqvioDesignAlign ?? 'center') as 'center' | 'top-left',
         };
       })
-      .find((item) => item.width > 0 && item.height > 0);
+      .filter((item) => item.width > 0 && item.height > 0);
+    const stage = stages.sort((left, right) => {
+      const leftDistance = Math.abs(left.width - window.innerWidth) + Math.abs(left.height - window.innerHeight);
+      const rightDistance = Math.abs(right.width - window.innerWidth) + Math.abs(right.height - window.innerHeight);
+      return leftDistance - rightDistance;
+    })[0];
     return {
       elementCount: elements.length,
       bodyTextLength: document.body.innerText.trim().length,
