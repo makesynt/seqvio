@@ -49,26 +49,9 @@ Installing the skill alone is **not** enough to render videos. You also need the
 npx skills add makesynt/seqvio
 ```
 
-This opens interactive selection for the skill, target agent, and install scope.
-From inside a project directory, use this explicit non-interactive Cursor
-install:
-
-```bash
-npx skills add makesynt/seqvio --skill seqvio --agent cursor --yes
-```
-
-`--skill seqvio` selects this skill without a picker, `--agent cursor` targets
-Cursor, and `--yes` skips confirmation prompts and auto-detects scope. None is
-required for an interactive install. By default the CLI installs into the
-current project when run inside one; add `--global` when the skill should be
-available across projects. Replace `cursor` with `claude-code`, `codex`, or
-another supported agent. To inspect the repository first:
-
-```bash
-npx skills add makesynt/seqvio --list
-```
-
-This step copies the Seqvio skill into your agent. It does **not** install npm packages, clone this repo, or render MP4 output by itself.
+This installs the Seqvio skill for the current agent. Use `--global` only when
+you want it available across projects. The skill install does **not** install
+npm packages or render MP4 output by itself.
 
 ### 2. Install the renderer
 

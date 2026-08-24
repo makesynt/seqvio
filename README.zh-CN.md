@@ -46,22 +46,8 @@ Seqvio 分两部分，需要分别安装：
 npx skills add makesynt/seqvio
 ```
 
-这会交互选择 skill、目标 agent 和安装范围。在项目目录中明确指定 Cursor 并进行无交互安装：
-
-```bash
-npx skills add makesynt/seqvio --skill seqvio --agent cursor --yes
-```
-
-`--skill seqvio` 跳过 skill 选择，`--agent cursor` 指定 Cursor，`--yes` 跳过
-确认提示并自动判断安装范围；交互安装时三者都不是必需参数。在项目目录中运行时默认
-安装到当前项目，只有需要跨项目使用时才添加 `--global`。也可把 `cursor` 换成
-`claude-code`、`codex` 等。查看仓库中的 skill 列表：
-
-```bash
-npx skills add makesynt/seqvio --list
-```
-
-这一步只会把 Seqvio skill 安装到 agent，**不会**安装 npm 包、不会 clone 仓库、也不会自动渲染 MP4。
+这会把 Seqvio skill 安装到当前 agent。只有需要跨项目使用时才添加
+`--global`。这一步**不会**安装 npm 包、clone 仓库或自动渲染 MP4。
 
 ### 2. 安装 renderer
 
