@@ -507,18 +507,29 @@ async function inspectDom(page: import('puppeteer').Page): Promise<{
         hasFocalTarget: Array.from(productRoot.querySelectorAll<HTMLElement>('[data-seqvio-focal-target]')).some(visible),
       };
     })() : undefined;
-    const manimFrames = Array.from(document.querySelectorAll<HTMLElement>('[data-seqvio-manim-clip]')).map((clip) => {
-      const video = clip.querySelector('video');
-      return {
-        id: clip.dataset.seqvioManimClip ?? 'unknown',
-        frame: Number(clip.dataset.seqvioManimFrame ?? 0),
-        fps: Number(video?.dataset.seqvioMediaFps ?? 30),
-        currentTime: video?.currentTime ?? 0,
-        duration: video && Number.isFinite(video.duration) ? video.duration : undefined,
-        marker: clip.dataset.seqvioManimMarker || undefined,
-        markerCount: Number(clip.dataset.seqvioManimMarkerCount ?? 0),
-      };
-    });
+    const manimFrames = Array.from(document.querySelectorAll<HTMLElement>('[data-seqvio-manim-clip]'))
+      .filter((clip) => {
+        const rect = clip.getBoundingClientRect();
+        let element: HTMLElement | null = clip;
+        while (element) {
+          const style = window.getComputedStyle(element);
+          if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) <= 0) return false;
+          element = element.parentElement;
+        }
+        return rect.width > 0 && rect.height > 0;
+      })
+      .map((clip) => {
+        const video = clip.querySelector('video');
+        return {
+          id: clip.dataset.seqvioManimClip ?? 'unknown',
+          frame: Number(clip.dataset.seqvioManimFrame ?? 0),
+          fps: Number(video?.dataset.seqvioMediaFps ?? 30),
+          currentTime: video?.currentTime ?? 0,
+          duration: video && Number.isFinite(video.duration) ? video.duration : undefined,
+          marker: clip.dataset.seqvioManimMarker || undefined,
+          markerCount: Number(clip.dataset.seqvioManimMarkerCount ?? 0),
+        };
+      });
     const stage = Array.from(document.querySelectorAll<HTMLElement>('[data-seqvio-design-stage="true"]'))
       .map((element) => {
         const rect = element.getBoundingClientRect();
