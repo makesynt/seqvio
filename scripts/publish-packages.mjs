@@ -84,6 +84,31 @@ function incompleteStateMessage(state) {
   return details.join('; ');
 }
 
+function repairMissingTags(state, cwd, environment) {
+  if (state.missingVersions.length > 0 || state.missingTags.length === 0) return;
+  for (const tag of state.missingTags) {
+    const create = spawnSync('git', ['tag', tag], {
+      cwd,
+      env: environment,
+      encoding: 'utf8',
+      stdio: 'pipe',
+    });
+    if (create.status !== 0) {
+      throw new Error(`Unable to create missing release tag ${tag}: ${create.stderr || create.error || 'git tag failed'}`);
+    }
+    const push = spawnSync('git', ['push', 'origin', `refs/tags/${tag}`], {
+      cwd,
+      env: environment,
+      encoding: 'utf8',
+      stdio: 'pipe',
+    });
+    if (push.status !== 0) {
+      throw new Error(`Unable to push missing release tag ${tag}: ${push.stderr || push.error || 'git push failed'}`);
+    }
+    process.stdout.write(`Repaired missing release tag ${tag}; npm version already exists.\n`);
+  }
+}
+
 async function waitForCompleteState(inspect, attempts, delayMs) {
   let state;
   for (let attempt = 0; attempt < attempts; attempt += 1) {
@@ -108,6 +133,18 @@ export async function publishPackages(options = {}) {
   const initialState = inspect();
   if (initialState.complete) {
     process.stdout.write(`All ${packages.length} package versions and git tags already exist; skipping publish.\n`);
+    return;
+  }
+  if (initialState.missingVersions.length === 0 && initialState.missingTags.length > 0) {
+    repairMissingTags(initialState, cwd, environment);
+    const repairedState = await waitForCompleteState(
+      inspect,
+      options.postconditionAttempts ?? 5,
+      options.postconditionDelayMs ?? 2000,
+    );
+    if (!repairedState.complete) {
+      throw new Error(`Release tags were repaired but release is still incomplete: ${incompleteStateMessage(repairedState)}`);
+    }
     return;
   }
 
