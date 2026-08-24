@@ -422,7 +422,7 @@ async function inspectDom(page: import('puppeteer').Page): Promise<{
         smallFontCount += 1;
       }
       // contrast (only for elements with text and a non-transparent background)
-      if (text.length > 0) {
+      if (text.length > 0 && !(element instanceof SVGElement)) {
         const fg = parseColor(style.color);
         const bg = parseColor(style.backgroundColor);
         if (fg && bg && contrastRatio(fg, bg) < MIN_CONTRAST) {
