@@ -67,7 +67,10 @@ export function diagnoseDesignStage(
   const expectedHeight = design.height * (fit === 'stretch' ? ratioY : fit === 'native' ? 1 : scale);
   const expectedLeft = (design.align ?? 'center') === 'top-left' ? 0 : (viewport.width - expectedWidth) / 2;
   const expectedTop = (design.align ?? 'center') === 'top-left' ? 0 : (viewport.height - expectedHeight) / 2;
-  const tolerance = 3;
+  // Browser transitions can produce a small transformed bounding-box delta
+  // (for example 1290x726 for a 1280x720 stage). Treat sub-1% drift as
+  // renderer rounding/transition noise while retaining meaningful mismatches.
+  const tolerance = Math.max(3, Math.min(viewport.width, viewport.height) * 0.01);
   const differs = (actual: number, expected: number) => Math.abs(actual - expected) > tolerance;
   if (!differs(observation.left, expectedLeft) && !differs(observation.top, expectedTop) && !differs(observation.width, expectedWidth) && !differs(observation.height, expectedHeight)) return [];
   return [{

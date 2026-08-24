@@ -410,7 +410,7 @@ async function inspectDom(page: import('puppeteer').Page): Promise<{
       // Only text-bearing elements can produce a text overflow diagnostic.
       // SVG/media and transformed layout wrappers often have larger scroll
       // bounds by design and should not be classified as overflowing text.
-      if (text && (
+      if (text && element.children.length === 0 && (
         element.scrollHeight > element.clientHeight + 1 ||
         element.scrollWidth > element.clientWidth + 1
       )) {
