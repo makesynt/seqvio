@@ -22,10 +22,10 @@ The narrated demo shows a real skill evaluation moving from terminal and browser
 evidence through reviewable direction, phrase-anchored timing, deterministic QA,
 and multiple explanation formats.
 
-<a href="./docs/assets/videos/seqvio-overview-en.mp4"><img src="./docs/assets/videos/seqvio-overview-en.preview.gif" alt="Seqvio narrated demo preview" width="720" /></a>
+<a href="https://www.youtube.com/watch?v=VX6tKv2mwwk"><img src="https://img.youtube.com/vi/VX6tKv2mwwk/maxresdefault.jpg" alt="Seqvio narrated demo preview" width="720" /></a>
 
-Open the preview above to watch the tracked MP4. The portable examples below
-are the recommended starting point when working from a clean checkout.
+Open the preview above to watch the narrated demo on YouTube. The portable
+examples below are the recommended starting point when working from a clean checkout.
 
 Localized overview compositions remain available under
 [`examples/compositions/`](./examples/compositions/), but their previously

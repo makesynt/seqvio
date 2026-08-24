@@ -21,9 +21,9 @@ Seqvio 为 agent 提供从真实系统捕获到讲解视频的完整路径。人
 带旁白演示展示了从终端和浏览器证据，到可审阅方向、短语锚定时间、确定性 QA
 以及多种讲解场景的完整流程。
 
-<a href="./docs/assets/videos/seqvio-overview-zh.mp4"><img src="./docs/assets/videos/seqvio-overview-zh.preview.gif" alt="Seqvio 带旁白演示预览" width="720" /></a>
+<a href="https://www.youtube.com/watch?v=VX6tKv2mwwk"><img src="https://img.youtube.com/vi/VX6tKv2mwwk/maxresdefault.jpg" alt="Seqvio 带旁白演示预览" width="720" /></a>
 
-点击上方预览即可打开仓库内的 MP4。从干净 checkout 开始时请使用下文列出的可移植示例。
+点击上方预览即可在 YouTube 播放带旁白演示。从干净 checkout 开始时请使用下文列出的可移植示例。
 
 中英文 overview composition 仍保留在
 [`examples/compositions/`](./examples/compositions/)；此前发布的视频早于
