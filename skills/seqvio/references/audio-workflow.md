@@ -74,12 +74,12 @@ Default provider: `elevenlabs`
 
 Supported providers:
 
-| Provider | When to use |
-| --- | --- |
+| Provider     | When to use                            |
+| ------------ | -------------------------------------- |
 | `elevenlabs` | Default; requires `ELEVENLABS_API_KEY` |
-| `openai` | Requires `OPENAI_API_KEY` |
-| `minimax` | Requires authenticated `mmx` CLI |
-| `edge-tts` | Local CLI-based fallback |
+| `openai`     | Requires `OPENAI_API_KEY`              |
+| `minimax`    | Requires authenticated `mmx` CLI       |
+| `edge-tts`   | Local CLI-based fallback               |
 
 If the preferred provider is unavailable, switch explicitly with `--provider` instead of stopping.
 
@@ -165,6 +165,48 @@ After regenerating a narrated overview:
 1. render to a temporary path under `output/`
 2. copy the final MP4 into `docs/assets/videos/`
 3. keep the source composition in `examples/compositions/`
+
+## Local SoundCues
+
+Sound effects are declared semantically on `ExplanationBeat.sounds` and resolved
+from a project-local registry. The registry maps cue names such as `ui.click`,
+`ui.pop`, `whoosh.soft`, and `typing` to local files. Run `seqvio-audio
+validate-sfx` before `resolve-sfx`; the resolver never downloads assets and never
+depends on HyperFrames or an online provider. Resolved SFX become ordinary
+`kind: "sfx"` tracks with beat metadata, so the renderer can align and duck them
+under narration deterministically.
+
+Generate the reviewable plan before editing the manifest:
+
+```bash
+seqvio-audio plan-sfx \
+  --manifest output/audio-manifest.resolved.json \
+  --out output/SOUND-DESIGN.md
+```
+
+The plan contains authored cues plus conservative suggestions derived from
+visual actions. Suggestions are never applied automatically. Use
+`--authoredOnly` when the review should list only existing `sounds` entries.
+
+Then validate the local registry and resolve approved cues:
+
+```bash
+seqvio-audio validate-sfx \
+  --registry sounds/registry.json \
+  --manifest output/audio-manifest.resolved.json
+
+seqvio-audio resolve-sfx \
+  --manifest output/audio-manifest.resolved.json \
+  --registry sounds/registry.json \
+  --outManifest output/audio-manifest.sfx.resolved.json
+
+seqvio-audio validate \
+  --manifest output/audio-manifest.sfx.resolved.json
+```
+
+The final validation catches SFX that start before zero, extend beyond the
+composition, reference unknown beats, repeat too often, cluster too densely, or
+overlap narration at prominent levels without ducking.
 
 ## Troubleshooting
 

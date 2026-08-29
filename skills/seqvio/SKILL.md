@@ -18,7 +18,10 @@ ideas into narrated explainer videos. Use this production loop for **new topics*
    chapters with `--resume`
 6. extract and synthesize with `seqvio-audio`, which resolves phrase anchors and
    semantic scene time maps
-7. run `seqvio-qa` with the resolved audio manifest, then render with
+7. optionally review `seqvio-audio plan-sfx`, author the approved SoundCues,
+   and resolve them with `seqvio-audio resolve-sfx`; Seqvio does not require
+   HyperFrames or an online media provider
+8. run `seqvio-qa` with the resolved audio manifest, then render with
    `seqvio-render`
 
 Storyboard v1 remains supported for whiteboard-only input. It is not the default
@@ -60,6 +63,32 @@ and muxes narration, while `--burnCaptions` must be explicit. Every capture job
 runs capture QA and writes `qa-report.json` before it is marked complete.
 
 The resolved manifest contains actual cue timings from synthesized audio. The framework can derive scene durations from those timings automatically.
+
+Sound design is a first-class, local-only layer. `ExplanationBeat.sounds` stores
+semantic cues such as `ui.click` or `whoosh.soft`; `sounds/registry.json` maps
+those cues to files under the project. Generate a review artifact first; its
+suggested rows do not modify the manifest automatically:
+
+```bash
+seqvio-audio plan-sfx \
+  --manifest output/audio-manifest.resolved.json \
+  --out output/SOUND-DESIGN.md
+```
+
+After approving and authoring cues, resolve them before rendering:
+
+```bash
+seqvio-audio resolve-sfx \
+  --manifest output/audio-manifest.resolved.json \
+  --registry sounds/registry.json \
+  --outManifest output/audio-manifest.sfx.resolved.json
+```
+
+The local registry is the only SFX provider in the current release. Files must
+be present locally, and no network access or external media skill is required.
+`seqvio-audio validate` also reports excessive cue density, repeated assets,
+out-of-range tails, invalid beat references, and prominent unducked effects
+that overlap narration.
 
 Provider configuration is environment-variable based. The repo includes `.env.example` as a variable template, but the CLI does not auto-load a `.env` file. Secrets must be present in the shell or CI environment before running `seqvio-audio synthesize`.
 

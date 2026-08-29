@@ -15,9 +15,15 @@ export type {
   AudioTrackSpec,
   AudioSceneTiming,
   ExplanationBeatTiming,
+  ResolvedSoundCue,
+  SoundCueName,
+  SoundCueSpec,
+  SoundAsset,
+  SoundAssetRegistry,
+  SoundTrigger,
   CompositionAudioManifest,
   RenderableMeta,
-} from '@seqvio/core';
+} from "@seqvio/core";
 
 export {
   framesToMs,
@@ -29,4 +35,4 @@ export {
   resolvePacingProfile,
   mapSceneSourceFrameToOutput,
   resolveNarrationAnchor,
-} from '@seqvio/core';
+} from "@seqvio/core";

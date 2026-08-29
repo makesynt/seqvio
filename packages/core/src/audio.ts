@@ -1,10 +1,11 @@
-import type { CaptionCue } from './captions';
+import type { CaptionCue } from "./captions";
 import type {
   ExplanationBeatAnchorSpec,
   VisualBeatAction,
-} from './explainer-document/schema';
+} from "./explainer-document/schema";
+import type { SoundCueSpec } from "./sound";
 
-export type AudioTrackKind = 'narration' | 'music' | 'sfx';
+export type AudioTrackKind = "narration" | "music" | "sfx";
 
 /** A sub-sentence timing chunk produced by TTS synthesis. */
 export interface NarrationChunk {
@@ -46,6 +47,18 @@ export interface AudioTrackSpec {
   volume?: number;
   offsetMs?: number;
   volumeKeyframes?: VolumeKeyframe[];
+  /** Original semantic cue when this track was resolved from a SoundCue. */
+  sourceCue?: string;
+  /** Local registry asset id when this track came from a SoundCue. */
+  assetId?: string;
+  /** Explanation beat that owns this sound event. */
+  beatId?: string;
+  /** Optional visual target associated with the beat's sound event. */
+  visualTargetId?: string;
+  /** Probed or registry-declared duration for resolved SFX. */
+  durationMs?: number;
+  /** Whether the track should duck under narration. SFX defaults to true. */
+  duckUnderNarration?: boolean;
 }
 
 export interface AudioSceneTiming {
@@ -59,7 +72,7 @@ export interface AudioSceneTiming {
   timeMap?: Array<{ outputFrame: number; sourceFrame: number }>;
   highlights?: Array<{
     id: string;
-    source: 'beat' | 'step' | 'annotation' | 'focus';
+    source: "beat" | "step" | "annotation" | "focus";
     startFrame: number;
     endFrame: number;
     minDurationFrames: number;
@@ -76,11 +89,12 @@ export interface ExplanationBeatTiming {
   sourceFrame: number;
   /** Resolved scene-local speech frame, populated after TTS. */
   outputFrame?: number;
-  method?: 'chunk-character' | 'cue-character';
+  method?: "chunk-character" | "cue-character";
   confidence?: number;
   /** Populated after synthesis when the phrase cannot be placed on audio. */
-  resolutionError?: 'anchor_not_found' | 'anchor_ambiguous';
+  resolutionError?: "anchor_not_found" | "anchor_ambiguous";
   visuals: VisualBeatAction[];
+  sounds?: SoundCueSpec[];
 }
 
 export interface CompositionAudioManifest {
@@ -102,32 +116,33 @@ export interface RenderableMeta {
   width?: number;
   height?: number;
   /** Authored coordinate system and its output fitting policy. */
-  design?: import('./design-stage').DesignStageConfig;
+  design?: import("./design-stage").DesignStageConfig;
   audio?: CompositionAudioManifest;
   captions?: CaptionCue[];
   pacing?: {
     profile?: string;
     highlights: Array<{
       id: string;
-      source: 'beat' | 'step' | 'annotation' | 'focus';
+      source: "beat" | "step" | "annotation" | "focus";
       startFrame: number;
       endFrame: number;
       minDurationFrames: number;
     }>;
   };
   /** Reviewable renderer-agnostic direction compiled from semantic ids. */
-  direction?: import('./direction').CompiledDirectionPlan;
+  direction?: import("./direction").CompiledDirectionPlan;
 }
 
 export function resolveCompositionAudioManifest(
   manifest: CompositionAudioManifest | undefined,
-  fallbackCaptions?: CaptionCue[]
+  fallbackCaptions?: CaptionCue[],
 ): CompositionAudioManifest | undefined {
   const runtimeOverride =
-    typeof window !== 'undefined'
-      ? (window as unknown as Record<string, unknown>).__seqvio_resolvedAudioManifest as
+    typeof window !== "undefined"
+      ? ((window as unknown as Record<string, unknown>)
+          .__seqvio_resolvedAudioManifest as
           | CompositionAudioManifest
-          | undefined
+          | undefined)
       : undefined;
 
   if (!runtimeOverride && !manifest && !fallbackCaptions?.length) {
@@ -138,8 +153,6 @@ export function resolveCompositionAudioManifest(
     ...(manifest ?? {}),
     ...(runtimeOverride ?? {}),
     captions:
-      runtimeOverride?.captions ??
-      fallbackCaptions ??
-      manifest?.captions,
+      runtimeOverride?.captions ?? fallbackCaptions ?? manifest?.captions,
   };
 }

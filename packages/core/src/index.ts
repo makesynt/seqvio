@@ -2,18 +2,19 @@
  * @seqvio/core
  */
 
-export * from './brand';
-export * from './frame';
-export * from './audio';
-export * from './captions';
-export * from './timeline';
-export * from './time';
-export * from './pacing';
-export * from './narration-anchor';
-export * from './composition';
-export * from './design-stage';
-export * from './scene-registry';
-export * from './transitions';
+export * from "./brand";
+export * from "./frame";
+export * from "./audio";
+export * from "./sound";
+export * from "./captions";
+export * from "./timeline";
+export * from "./time";
+export * from "./pacing";
+export * from "./narration-anchor";
+export * from "./composition";
+export * from "./design-stage";
+export * from "./scene-registry";
+export * from "./transitions";
 export {
   AnnotationLayer,
   AnnotationProvider,
@@ -30,7 +31,7 @@ export {
   annotationOpacity,
   orderAnnotationsForStacking,
   useAnnotationTargetRegistry,
-} from './annotation';
+} from "./annotation";
 export type {
   AnnotationItem,
   AnnotationLayerProps,
@@ -45,16 +46,16 @@ export type {
   SafeLabelPlacement,
   LabelPlacementRequest,
   PlacedLabel,
-} from './annotation';
-export * from './storyboard';
-export * from './authoring';
-export * from './explainer-document';
-export * from './seekable';
-export * from './adapters';
-export * from './clock';
-export * from './parsers';
-export * from './direction';
-export * from './motion-grammar';
-export * from './style-profile';
-export * from './style-profile-runtime';
-export * from './director';
+} from "./annotation";
+export * from "./storyboard";
+export * from "./authoring";
+export * from "./explainer-document";
+export * from "./seekable";
+export * from "./adapters";
+export * from "./clock";
+export * from "./parsers";
+export * from "./direction";
+export * from "./motion-grammar";
+export * from "./style-profile";
+export * from "./style-profile-runtime";
+export * from "./director";

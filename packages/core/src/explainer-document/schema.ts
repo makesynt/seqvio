@@ -10,39 +10,41 @@ import type {
   StoryboardElement,
   StoryboardLayoutId,
   StoryboardSceneRole,
-} from '../storyboard/schema';
-export { SCENE_TYPES, type SceneType } from './capabilities';
+} from "../storyboard/schema";
+import type { SoundCueSpec } from "../sound";
+export { SCENE_TYPES, type SceneType } from "./capabilities";
 
-export const EXPLAINER_DOCUMENT_FORMAT = 'seqvio-explainer' as const;
-export const EXPLAINER_DOCUMENT_SCHEMA_VERSION = '1.0' as const;
+export const EXPLAINER_DOCUMENT_FORMAT = "seqvio-explainer" as const;
+export const EXPLAINER_DOCUMENT_SCHEMA_VERSION = "1.0" as const;
 
-export type ExplainerDocumentSchemaVersion = typeof EXPLAINER_DOCUMENT_SCHEMA_VERSION;
+export type ExplainerDocumentSchemaVersion =
+  typeof EXPLAINER_DOCUMENT_SCHEMA_VERSION;
 
 export type AnnotationKind =
-  | 'arrow'
-  | 'circle'
-  | 'box'
-  | 'underline'
-  | 'spotlight'
-  | 'focus-ring'
-  | 'callout'
-  | 'bracket'
-  | 'connector'
-  | 'region-shade'
-  | 'guided-path';
+  | "arrow"
+  | "circle"
+  | "box"
+  | "underline"
+  | "spotlight"
+  | "focus-ring"
+  | "callout"
+  | "bracket"
+  | "connector"
+  | "region-shade"
+  | "guided-path";
 
 export const ANNOTATION_KINDS: AnnotationKind[] = [
-  'arrow',
-  'circle',
-  'box',
-  'underline',
-  'spotlight',
-  'focus-ring',
-  'callout',
-  'bracket',
-  'connector',
-  'region-shade',
-  'guided-path',
+  "arrow",
+  "circle",
+  "box",
+  "underline",
+  "spotlight",
+  "focus-ring",
+  "callout",
+  "bracket",
+  "connector",
+  "region-shade",
+  "guided-path",
 ];
 
 export interface AddressableElement {
@@ -50,14 +52,14 @@ export interface AddressableElement {
 }
 
 export type VisualBeatActionKind =
-  | 'reveal'
-  | 'highlight'
-  | 'focus'
-  | 'annotate'
-  | 'compare'
-  | 'trace'
-  | 'emphasize'
-  | 'transform';
+  | "reveal"
+  | "highlight"
+  | "focus"
+  | "annotate"
+  | "compare"
+  | "trace"
+  | "emphasize"
+  | "transform";
 
 export interface ExplanationCueSpec {
   id: string;
@@ -86,6 +88,7 @@ export interface ExplanationBeatSpec extends AddressableElement {
   cueId: string;
   anchor: ExplanationBeatAnchorSpec;
   visuals: VisualBeatAction[];
+  sounds?: SoundCueSpec[];
   evidence?: {
     captureStepId?: string;
   };
@@ -116,16 +119,16 @@ export type CodeStep = {
   /** Stable authoring target for ExplanationBeat timing. */
   id?: string;
 } & (
-  | { at: number; action: 'type'; range?: LineRange }
-  | { at: number; action: 'focus'; range: LineRange }
-  | { at: number; action: 'insert'; line: number; text: string }
-  | { at: number; action: 'replace'; range: LineRange; text: string }
-  | { at: number; action: 'delete'; range: LineRange }
-  | { at: number; action: 'annotate'; targetId: string; text: string }
+  | { at: number; action: "type"; range?: LineRange }
+  | { at: number; action: "focus"; range: LineRange }
+  | { at: number; action: "insert"; line: number; text: string }
+  | { at: number; action: "replace"; range: LineRange; text: string }
+  | { at: number; action: "delete"; range: LineRange }
+  | { at: number; action: "annotate"; targetId: string; text: string }
 );
 
 export interface WhiteboardSceneSpec {
-  type: 'whiteboard';
+  type: "whiteboard";
   id: string;
   layout?: StoryboardLayoutId;
   sceneRole?: StoryboardSceneRole;
@@ -138,7 +141,7 @@ export interface WhiteboardSceneSpec {
 }
 
 export interface CodeSceneSpec {
-  type: 'code';
+  type: "code";
   id: string;
   language: string;
   source: string;
@@ -164,16 +167,16 @@ export type DiagramStep = {
   /** Stable authoring target for ExplanationBeat timing. */
   id?: string;
 } & (
-  | { at: number; action: 'reveal'; targetId: string }
-  | { at: number; action: 'connect'; edgeId: string }
-  | { at: number; action: 'trace'; edgeId: string }
-  | { at: number; action: 'emphasize'; targetId: string }
-  | { at: number; action: 'collapse'; groupId: string }
-  | { at: number; action: 'expand'; groupId: string }
+  | { at: number; action: "reveal"; targetId: string }
+  | { at: number; action: "connect"; edgeId: string }
+  | { at: number; action: "trace"; edgeId: string }
+  | { at: number; action: "emphasize"; targetId: string }
+  | { at: number; action: "collapse"; groupId: string }
+  | { at: number; action: "expand"; groupId: string }
 );
 
 export interface DiagramSceneSpec {
-  type: 'diagram';
+  type: "diagram";
   id: string;
   nodes: DiagramNode[];
   edges: DiagramEdge[];
@@ -246,11 +249,11 @@ export interface InfographicChartAxisSpec {
 
 export interface InfographicChartSpec extends AddressableElement {
   title: string;
-  kind: 'bar' | 'line';
+  kind: "bar" | "line";
   series: InfographicChartSeriesSpec[];
   xAxis?: InfographicChartAxisSpec;
   yAxis?: InfographicChartAxisSpec;
-  legend?: 'none' | 'top' | 'bottom';
+  legend?: "none" | "top" | "bottom";
   unit?: string;
   sourceLabel?: string;
   at?: number;
@@ -268,17 +271,17 @@ export interface AttentionSequenceSpec extends AddressableElement {
   handoffTo?: string;
   minHoldFrames?: number;
   sourceBeatId?: string;
-  persistence?: 'timed' | 'until-handoff' | 'until-clear';
+  persistence?: "timed" | "until-handoff" | "until-clear";
   clearAt?: number;
   handoffToSceneId?: string;
   priority?: number;
 }
 
 export interface InfographicSceneSpec {
-  type: 'infographic';
+  type: "infographic";
   id: string;
   title?: string;
-  density?: 'auto' | 'standard' | 'reduced';
+  density?: "auto" | "standard" | "reduced";
   metrics?: InfographicMetricSpec[];
   comparisons?: InfographicComparisonSpec[];
   process?: InfographicProcessStepSpec[];
@@ -321,7 +324,7 @@ export interface TerminalGridSnapshotSpec {
 /** Placeholder scene families compiled to stub components in Phase A. */
 export interface TerminalRenderOptions {
   title?: string;
-  presentation?: 'minimal' | 'vhs';
+  presentation?: "minimal" | "vhs";
   typingCps?: number;
   cursorBlink?: boolean;
   zoomOnInput?: boolean;
@@ -331,7 +334,7 @@ export interface TerminalRenderOptions {
 }
 
 export interface TerminalSceneSpec {
-  type: 'terminal';
+  type: "terminal";
   id: string;
   /**
    * Legacy field for placeholder terminal scenes.
@@ -341,7 +344,7 @@ export interface TerminalSceneSpec {
   /** Streamed terminal I/O events (typically from terminal-narrator). */
   events?: Array<{
     timeMs: number;
-    kind: 'stdin' | 'stdout' | 'stderr';
+    kind: "stdin" | "stdout" | "stderr";
     text: string;
     /** Complete terminal viewport; replaces earlier persistent output. */
     snapshot?: boolean;
@@ -389,7 +392,7 @@ export interface RecordedFocusTarget extends TimedPoint {
 
 /** Browser screen-recording scene (from @seqvio/browser-recorder via capture). */
 export interface BrowserSceneSpec {
-  type: 'browser';
+  type: "browser";
   id: string;
   sourceVideo: string;
   cursorPoints?: TimedPoint[];
@@ -418,7 +421,7 @@ export interface ManimMarkerSpec extends AddressableElement {
 
 /** Pre-rendered mathematical animation produced by @seqvio/manim-adapter. */
 export interface ManimSceneSpec {
-  type: 'manim';
+  type: "manim";
   id: string;
   sourceVideo: string;
   sourceManifest?: string;
@@ -426,7 +429,7 @@ export interface ManimSceneSpec {
   mediaWidth?: number;
   mediaHeight?: number;
   mediaFps?: number;
-  fit?: 'contain' | 'cover' | 'fill';
+  fit?: "contain" | "cover" | "fill";
   narration?: string;
   explanation?: SceneExplanationSpec;
   duration?: number;
@@ -462,7 +465,7 @@ export interface ExplainerDocument {
   /** Versioned pacing policy used by authoring, timing resolution, and QA. */
   pacingProfile?: string;
   /** Optional visual profile; semantic ids, evidence, and timing remain unchanged. */
-  styleProfile?: import('../style-profile').StyleProfile;
+  styleProfile?: import("../style-profile").StyleProfile;
   chapters?: ChapterSpec[];
   scenes: SceneSpec[];
   /** Document-level annotations that may target any scene element id. */
@@ -473,15 +476,15 @@ export const EXPLAINER_DOCUMENT_DEFAULTS = {
   width: 1280,
   height: 720,
   fps: 30,
-  backgroundColor: '#ffffff',
+  backgroundColor: "#ffffff",
   lockToAudio: true,
   transitionDuration: 12,
-  pacingProfile: 'explainer-v1',
+  pacingProfile: "explainer-v1",
 };
 
 /** Render-plan contracts (Phase A schema; resume implementation follows in renderer). */
 
-export type ChapterRenderStatus = 'pending' | 'complete' | 'failed';
+export type ChapterRenderStatus = "pending" | "complete" | "failed";
 
 export interface ChapterRenderPlanEntry {
   id: string;

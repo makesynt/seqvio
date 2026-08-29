@@ -1,0 +1,22 @@
+{
+  "ui.click": [
+    {
+      "id": "click-01",
+      "file": "../../assets/sfx/click.mp3",
+      "durationMs": 370,
+      "source": "local",
+      "license": "user-provided",
+      "tags": ["ui", "interaction", "short"]
+    }
+  ],
+  "ui.pop": [
+    {
+      "id": "pop-01",
+      "file": "../../assets/sfx/pop.mp3",
+      "durationMs": 720,
+      "source": "local",
+      "license": "user-provided",
+      "tags": ["reveal", "short"]
+    }
+  ]
+}

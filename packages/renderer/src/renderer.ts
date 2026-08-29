@@ -129,6 +129,7 @@ interface ResolvedAudioTrack {
   kind: "narration" | "music" | "sfx";
   volume: number;
   offsetMs: number;
+  duckUnderNarration: boolean;
 }
 
 export function buildStreamCopyMuxArgs(
@@ -648,8 +649,8 @@ export class VideoRenderer {
    */
   private buildTerminalFilterComplex(): string {
     const { width: vw, height: vh } = this.options;
-    const ww = this.terminalDims!.width;   // captured window width (title bar + terminal)
-    const wh = this.terminalDims!.height;  // captured window height
+    const ww = this.terminalDims!.width; // captured window width (title bar + terminal)
+    const wh = this.terminalDims!.height; // captured window height
     const ox = Math.round((vw - ww) / 2);
     const oy = Math.round((vh - wh) / 2);
 
@@ -662,9 +663,12 @@ export class VideoRenderer {
   private buildTerminalEncodeArgs(targetPath: string): string[] {
     const args = [
       "-y",
-      "-f", "image2pipe",
-      "-framerate", String(this.effectiveFps),
-      "-i", "-",
+      "-f",
+      "image2pipe",
+      "-framerate",
+      String(this.effectiveFps),
+      "-i",
+      "-",
     ];
 
     if (this.inlineAudioPath) {
@@ -672,12 +676,18 @@ export class VideoRenderer {
     }
 
     args.push(
-      "-map", "[out]",
-      "-filter_complex", this.buildTerminalFilterComplex(),
-      "-c:v", "libx264",
-      "-pix_fmt", "yuv420p",
-      "-crf", String(this.crfForQuality()),
-      "-preset", "medium",
+      "-map",
+      "[out]",
+      "-filter_complex",
+      this.buildTerminalFilterComplex(),
+      "-c:v",
+      "libx264",
+      "-pix_fmt",
+      "yuv420p",
+      "-crf",
+      String(this.crfForQuality()),
+      "-preset",
+      "medium",
     );
 
     if (this.inlineAudioPath) {
@@ -685,8 +695,10 @@ export class VideoRenderer {
     }
 
     args.push(
-      "-movflags", "+faststart",
-      "-r", String(this.effectiveFps),
+      "-movflags",
+      "+faststart",
+      "-r",
+      String(this.effectiveFps),
       targetPath,
     );
     return args;
@@ -710,7 +722,9 @@ export class VideoRenderer {
     const useTerminal = this.terminalMode && this.terminalDims;
     const ffmpeg = spawn(
       ffmpegPath.path,
-      useTerminal ? this.buildTerminalEncodeArgs(targetPath) : this.buildEncodeArgs(targetPath),
+      useTerminal
+        ? this.buildTerminalEncodeArgs(targetPath)
+        : this.buildEncodeArgs(targetPath),
       { windowsHide: true },
     );
 
@@ -763,7 +777,8 @@ export class VideoRenderer {
         const captureFrame = useTerminal
           ? async () => {
               const el = await findTerminalElement(page);
-              if (!el) throw new Error('Terminal element disappeared mid-render');
+              if (!el)
+                throw new Error("Terminal element disappeared mid-render");
               const { buffer } = await captureTerminalCanvas(page, el);
               return buffer;
             }
@@ -1040,6 +1055,7 @@ export class VideoRenderer {
         kind: track.kind,
         volume: track.volume ?? 1,
         offsetMs: track.offsetMs ?? 0,
+        duckUnderNarration: track.duckUnderNarration ?? track.kind === "sfx",
       });
     }
 
@@ -1053,6 +1069,7 @@ export class VideoRenderer {
         kind: "narration",
         volume: 1,
         offsetMs: 0,
+        duckUnderNarration: false,
       });
     }
 
@@ -1066,6 +1083,7 @@ export class VideoRenderer {
         kind: "music",
         volume: 0.35,
         offsetMs: 0,
+        duckUnderNarration: true,
       });
     }
 
@@ -1127,10 +1145,7 @@ export class VideoRenderer {
     // Concat WAVs → AAC in one pass.  No intermediate PCM WAV on disk,
     // and the encode time overlaps with browser screenshot work since
     // this runs between setup and the render phase.
-    const aacPath = path.join(
-      this.options.tempDir,
-      "narration-premix.aac",
-    );
+    const aacPath = path.join(this.options.tempDir, "narration-premix.aac");
     const listPath = `${aacPath}.txt`;
     fs.writeFileSync(
       listPath,
@@ -1181,6 +1196,7 @@ export class VideoRenderer {
         kind: "narration" as const,
         volume: 1,
         offsetMs: 0,
+        duckUnderNarration: false,
       },
       ...this.resolvedAudioTracks.filter(
         (t) =>
@@ -1235,6 +1251,8 @@ export class VideoRenderer {
       const filters: string[] = [];
       const narrationLabels: string[] = [];
       const musicLabels: string[] = [];
+      const sfxDuckLabels: string[] = [];
+      const sfxDryLabels: string[] = [];
       const otherLabels: string[] = [];
       const args: string[] = ["-y", "-i", videoPath];
 
@@ -1262,12 +1280,15 @@ export class VideoRenderer {
           musicLabels.push(`[${label}]`);
         } else if (track.kind === "narration") {
           narrationLabels.push(`[${label}]`);
+        } else if (track.duckUnderNarration) {
+          sfxDuckLabels.push(`[${label}]`);
         } else {
-          otherLabels.push(`[${label}]`);
+          sfxDryLabels.push(`[${label}]`);
         }
       });
 
       const mixInputs: string[] = [];
+      const narrationKeyLabels: string[] = [];
 
       if (narrationLabels.length > 0) {
         if (narrationLabels.length === 1) {
@@ -1277,10 +1298,18 @@ export class VideoRenderer {
             `${narrationLabels.join("")}amix=inputs=${narrationLabels.length}:duration=longest:dropout_transition=0[anarr0]`,
           );
         }
-        if (musicLabels.length > 0) {
-          // Only split narration when a music track needs it as a sidechain
-          // key — the second output is left dangling otherwise.
-          filters.push("[anarr0]asplit=2[anarr][anarrkey]");
+        const sidechainCount =
+          (musicLabels.length > 0 ? 1 : 0) + (sfxDuckLabels.length > 0 ? 1 : 0);
+        if (sidechainCount > 0) {
+          const outputs = [
+            "[anarr]",
+            ...Array.from({ length: sidechainCount }, (_, index) => {
+              const label = `[anarrkey${index}]`;
+              narrationKeyLabels.push(label);
+              return label;
+            }),
+          ];
+          filters.push(`[anarr0]asplit=${outputs.length}${outputs.join("")}`);
         } else {
           filters.push("[anarr0]anull[anarr]");
         }
@@ -1295,16 +1324,38 @@ export class VideoRenderer {
             `${musicLabels.join("")}amix=inputs=${musicLabels.length}:duration=longest:dropout_transition=0[amus0]`,
           );
         }
-        if (narrationLabels.length > 0) {
+        if (narrationKeyLabels.length > 0) {
           // Sidechain-duck the music bed under narration so the voice stays
           // intelligible instead of fighting a flat music mix.
           filters.push(
-            "[amus0][anarrkey]sidechaincompress=threshold=0.02:ratio=8:attack=25:release=500:makeup=1[amus]",
+            `[amus0]${narrationKeyLabels[0]}sidechaincompress=threshold=0.02:ratio=8:attack=25:release=500:makeup=1[amus]`,
           );
         } else {
           filters.push("[amus0]anull[amus]");
         }
         mixInputs.push("[amus]");
+      }
+
+      if (sfxDuckLabels.length > 0) {
+        filters.push(
+          `${sfxDuckLabels.join("")}amix=inputs=${sfxDuckLabels.length}:duration=longest:dropout_transition=0[asfx0]`,
+        );
+        if (narrationKeyLabels.length > 0) {
+          const keyIndex = musicLabels.length > 0 ? 1 : 0;
+          filters.push(
+            `[asfx0]${narrationKeyLabels[keyIndex]}sidechaincompress=threshold=0.03:ratio=4:attack=10:release=180:makeup=1[asfx]`,
+          );
+        } else {
+          filters.push("[asfx0]anull[asfx]");
+        }
+        mixInputs.push("[asfx]");
+      }
+
+      if (sfxDryLabels.length > 0) {
+        filters.push(
+          `${sfxDryLabels.join("")}amix=inputs=${sfxDryLabels.length}:duration=longest:dropout_transition=0[asfxdry]`,
+        );
+        mixInputs.push("[asfxdry]");
       }
 
       mixInputs.push(...otherLabels);
