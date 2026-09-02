@@ -4,7 +4,7 @@
 
 ### Seqvio
 
-### An explainer video toolkit for agents
+### Evidence-backed explainer videos for agents
 
 Turn real terminal sessions, browser runs, and authored ideas into reviewable
 videos where narration, visuals, and evidence move together.
@@ -16,7 +16,7 @@ Real evidence. Phrase-anchored timing. Deterministic QA.
 
 ## One connected workflow
 
-### From real agent work to an explanation
+### From agent work to an evidence-backed explanation
 
 Seqvio keeps the source activity, editorial decisions, spoken phrases, and final
 frames connected instead of reconstructing the story after the fact.

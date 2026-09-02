@@ -5,22 +5,28 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 const root = path.resolve(import.meta.dirname, "..");
+const cliArgs = new Map();
+for (let index = 2; index < process.argv.length; index += 2) {
+  cliArgs.set(process.argv[index]?.replace(/^--/, ""), process.argv[index + 1]);
+}
 const manifestPath = path.join(
   root,
-  "output/seqvio-product-hunt-html-anything-audio/audio-manifest.resolved.json",
+  cliArgs.get("manifest") ??
+    "output/seqvio-product-hunt-html-anything-audio/audio-manifest.resolved.json",
 );
 const videoPath = path.join(
   root,
-  "output/seqvio-product-hunt-html-anything-visual-v9.mp4",
+  cliArgs.get("video") ?? "output/seqvio-product-hunt-html-anything-visual-v9.mp4",
 );
 const outputPath = path.join(
   root,
-  process.argv.includes("--sfx-preview")
+  cliArgs.get("output") ??
+    (process.argv.includes("--sfx-preview")
     ? "output/seqvio-product-hunt-html-anything-sfx-preview.mp4"
-    : "output/seqvio-product-hunt-html-anything-final.mp4",
+    : "output/seqvio-product-hunt-html-anything-final.mp4"),
 );
-const duration = 64.33;
 const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+const duration = Number(cliArgs.get("duration") ?? (manifest.duration / manifest.fps));
 const sfxBusGain = 1.2;
 
 const sfxRoot = path.join(root, "output/mixkit-neutral-audio");

@@ -2,14 +2,19 @@
 
 ## One sentence
 
-Seqvio turns real agent work and authored ideas into narration-locked explainer videos.
+Seqvio turns real agent work and authored ideas into evidence-backed explainer videos.
 
 ## What it is
 
-Seqvio is an open-source, local explainer production framework. A host agent or
-human author makes the creative decisions; Seqvio provides the reviewable
-authoring artifacts, executable `ExplainerDocument` contract, visual scene
-vocabulary, timing alignment, capture adapters, QA, and MP4 rendering.
+Seqvio is an open-source, local framework for evidence-backed explainer videos.
+A host agent or human author makes the creative decisions; Seqvio connects
+reviewable authoring artifacts, real capture evidence, the executable
+`ExplainerDocument` contract, visual scene vocabulary, timing alignment,
+capture adapters, QA, and MP4 rendering.
+
+The durable product distinction is the evidence chain: an agent action, the
+claim it supports, the narration that describes it, and the visual action that
+shows it remain inspectable together.
 
 ## The product path
 

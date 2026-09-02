@@ -6,8 +6,9 @@ normal playback.
 
 ## 1. Product premise, 0-5s
 
-Introduce Seqvio as an explainer video toolkit for agents. Start with moving,
-recognizable technical artifacts rather than a static feature list.
+Introduce Seqvio as a way for agents to create evidence-backed explainer
+videos. Start with moving, recognizable evidence rather than a static feature
+list.
 
 ## 2. A real skill evaluation, 4-13s
 
@@ -42,9 +43,9 @@ the same evidence-led workflow, not separate product modes.
 
 ## 7. Close, 59-64s
 
-Show `Agent work, explained with Seqvio` beside the Seqvio icon and wordmark.
-The closing narration is `Seqvio turns agent work into explainer videos people
-can follow`. Do not repeat a terminal command, publish claim, or
+Show `Evidence-backed explainers for agents` beside the Seqvio icon and
+wordmark. The closing narration is `Seqvio turns real agent work into
+evidence-backed explainer videos`. Do not repeat a terminal command, publish claim, or
 experimental-status label in the closing frame.
 
 The source of truth is

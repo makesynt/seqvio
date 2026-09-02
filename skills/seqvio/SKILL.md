@@ -139,6 +139,7 @@ The skill alone does not install npm packages or render MP4 output.
 - "Edit `examples/compositions/technical-demo.tsx` then render with chapter resume for only the code scene."
 - "Fix timing in this composition so each scene aligns with its narration cue after synthesis."
 - "Render a silent whiteboard title card from a new single-scene TSX file."
+- "Import a static Excalidraw canvas as a deterministic whiteboard redraw video."
 
 ## Read This First
 
@@ -191,6 +192,21 @@ Use a `WhiteboardScene` with drawable children:
 - `Hand`
 
 This is the simplest path for title cards, diagrams, tutorials, and whiteboard explainers.
+
+### Static Excalidraw import
+
+Use `seqvio-excalidraw` when the source is a saved `.excalidraw` JSON file:
+
+```bash
+seqvio-excalidraw import \
+  --input diagram.excalidraw \
+  --outDir output/diagram
+```
+
+The command writes an editable `diagram.tsx`, normalized `import.json`, and
+`import-report.json`. Render `diagram.tsx` with `seqvio-render`. This workflow
+reconstructs element order and paths from the static scene; it does not claim
+to recover original pointer timing. External embeds are never fetched.
 
 ### Multi-scene work
 

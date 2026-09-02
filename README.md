@@ -239,6 +239,7 @@ content or real capture
   -> TSX + logical source timeline
   -> TTS synthesis + phrase-anchor resolution
   -> semantic scene timeMap
+  -> optional local SoundCue plan + resolution
   -> seqvio-qa
   -> seqvio-render -> MP4
 ```
@@ -247,8 +248,9 @@ content or real capture
 2. Produce or capture an `ExplainerDocument` scene using stable visual and capture-step ids. Its `schemaVersion` is an implementation compatibility marker, not part of the product name.
 3. Author `explanation.cues` and `explanation.beats` together; the compiler emits narration, visual timing, highlights, and scene metadata.
 4. Extract and synthesize audio with `seqvio-audio`. Measured audio resolves Beat `outputFrame`s and semantic scene time maps.
-5. Run `seqvio-qa`; unresolved/reversed Beats are errors, while low-confidence whole-cue alignment is reported as a warning.
-6. Render frames and mux narration with `seqvio-render --audioManifest ...`.
+5. Optionally run `seqvio-audio plan-sfx`, review its suggestions, and resolve approved semantic cues from a local asset registry.
+6. Run `seqvio-qa`; unresolved/reversed Beats are errors, while low-confidence whole-cue alignment is reported as a warning.
+7. Render frames and mux narration with `seqvio-render --audioManifest ...`.
 
 Hand-authored TSX remains supported as the lower-level production surface and may declare `meta.audio.narration` directly.
 
@@ -303,7 +305,8 @@ Seqvio is a visual language for agents that need to explain, not merely animate.
 - ExplainerDocument as the canonical IR, with retained Storyboard IR compatibility
   for whiteboard-only input
 - `seqvio-render` CLI for TSX-to-MP4 rendering
-- `seqvio-audio` CLI for audio/caption manifest extraction and TTS synthesis
+- `seqvio-audio` CLI for audio/caption extraction, TTS synthesis, reviewable local SoundCue planning, deterministic SFX resolution, and SFX QA
+- `seqvio-excalidraw` CLI for deterministic static Excalidraw-to-whiteboard import
 - `seqvio-qa` CLI with baseline/capture profiles, stable audio/temporal/media diagnostics, configurable warning promotion, and key-frame visual checks
 - `seqvio-doctor` CLI for Node, Chromium, FFmpeg, bundled-font, `node-pty`, and writable-path diagnostics (`--json` is available for automation)
 - ElevenLabs, OpenAI, MiniMax, and edge-tts narration providers

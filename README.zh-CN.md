@@ -10,9 +10,9 @@
 
 [English](./README.md) | 简体中文
 
-**让 agent 把真实工作变成有证据的讲解视频。**
+**为 agent 生成有证据支撑的讲解视频。**
 
-Seqvio 为 agent 提供从真实系统捕获到讲解视频的完整路径。人类可读的 `EDITORIAL.md` 与 `VISUAL-DESIGN.md` 先让内容取舍和视觉方向可审阅，再由正式 `ExplainerDocument` IR 通过 `ExplanationBeat` 绑定旁白短语与视觉动作。
+Seqvio 为 agent 提供从真实工作到有证据支撑的讲解视频路径。人类可读的 `EDITORIAL.md` 与 `VISUAL-DESIGN.md` 先让内容取舍和视觉方向可审阅，再由正式 `ExplainerDocument` IR 通过 `ExplanationBeat` 将证据、旁白短语与视觉动作绑定在一起。
 
 > **当前状态：** 仓库支持显式 React/TSX composition，以及拥有 public `whiteboard`、`code`、`diagram`、`terminal`、`browser` 编译路径和实验性 `infographic`、外部 Python `manim` 编译路径的 `ExplainerDocument`。短语锚定的 ExplanationBeat 驱动逻辑视觉时间、TTS 后语义 timeMap、语速/高亮 QA 和确定性本地渲染。Capture CLI contract `2.0` 将正式 IR 产物统一命名为 `explainer.json`。
 
@@ -226,6 +226,7 @@ node packages/browser-recorder/dist/cli.js record --plan plan.json --jobId demo 
   -> TSX + 逻辑源时间轴
   -> TTS + 短语锚点解析
   -> 语义 scene timeMap
+  -> 可选的本地 SoundCue 规划与解析
   -> seqvio-qa
   -> seqvio-render -> MP4
 ```
@@ -234,8 +235,9 @@ node packages/browser-recorder/dist/cli.js record --plan plan.json --jobId demo 
 2. 生成或捕获 `ExplainerDocument`，为视觉元素和捕获步骤设置稳定 ID；其中 `schemaVersion` 只是实现兼容标记，不属于产品名称。
 3. 同时编写 `explanation.cues` 与 `explanation.beats`；编译器统一生成旁白、视觉时间、高亮和场景元数据。
 4. 用 `seqvio-audio` 提取并合成音频；实际音频时长会解析 Beat `outputFrame` 和语义 timeMap。
-5. 运行 `seqvio-qa`；无法解析或倒序的 Beat 是错误，整段字符比例对齐的低置信度会形成警告。
-6. 使用 `seqvio-render --audioManifest ...` 渲染并混流旁白。
+5. 可选运行 `seqvio-audio plan-sfx`，审阅建议后，从本地素材 registry 解析已确认的语义音效 cue。
+6. 运行 `seqvio-qa`；无法解析或倒序的 Beat 是错误，整段字符比例对齐的低置信度会形成警告。
+7. 使用 `seqvio-render --audioManifest ...` 渲染并混流旁白。
 
 手写 TSX 仍是受支持的低层生产接口，也可以直接维护 `meta.audio.narration`。
 
@@ -289,7 +291,8 @@ Seqvio 是 agent 用来解释想法的视觉语言，而不只是一个动画工
 - `@seqvio/core`：`VideoComposition`、`Scene`、`Transition`
 - ExplainerDocument 是正式 IR；Storyboard IR 仅作为白板输入兼容路径保留
 - `seqvio-render`：TSX 到 MP4
-- `seqvio-audio`：manifest 提取与 TTS 合成
+- `seqvio-audio`：manifest 提取、TTS 合成、可审阅的本地 SoundCue 规划、确定性 SFX 解析和音效 QA
+- `seqvio-excalidraw`：将静态 Excalidraw 文件确定性导入为可编辑白板 composition
 - `seqvio-qa`：baseline/capture profile、稳定音频/时序/媒体诊断、警告升级和关键帧视觉检查
 - `seqvio-doctor`：检查 Node、Chromium、FFmpeg、内置字体、`node-pty` 和工作路径，并支持 `--json`
 - TTS provider：ElevenLabs、OpenAI、MiniMax、edge-tts

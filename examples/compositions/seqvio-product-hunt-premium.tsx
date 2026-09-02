@@ -1831,7 +1831,7 @@ function ReviewScene() {
             Control the story
           </div>
           <div style={{ marginTop: 12 }}>
-            Turn technical work into a story people can follow.
+            Turn real agent work into an explanation people can follow.
           </div>
           <div style={{ marginTop: 36, color: C.muted }}>Audience</div>
           <div style={{ marginTop: 8, color: C.blue }}>
@@ -6694,7 +6694,7 @@ function Closing() {
               transform: `translateY(${(1 - copy) * 18}px)`,
             }}
           >
-            Agent work, explained with{" "}
+            Evidence-backed explainers for{" "}
             <span style={{ color: C.green }}>Seqvio</span>
           </div>
           <div
@@ -6883,7 +6883,7 @@ export const meta: RenderableMeta = {
       {
         id: "hook",
         sceneId: "hook",
-        text: "Seqvio is an explainer video toolkit for agents",
+        text: "Seqvio creates evidence-backed explainer videos for agents",
       },
       {
         id: "task",
@@ -6928,7 +6928,7 @@ export const meta: RenderableMeta = {
       {
         id: "closing",
         sceneId: "closing",
-        text: "Seqvio turns agent work into explainer videos people can follow",
+        text: "Seqvio turns real agent work into evidence-backed explainer videos",
       },
     ],
   },

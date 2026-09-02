@@ -12,6 +12,7 @@ const manifestPath = path.resolve(args.get("manifest") ?? "");
 const outDir = path.resolve(args.get("outDir") ?? "");
 const baseUrl = String(args.get("baseUrl") ?? "").replace(/\/$/, "");
 const promptWav = path.resolve(args.get("promptWav") ?? "");
+const language = String(args.get("lang") ?? "en");
 const sampleRate = 22050;
 const authoredStarts = args.get("starts")
   ? JSON.parse(fs.readFileSync(path.resolve(args.get("starts")), "utf8"))
@@ -59,7 +60,7 @@ for (let index = 0; index < source.narration.length; index += 1) {
   const output = path.join(narrationDir, filename);
   if (!fs.existsSync(output) || forceIds.has(cue.id)) {
     const form = new FormData();
-    form.append("tts_text", `<|en|>${cue.text}`);
+    form.append("tts_text", `<|${language}|>${cue.text}`);
     form.append(
       "prompt_wav",
       new Blob([fs.readFileSync(promptWav)], { type: "audio/wav" }),
@@ -88,7 +89,7 @@ for (let index = 0; index < source.narration.length; index += 1) {
   cursorMs = Math.max(cursorMs, endMs + 250);
   resolved.push({
     ...cue,
-    text: `<|en|>${cue.text}`,
+    text: `<|${language}|>${cue.text}`,
     startMs,
     endMs,
     startFrame: Math.round((startMs / 1000) * source.fps),

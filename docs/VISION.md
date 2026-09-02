@@ -1,6 +1,6 @@
 # Seqvio Vision
 
-**Seqvio is a visual language for agents to explain ideas.**
+**Seqvio creates evidence-backed explainer videos for agents.**
 
 This document states what Seqvio is, who it is for, and what it deliberately does
 not do. It changes slowly. For the ordered bet on what to build next, see
@@ -10,11 +10,11 @@ history, see [`archive/PRODUCT-PLAN-2026-07.md`](./archive/PRODUCT-PLAN-2026-07.
 
 ## What Seqvio Is
 
-Seqvio gives a host coding agent (Cursor, Claude Code, Codex, Gemini CLI, and similar)
-an explainer-native visual vocabulary: scenes, narration, whiteboards, sticky-note
-workshops, product walkthroughs, and a QA loop. The agent uses those primitives to
-decide what the viewer should see, hear, and understand next instead of filling a
-generic motion template.
+Seqvio gives a host agent (Cursor, Claude Code, Codex, Gemini CLI, and similar) a
+capture-to-explanation workflow: real terminal and browser activity, authored
+evidence, narration, visual actions, and QA stay connected in a reviewable
+explainer. Its scene vocabulary is the visual language that makes those
+explanations executable, rather than a generic motion template.
 
 `ExplainerDocument` is the canonical interchange contract for captured and
 agent-authored explainers; it compiles to editable React/TSX, which is rendered
@@ -25,7 +25,7 @@ workflow.
 
 ### Core Promise
 
-A visual language for agents to explain ideas.
+Evidence-backed explainer videos for agents.
 
 - Education: lessons, concept explainers, step-by-step tutorials.
 - Product: feature intros, onboarding flows, release notes, workflow explainers.

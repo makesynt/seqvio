@@ -6,14 +6,14 @@ the public narration outline is maintained in [`DEMO-SCRIPT.md`](./DEMO-SCRIPT.m
 
 ## Objective
 
-Show that Seqvio turns real agent work and authored ideas into explainer videos
-whose evidence, narration, visual order, and rendered output stay connected. The
+Show that Seqvio turns real agent work and authored ideas into evidence-backed
+explainer videos whose evidence, narration, visual order, and rendered output stay connected. The
 opening three seconds must establish a living technical context rather than a
 feature grid or a static product mockup.
 
 ## Product Claims
 
-- Seqvio is an explainer video toolkit for agents.
+- Seqvio creates evidence-backed explainer videos for agents.
 - An agent task can lead to terminal and browser evidence, then to a reviewable
   explanation and a rendered video.
 - `EDITORIAL.md`, `VISUAL-DESIGN.md`, `ExplainerDocument`,
@@ -43,13 +43,13 @@ generator, a hosted agent runtime, or a universal one-click capture workflow.
 
 | Time   | Scene               | What the viewer sees                                                                                              | Claim                                          |
 | ------ | ------------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| 0-4s   | Opening             | Four moving evidence dimensions resolve into the Seqvio icon and wordmark                                         | An explainer video toolkit for agents          |
+| 0-4s   | Opening             | Four moving evidence dimensions resolve into the Seqvio icon and wordmark                                         | Evidence-backed explainer videos for agents   |
 | 4-13s  | Skill evaluation    | An agent session requests an `html-anything` landing page; terminal output and its generated page become evidence | A real skill evaluation from task to evidence  |
 | 13-20s | Story review        | Editorial and visual decisions are reviewed as an authored story, not two arbitrary black file panes              | Review the story before it becomes video       |
 | 21-32s | System explanation  | A rich, abstracted architecture diagram connects task, evidence, narration, visual actions, and output            | Explain the system                             |
 | 32-39s | Timing              | Measured speech and visual order lock phrases to evidence and actions                                             | Align narration and visuals                    |
 | 40-59s | QA and applications | Deterministic checks pass, then six application examples form a dynamic montage                                   | Verify before rendering / Use cases for Seqvio |
-| 59-64s | Closing             | The Seqvio icon and wordmark hold while the narration completes the product promise                               | Agent work, explained with Seqvio              |
+| 59-64s | Closing             | The Seqvio icon and wordmark hold while the narration completes the product promise                               | Evidence-backed explainers for agents         |
 
 ## Evidence Treatment
 
