@@ -74,6 +74,7 @@ declare global {
     __seqvio_terminalReady?: Promise<void>;
     __seqvio_terminalReadyById?: Map<string, Promise<void>>;
     __seqvio_annotationReadyById?: Map<string, Promise<void>>;
+    __seqvio_excalidrawReadyById?: Map<string, Promise<void>>;
   }
 }
 
@@ -309,6 +310,13 @@ async function waitForAnnotationLayers(): Promise<void> {
   await Promise.all(pending);
 }
 
+async function waitForExcalidrawLayers(): Promise<void> {
+  const pending = window.__seqvio_excalidrawReadyById
+    ? [...window.__seqvio_excalidrawReadyById.values()]
+    : [];
+  await Promise.all(pending);
+}
+
 async function syncSeekableVideos(frame: number): Promise<void> {
   const videos = Array.from(
     document.querySelectorAll<HTMLVideoElement>('video[data-seqvio-seekable-media="true"]'),
@@ -373,6 +381,7 @@ async function waitForInitialResources(): Promise<void> {
   );
   await waitForTerminalRenderers();
   await waitForAnnotationLayers();
+  await waitForExcalidrawLayers();
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 }
 
@@ -387,6 +396,7 @@ async function waitForFrame(): Promise<void> {
   await applyWhiteboardLayerCache(readRuntimeGlobal<number>("frame") ?? 0);
   await waitForTerminalRenderers();
   await waitForAnnotationLayers();
+  await waitForExcalidrawLayers();
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 }
 

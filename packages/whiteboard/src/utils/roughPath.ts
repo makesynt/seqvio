@@ -24,6 +24,10 @@ export interface RoughStyle {
   roughness: number;
   bowing: number;
   seed: number;
+  stroke?: string;
+  strokeWidth?: number;
+  strokeStyle?: 'solid' | 'dashed' | 'dotted';
+  fillStyle?: 'solid' | 'hachure' | 'cross-hatch' | 'zigzag';
 }
 
 export function hashRoughSeed(key: string): number {
@@ -35,17 +39,82 @@ export function hashRoughSeed(key: string): number {
   return (h >>> 0) % 2_147_483_647 || 1;
 }
 
-function roughOptions(style: RoughStyle): Options {
+function roughOptions(style: RoughStyle, fill?: string): Options {
+  const strokeWidth = style.strokeWidth ?? 1;
   return {
     roughness: style.roughness,
     bowing: style.bowing,
     seed: style.seed,
-    stroke: '#000',
-    strokeWidth: 1,
-    fill: 'none',
-    disableMultiStroke: true,
-    preserveVertices: false,
+    stroke: style.stroke ?? '#000',
+    strokeWidth: style.strokeStyle && style.strokeStyle !== 'solid' ? strokeWidth + 0.5 : strokeWidth,
+    strokeLineDash:
+      style.strokeStyle === 'dashed'
+        ? [strokeWidth * 8, strokeWidth * 6]
+        : style.strokeStyle === 'dotted'
+          ? [strokeWidth, strokeWidth * 3]
+          : undefined,
+    fill: fill && fill !== 'transparent' ? fill : undefined,
+    fillStyle: style.fillStyle,
+    // Match Excalidraw's shape.ts: non-solid strokes avoid overlaid dashes,
+    // while solid strokes retain RoughJS's characteristic multi-stroke.
+    disableMultiStroke: style.strokeStyle !== undefined && style.strokeStyle !== 'solid',
+    fillWeight: strokeWidth / 2,
+    hachureGap: strokeWidth * 4,
+    preserveVertices: style.roughness < 1,
   };
+}
+
+export interface RoughSvgLayer {
+  d: string;
+  stroke: string;
+  strokeWidth: number;
+  fill?: string;
+}
+
+function drawableToLayers(
+  gen: RoughGenerator,
+  drawable: ReturnType<RoughGenerator['line']>
+): RoughSvgLayer[] {
+  return gen.toPaths(drawable).map((path) => ({
+    d: path.d,
+    stroke: path.stroke,
+    strokeWidth: path.strokeWidth,
+    fill: path.fill,
+  }));
+}
+
+export function roughSvgLayers(
+  geometry: 'path' | 'rectangle' | 'ellipse' | 'diamond',
+  pathD: string,
+  bounds: { x: number; y: number; width: number; height: number },
+  style: RoughStyle,
+  fill?: string,
+): RoughSvgLayer[] {
+  const gen = getGenerator();
+  const options = roughOptions(style, fill);
+  const drawable =
+    geometry === 'rectangle'
+      ? gen.rectangle(bounds.x, bounds.y, bounds.width, bounds.height, options)
+      : geometry === 'ellipse'
+        ? gen.ellipse(
+            bounds.x + bounds.width / 2,
+            bounds.y + bounds.height / 2,
+            bounds.width,
+            bounds.height,
+            { ...options, curveFitting: 1 },
+          )
+        : geometry === 'diamond'
+          ? gen.polygon(
+              [
+                [bounds.x + bounds.width / 2, bounds.y],
+                [bounds.x + bounds.width, bounds.y + bounds.height / 2],
+                [bounds.x + bounds.width / 2, bounds.y + bounds.height],
+                [bounds.x, bounds.y + bounds.height / 2],
+              ],
+              options,
+            )
+          : gen.path(pathD, { ...options, preserveVertices: true });
+  return drawableToLayers(gen, drawable);
 }
 
 function drawableToPathD(gen: RoughGenerator, drawable: ReturnType<RoughGenerator['line']>): string {

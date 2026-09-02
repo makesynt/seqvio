@@ -141,6 +141,7 @@ export function writeRenderShell(
 <body>
   <div id="root"></div>
   <script src="./xterm.js"></script>
+  <script>window.EXCALIDRAW_ASSET_PATH = './excalidraw-assets/';</script>
   <script src="./scene-bundle.js"></script>
 </body>
 </html>`;
@@ -322,6 +323,19 @@ function copyBundledAssets(outDir: string): void {
   if (xtermCss) {
     fs.copyFileSync(xtermCss, path.join(outDir, "xterm.css"));
   }
+
+  const excalidrawFonts = findFirstExisting(
+    roots.map((root) =>
+      path.join(root, "@excalidraw", "excalidraw", "dist", "prod", "fonts"),
+    ),
+  );
+  if (excalidrawFonts) {
+    fs.cpSync(
+      excalidrawFonts,
+      path.join(outDir, "excalidraw-assets", "fonts"),
+      { recursive: true },
+    );
+  }
 }
 
 export async function bundleScene(
@@ -351,6 +365,13 @@ export async function bundleScene(
   const coreEntry = resolvePackageModuleEntry("@seqvio/core");
 
   const alias: Record<string, string> = {
+    // A single React dispatcher is mandatory for hook-based compositions.
+    // Workspace packages may otherwise resolve their own peer-compatible copy.
+    "react": resolvePackageFile("react", "index.js"),
+    "react/jsx-runtime": resolvePackageFile("react", "jsx-runtime.js"),
+    "react/jsx-dev-runtime": resolvePackageFile("react", "jsx-dev-runtime.js"),
+    "react-dom": resolvePackageFile("react-dom", "index.js"),
+    "react-dom/client": resolvePackageFile("react-dom", "client.js"),
     "@seqvio/whiteboard": whiteboardEntry,
     "@seqvio/core": coreEntry,
     // Keep the browser-only sub-path available to generated compositions that

@@ -44,23 +44,37 @@
  */
 
 // Core Components
-export { WhiteboardScene } from './components/WhiteboardScene';
-export { DrawText } from './components/DrawText';
-export { DrawShape } from './components/DrawShape';
-export { DrawImage } from './components/DrawImage';
-export { DrawIcon } from './components/DrawIcon';
-export { ICON_PATHS, ICON_NAMES, isIconName } from './components/icons';
-export type { IconName } from './components/icons';
-export { Hand } from './components/Hand';
+export { WhiteboardScene } from "./components/WhiteboardScene";
+export { DrawText } from "./components/DrawText";
+export { DrawShape } from "./components/DrawShape";
+export { DrawPath } from "./components/DrawPath";
+export { ExcalidrawCanvasScene } from "./components/ExcalidrawCanvasScene";
+export type {
+  ExcalidrawCanvasSceneProps,
+  ExcalidrawElementTiming,
+} from "./components/ExcalidrawCanvasScene";
+export { DrawImage } from "./components/DrawImage";
+export { DrawIcon } from "./components/DrawIcon";
+export { ICON_PATHS, ICON_NAMES, isIconName } from "./components/icons";
+export type { IconName } from "./components/icons";
+export { Hand } from "./components/Hand";
 
 // Hooks
-export { useCurrentFrame, useFPS, setGlobalFrame } from './hooks/useCurrentFrame';
-export { useDrawAnimationProgress } from './hooks/useDrawAnimationProgress';
-export { useNarrationTiming } from './hooks/useNarrationTiming';
+export {
+  useCurrentFrame,
+  useFPS,
+  setGlobalFrame,
+} from "./hooks/useCurrentFrame";
+export { useDrawAnimationProgress } from "./hooks/useDrawAnimationProgress";
+export { useNarrationTiming } from "./hooks/useNarrationTiming";
 
 // Context
-export { DrawRegistryProvider, useDrawRegistry, useOptionalDrawRegistry } from './context/DrawRegistry';
-export { SceneLocalFrameProvider } from './context/SceneLocalFrame';
+export {
+  DrawRegistryProvider,
+  useDrawRegistry,
+  useOptionalDrawRegistry,
+} from "./context/DrawRegistry";
+export { SceneLocalFrameProvider } from "./context/SceneLocalFrame";
 
 // Theme
 export {
@@ -87,7 +101,7 @@ export {
   getSeqvioStylePreset,
   listSeqvioStylePresets,
   seqvioStylePresets,
-} from './theme';
+} from "./theme";
 export type {
   WhiteboardTheme,
   TextRenderMode,
@@ -99,25 +113,29 @@ export type {
   SeqvioStyleId,
   SeqvioStylePreset,
   SeqvioStyleScheme,
-} from './theme';
+} from "./theme";
 
 // Utilities
-export * from './utils/pathUtils';
-export * from './utils/animationUtils';
+export * from "./utils/pathUtils";
+export * from "./utils/animationUtils";
 export {
   computeEffectiveStartMap,
   getSerializedSceneEnd,
   sortDrawsBySchedule,
-} from './utils/drawTiming';
+} from "./utils/drawTiming";
 export {
   splitStrokeWashProgress,
   resolveStrokeHeadProgress,
-} from './utils/drawProgress';
-export type { StrokeWashSplit } from './utils/drawProgress';
-export { getTextRevealMetrics } from './utils/textReveal';
-export type { TextBounds as TextRevealBounds, TextRevealClip, TextRevealMetrics } from './utils/textReveal';
-export type { DrawTimingInput } from './utils/drawTiming';
-export * from './utils/textPath';
+} from "./utils/drawProgress";
+export type { StrokeWashSplit } from "./utils/drawProgress";
+export { getTextRevealMetrics } from "./utils/textReveal";
+export type {
+  TextBounds as TextRevealBounds,
+  TextRevealClip,
+  TextRevealMetrics,
+} from "./utils/textReveal";
+export type { DrawTimingInput } from "./utils/drawTiming";
+export * from "./utils/textPath";
 export {
   preloadHandwritingFonts,
   preloadFontFace,
@@ -126,22 +144,25 @@ export {
   YOZAI_FAMILY,
   XIAOLAI_FAMILY,
   WENKAI_FAMILY,
-} from './utils/handwritingFonts';
-export { pickHandwritingFontFamily } from './utils/handwritingFontForText';
+} from "./utils/handwritingFonts";
+export { pickHandwritingFontFamily } from "./utils/handwritingFontForText";
 export {
   textToRoughHandPathSync,
   preloadLongcangOpentype,
   preloadYozaiOpentype,
   preloadXiaolaiOpentype,
   preloadWenkaiOpentype,
-} from './utils/textPath';
-export { estimateTextBounds, boundsFromSvgTextElement } from './utils/textBounds';
-export type { TextBounds } from './utils/textBounds';
+} from "./utils/textPath";
+export {
+  estimateTextBounds,
+  boundsFromSvgTextElement,
+} from "./utils/textBounds";
+export type { TextBounds } from "./utils/textBounds";
 
 // Types
-export * from './types';
+export * from "./types";
 
 /**
  * Package version
  */
-export const VERSION = '0.5.0';
+export const VERSION = "0.5.0";

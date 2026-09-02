@@ -2,23 +2,23 @@
  * DrawShape Component – SVG stroke animation with optional roughjs hand-drawn paths
  */
 
-import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { DrawShapeProps } from '../types';
+import React, { useEffect, useId, useMemo, useRef, useState } from "react";
+import { DrawShapeProps } from "../types";
 import {
   getAngleOnPath,
   getPointOnPath,
   useOptionalDrawRegistry,
-} from '../context/DrawRegistry';
-import { useDrawAnimationProgress } from '../hooks/useDrawAnimationProgress';
-import { calculateStrokeDashoffset } from '../utils/animationUtils';
-import { resolvePathLength } from '../utils/strokePathUtils';
+} from "../context/DrawRegistry";
+import { useDrawAnimationProgress } from "../hooks/useDrawAnimationProgress";
+import { calculateStrokeDashoffset } from "../utils/animationUtils";
+import { resolvePathLength } from "../utils/strokePathUtils";
 import {
   createArrowPath,
   createCirclePath,
   createRectanglePath,
   createRoundedRectanglePath,
   createUnderlinePath,
-} from '../utils/pathUtils';
+} from "../utils/pathUtils";
 import {
   hashRoughSeed,
   roughArrow,
@@ -28,15 +28,18 @@ import {
   roughRoundedRectangle,
   roughStarPath,
   roughUnderline,
-} from '../utils/roughPath';
-import { useWhiteboardTheme } from '../theme';
-import { areSerializablePropsEqual } from '../utils/propEquality';
+} from "../utils/roughPath";
+import { useWhiteboardTheme } from "../theme";
+import { areSerializablePropsEqual } from "../utils/propEquality";
 
-function createStarPath(center: { x: number; y: number }, size: number): string {
+function createStarPath(
+  center: { x: number; y: number },
+  size: number,
+): string {
   const points = 5;
   const outerRadius = size / 2;
   const innerRadius = outerRadius * 0.4;
-  let starPath = '';
+  let starPath = "";
 
   for (let i = 0; i < points * 2; i++) {
     const radius = i % 2 === 0 ? outerRadius : innerRadius;
@@ -49,8 +52,8 @@ function createStarPath(center: { x: number; y: number }, size: number): string 
   return `${starPath} Z`;
 }
 
-function isRectType(type: DrawShapeProps['type']): boolean {
-  return type === 'rectangle' || type === 'rounded-rectangle';
+function isRectType(type: DrawShapeProps["type"]): boolean {
+  return type === "rectangle" || type === "rounded-rectangle";
 }
 
 const DrawShapeComponent: React.FC<DrawShapeProps> = ({
@@ -61,10 +64,12 @@ const DrawShapeComponent: React.FC<DrawShapeProps> = ({
   to,
   start = 0,
   duration,
-  easing = 'ease-out',
+  easing = "ease-out",
   strokeColor: strokeColorProp,
   strokeWidth: strokeWidthProp,
   fillColor: fillColorProp,
+  fillStyle = "solid",
+  opacity = 1,
   fillDelay = 0.3,
   roughness: roughnessProp,
   borderRadius: borderRadiusProp,
@@ -80,11 +85,10 @@ const DrawShapeComponent: React.FC<DrawShapeProps> = ({
   const strokeWidth = strokeWidthProp ?? theme.strokeWidthBold;
   const borderRadius =
     borderRadiusProp ??
-    (type === 'rounded-rectangle' ? theme.defaultBorderRadius : 0);
+    (type === "rounded-rectangle" ? theme.defaultBorderRadius : 0);
 
-  const handDrawn = theme.handDrawn === true;
-  const roughness =
-    roughnessProp ?? theme.roughness ?? (handDrawn ? 1.25 : 0);
+  const handDrawn = theme.handDrawn === true && roughnessProp !== 0;
+  const roughness = roughnessProp ?? theme.roughness ?? (handDrawn ? 1.25 : 0);
   const bowing = theme.bowing ?? 1.1;
 
   const progress = useDrawAnimationProgress(drawId, start, duration, easing);
@@ -99,7 +103,7 @@ const DrawShapeComponent: React.FC<DrawShapeProps> = ({
         to,
         borderRadius,
       }),
-    [type, position, size, from, to, borderRadius]
+    [type, position, size, from, to, borderRadius],
   );
 
   // Seed the rough generator from the shape's own geometry, NOT from drawId
@@ -111,113 +115,122 @@ const DrawShapeComponent: React.FC<DrawShapeProps> = ({
       roughness: handDrawn ? Math.max(0.5, roughness) : roughness,
       bowing,
       seed: hashRoughSeed(`shape:${geometryKey}`),
+      stroke: strokeColor,
+      strokeWidth,
     }),
-    [handDrawn, roughness, bowing, geometryKey]
+    [handDrawn, roughness, bowing, geometryKey, strokeColor, strokeWidth],
   );
 
   const path = useMemo(() => {
     if (handDrawn) {
       switch (type) {
-        case 'arrow': {
+        case "arrow": {
           const a = from ?? position;
           const b = to ?? { x: position.x + 100, y: position.y };
           return roughArrow(a, b, roughStyle);
         }
-        case 'circle': {
-          const diameter = typeof size === 'number' ? size : size.width;
+        case "circle": {
+          const diameter = typeof size === "number" ? size : size.width;
           return roughCircle(position, diameter, roughStyle);
         }
-        case 'rounded-rectangle': {
-          const width = typeof size === 'number' ? size : size.width;
-          const height = typeof size === 'number' ? size : size.height;
+        case "rounded-rectangle": {
+          const width = typeof size === "number" ? size : size.width;
+          const height = typeof size === "number" ? size : size.height;
           return roughRoundedRectangle(
             position.x,
             position.y,
             width,
             height,
             borderRadius,
-            roughStyle
+            roughStyle,
           );
         }
-        case 'rectangle': {
-          const width = typeof size === 'number' ? size : size.width;
-          const height = typeof size === 'number' ? size : size.height;
+        case "rectangle": {
+          const width = typeof size === "number" ? size : size.width;
+          const height = typeof size === "number" ? size : size.height;
           return roughRectangle(
             position.x,
             position.y,
             width,
             height,
-            roughStyle
+            roughStyle,
           );
         }
-        case 'line': {
+        case "line": {
           const a = from ?? position;
           const b = to ?? { x: position.x + 100, y: position.y };
           return roughLine(a, b, roughStyle);
         }
-        case 'underline': {
-          const length = typeof size === 'number' ? size : size.width;
+        case "underline": {
+          const length = typeof size === "number" ? size : size.width;
           return roughUnderline(position.x, position.y, length, roughStyle);
         }
-        case 'star': {
-          const starSize = typeof size === 'number' ? size : size.width;
+        case "star": {
+          const starSize = typeof size === "number" ? size : size.width;
           return roughStarPath(position, starSize, roughStyle);
         }
         default:
-          return '';
+          return "";
       }
     }
 
     switch (type) {
-      case 'arrow':
+      case "arrow":
         if (from && to) return createArrowPath(from, to);
-        return createArrowPath(position, { x: position.x + 100, y: position.y });
-      case 'circle': {
-        const radius = typeof size === 'number' ? size / 2 : size.width / 2;
+        return createArrowPath(position, {
+          x: position.x + 100,
+          y: position.y,
+        });
+      case "circle": {
+        const radius = typeof size === "number" ? size / 2 : size.width / 2;
         return createCirclePath(position, radius);
       }
-      case 'rounded-rectangle': {
-        const width = typeof size === 'number' ? size : size.width;
-        const height = typeof size === 'number' ? size : size.height;
+      case "rounded-rectangle": {
+        const width = typeof size === "number" ? size : size.width;
+        const height = typeof size === "number" ? size : size.height;
         return createRoundedRectanglePath(
           position.x,
           position.y,
           width,
           height,
-          borderRadius
+          borderRadius,
         );
       }
-      case 'rectangle': {
-        const width = typeof size === 'number' ? size : size.width;
-        const height = typeof size === 'number' ? size : size.height;
+      case "rectangle": {
+        const width = typeof size === "number" ? size : size.width;
+        const height = typeof size === "number" ? size : size.height;
         return createRectanglePath(
           position.x,
           position.y,
           width,
           height,
           0,
-          borderRadius
+          borderRadius,
         );
       }
-      case 'line':
+      case "line":
         if (from && to) return `M ${from.x} ${from.y} L ${to.x} ${to.y}`;
         return `M ${position.x} ${position.y} L ${position.x + 100} ${position.y}`;
-      case 'underline': {
-        const length = typeof size === 'number' ? size : size.width;
+      case "underline": {
+        const length = typeof size === "number" ? size : size.width;
         return createUnderlinePath(position.x, position.y, length);
       }
-      case 'star':
-        return createStarPath(position, typeof size === 'number' ? size : size.width);
+      case "star":
+        return createStarPath(
+          position,
+          typeof size === "number" ? size : size.width,
+        );
       default:
-        return '';
+        return "";
     }
   }, [handDrawn, type, position, size, from, to, borderRadius, roughStyle]);
 
   const useShapeWash =
     fillColorProp === undefined &&
-    theme.shapeFillDefault === 'wash' &&
+    theme.shapeFillDefault === "wash" &&
     isRectType(type);
-  const resolvedFillColor = fillColorProp ?? (useShapeWash ? theme.shapeWashFill : 'none');
+  const resolvedFillColor =
+    fillColorProp ?? (useShapeWash ? theme.shapeWashFill : "none");
 
   useEffect(() => {
     if (pathRef.current) {
@@ -250,7 +263,16 @@ const DrawShapeComponent: React.FC<DrawShapeProps> = ({
     });
 
     return () => registry.unregisterDraw(drawId);
-  }, [registry, drawId, start, duration, easing, strokeWidth, position.x, position.y]);
+  }, [
+    registry,
+    drawId,
+    start,
+    duration,
+    easing,
+    strokeWidth,
+    position.x,
+    position.y,
+  ]);
 
   useEffect(() => {
     if (registry && pathRef.current) {
@@ -259,34 +281,49 @@ const DrawShapeComponent: React.FC<DrawShapeProps> = ({
   }, [registry, drawId, path, pathLength]);
 
   const effectivePathLength = resolvePathLength(pathRef.current, pathLength);
-  const strokeDashoffset = calculateStrokeDashoffset(progress, effectivePathLength);
+  const strokeDashoffset = calculateStrokeDashoffset(
+    progress,
+    effectivePathLength,
+  );
   const fillProgress = Math.max(0, (progress - fillDelay) / (1 - fillDelay));
-  const shouldFill = resolvedFillColor !== 'none' && fillProgress > 0;
+  const shouldFill = resolvedFillColor !== "none" && fillProgress > 0;
   const fillOpacity = shouldFill
     ? useShapeWash
       ? fillProgress * theme.shapeWashOpacity
       : fillProgress
     : 0;
 
+  const plainFillPath = useMemo(() => {
+    if (!shouldFill || type === "circle") return "";
+    if (type === "rectangle" || type === "rounded-rectangle") {
+      const width = typeof size === "number" ? size : size?.width ?? 0;
+      const height = typeof size === "number" ? size : size?.height ?? 0;
+      return type === "rounded-rectangle"
+        ? createRoundedRectanglePath(position.x, position.y, width, height, borderRadius)
+        : createRectanglePath(position.x, position.y, width, height, 0, 0);
+    }
+    return "";
+  }, [shouldFill, type, size, position.x, position.y, borderRadius]);
+
   // For circles with fill: use a plain <circle> element for the fill background,
   // because roughjs generates multiple sub-paths whose nonzero fill rule creates
   // "holes" in the interior. The plain <circle> fills cleanly; roughjs only strokes.
   const circleRadius =
-    type === 'circle' && shouldFill
-      ? (typeof size === 'number' ? size : size.width) / 2
+    type === "circle" && shouldFill
+      ? (typeof size === "number" ? size : size.width) / 2
       : null;
 
   return (
-      <svg
-        className="seqvio-drawable"
-        data-annotation-target={annotationId}
-        data-seqvio-draw-start={start}
-        data-seqvio-draw-end={start + duration}
-        style={{
-        position: 'absolute',
+    <svg
+      className="seqvio-drawable"
+      data-annotation-target={annotationId}
+      data-seqvio-draw-start={start}
+      data-seqvio-draw-end={start + duration}
+      style={{
+        position: "absolute",
         left: 0,
         top: 0,
-        overflow: 'visible',
+        overflow: "visible",
       }}
       width="100%"
       height="100%"
@@ -297,7 +334,15 @@ const DrawShapeComponent: React.FC<DrawShapeProps> = ({
           cy={position.y}
           r={circleRadius}
           fill={resolvedFillColor}
-          fillOpacity={fillOpacity}
+          fillOpacity={fillOpacity * opacity}
+          stroke="none"
+        />
+      )}
+      {plainFillPath && (
+        <path
+          d={plainFillPath}
+          fill={resolvedFillColor}
+          fillOpacity={fillOpacity * opacity}
           stroke="none"
         />
       )}
@@ -306,8 +351,9 @@ const DrawShapeComponent: React.FC<DrawShapeProps> = ({
         d={path}
         stroke={strokeColor}
         strokeWidth={strokeWidth}
-        fill={circleRadius !== null ? 'none' : (shouldFill ? resolvedFillColor : 'none')}
-        fillOpacity={circleRadius !== null ? 0 : fillOpacity}
+        fill="none"
+        fillOpacity={0}
+        opacity={opacity}
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeDasharray={effectivePathLength || undefined}
@@ -317,7 +363,10 @@ const DrawShapeComponent: React.FC<DrawShapeProps> = ({
   );
 };
 
-export const DrawShape = React.memo(DrawShapeComponent, areSerializablePropsEqual);
-DrawShape.displayName = 'DrawShape';
+export const DrawShape = React.memo(
+  DrawShapeComponent,
+  areSerializablePropsEqual,
+);
+DrawShape.displayName = "DrawShape";
 
 export default DrawShape;

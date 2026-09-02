@@ -97,6 +97,8 @@ export interface DrawShapeProps extends DrawOptions {
     | 'star';
   position?: Point;
   size?: number | { width: number; height: number };
+  fillStyle?: 'solid' | 'hachure' | 'cross-hatch' | 'zigzag';
+  opacity?: number;
   from?: Point;
   to?: Point;
   roughness?: number;
